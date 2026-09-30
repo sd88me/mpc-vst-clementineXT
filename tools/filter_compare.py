@@ -30,10 +30,11 @@ def main():
         ours = [20 * math.log10(max(h[min(1024, round(f * 2048 / 40000))], 1e-9)) for f in FREQS]
         # firmware minus shelf; align the passband (mean of the lowest 6 points) and compare where the firmware is above -70 dB relative
         fwn = [a - shelf_db(f) for a, f in zip(fw, FREQS)]
-        off = sum(fwn[i] - ours[i] for i in range(0, 6)) / 6
+        off = -19.1 if os.environ.get('ABS') else sum(fwn[i] - ours[i] for i in range(0, 6)) / 6   # ABS=1: compare levels too (the 12 dB LP passband sits at -19.1)
         errs = [(fwn[i] - off) - ours[i] for i in range(48) if fwn[i] - off > -75 and ours[i] > -75]
+        bias = sum(errs) / max(len(errs), 1)
         rms = math.sqrt(sum(e * e for e in errs) / max(len(errs), 1))
-        print('type %2d cutoff %3d reso %3d special %3d: rms %5.2f dB  passband offset %+.1f dB' % (t, c, r, sp, rms, off))
+        print('type %2d cutoff %3d reso %3d special %3d: rms %5.2f dB  passband offset %+.1f dB  mean error %+.1f dB' % (t, c, r, sp, rms, off, bias))
         worst.setdefault(t, []).append(rms)
     print('mean rms per type:', {t: round(sum(v) / len(v), 2) for t, v in worst.items()})
 

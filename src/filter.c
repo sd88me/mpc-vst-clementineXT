@@ -150,16 +150,27 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
         return lp;
     }
-    case 2:   /* 24 dB BP: two band-pass sections, level from the firmware (-5.5 dB vs the LP passband) */
-        svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
-        svf_tick(&f->b, k * bp, g, k, &lp2, &bp2, &hp2);
-        return 0.53f * k * bp2;
+    case 2: { /* 24 dB BP (fitted to the firmware): one-pole HP and the resonant 2-pole LP at 0.745x the 12 dB LP's pole, then a critically
+               * damped 2-pole LP at 4.7x the nominal pole (capped below Nyquist) */
+        float gr, kr, g24;
+        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
+        float gh = tanf(0.745f * atanf(g)), gq = tanf(0.745f * atanf(gr));
+        float v = (x - f->c.ic1) * (gh / (1.0f + gh)), l1 = v + f->c.ic1; f->c.ic1 = l1 + v;   /* TPT one-pole low-pass state */
+        svf_tick(&f->a, x - l1, gq, kr, &lp, &bp, &hp);
+        svf_tick(&f->b, lp, fminf(g * 4.7f, 5.0f), 2.0f, &lp2, &bp2, &hp2);
+        float cdb = cutoff <= 72 ? 4.5f : cutoff <= 96 ? 4.5f + (cutoff - 72) * 0.096f : 6.8f + (cutoff - 96) * 0.23f;   /* level vs the LP passband, measured */
+        return lp2 * powf(10.0f, cdb / 20.0f);
+    }
     case 3:   /* 12 dB BP (-2.6 dB) */
         svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
         return 0.74f * k * bp;
-    case 4:   /* 12 dB HP (-3.5 dB) */
-        svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
-        return 0.67f * hp;
+    case 4: { /* 12 dB HP: the 12 dB LP's (pole, Q) set as a high-pass, then a fixed critically damped 2-pole LP near 12.5 kHz (fitted to the firmware, 0.1-1.2 dB rms) */
+        float gr, kr, g24;
+        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
+        svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
+        svf_tick(&f->b, hp, 1.5f, 2.0f, &lp2, &bp2, &hp2);
+        return lp2;
+    }
     case 5:   /* sine waveshaper (about +9.5 dB small-signal) then 12 dB LP */
         svf_tick(&f->a, sinf(3.0f * x), g, k, &lp, &bp, &hp);
         return lp;
