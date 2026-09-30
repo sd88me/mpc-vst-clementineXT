@@ -84,3 +84,13 @@ Sent MIDI (bend, controllers) must follow the note: the firmware resets them at 
   through volume the waveforms match the firmware to about 0.5%.
 - **Not measured yet:** symmetry, humanize, sync (shared LFO), LFO 2 phase lock, random and S&H shapes, LFO level destinations, Modifiers,
   wave envelope, free envelope, the remaining destinations (reso, wave position, FM, envelope times).
+
+## 2026-10-01: mixer sources
+- **Noise:** linear in the mixer level; white noise shaped by a pole (2.5 kHz) and zero (12 kHz) after the output shelf is removed (within 1.5 dB
+  of the firmware at 60 Hz-16 kHz); rms 0.0254 at level 127 through our chain (`NOISE_LEVEL` 0.756).
+- **Ring modulator and two-oscillator mix** match the firmware within 0.5% (levels and the sum/difference tones).
+- **Oscillator FM** is frequency modulation (sideband amplitude falls as 1/(modulator:carrier ratio), measured at 2:1, 3:1, 4:1):
+  carrier frequency x (1 + k*w2) with k = 0.085*(amount/16)^2.8; first sidebands within 3% of the firmware for amounts 16-44. The carrier
+  level differs (start-phase dependent) and amounts above about 48 are not compared.
+- **Velocity to volume:** positive amounts match 1 - a*(1 - vel/127) with a = amount/64 (2.3% at vel 1 with +63). Negative amounts (which make
+  loud notes quiet) follow a steeper law that is not modelled: at -64 the level reaches zero near velocity 100, not 127.

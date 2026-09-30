@@ -24,7 +24,7 @@ enum { ST_ATT, ST_DEC, ST_SUS, ST_REL };
 typedef struct { int stage; float level; } env_t;
 /* key = the played note that owns the voice; pitch = its current pitch in notes (moves during glide), target = where it glides to,
  * det = unison/dual detune in notes, panoff = its pan offset from the spread (0..1, sign = side). */
-typedef struct { int key, on, vel; float ph1, ph2, pitch, target, det, panoff; env_t aenv, fenv; filt_t flt; lfo_t lfo[2]; float lfov[2]; } voice_t;
+typedef struct { int key, on, vel; float ph1, ph2, pitch, target, det, panoff; env_t aenv, fenv; filt_t flt; lfo_t lfo[2]; float lfov[2]; uint32_t nrng; float nx1, ny1; } voice_t;
 typedef struct {
     patch_t cur;                 /* the engine state is the XT's SDATA block */
     struct { int note, vel; } held[16];   /* keys currently down, oldest first */
@@ -49,7 +49,7 @@ typedef struct {
 enum { P_FX_TYPE = 76, P_FX_P1 = 81, P_CHORUS = 82, P_FX_P2 = 83, P_FX_P3 = 86 };
 enum { P_OSC1_OCT = 1, P_OSC1_SEMI = 2, P_OSC1_DET = 3, P_OSC1_KT = 6, P_OSC2_OCT = 12, P_OSC2_SEMI = 13, P_OSC2_DET = 14,
        P_OSC2_SYNC = 16, P_OSC2_KT = 18, P_TABLE = 25, P_W1_START = 26, P_W1_PHASE = 27, P_W2_START = 36, P_W2_PHASE = 37,
-       P_MIX_W1 = 47, P_MIX_W2 = 48, P_MIX_RING = 49, P_CLIP = 55, P_VOLUME = 77, P_AMP_VELO = 79, P_PAN = 84,
+       P_MIX_W1 = 47, P_MIX_W2 = 48, P_MIX_RING = 49, P_MIX_NOISE = 50, P_CLIP = 55, P_VOLUME = 77, P_AMP_VELO = 79, P_PAN = 84,
        P_AENV_A = 119, P_AENV_D = 120, P_AENV_S = 121, P_AENV_R = 122,
        P_F1_CUTOFF = 62, P_F1_RESO = 63, P_F1_TYPE = 64, P_F1_KT = 65, P_F1_ENV = 66, P_F1_VELO = 67, P_F1_SPECIAL = 70,
        P_F2_CUTOFF = 73, P_F2_TYPE = 74, P_F2_KT = 75, P_FENV_A = 113, P_FENV_D = 114, P_FENV_S = 115, P_FENV_R = 116 };
@@ -134,6 +134,7 @@ static void start_voice(inst_t *s, int idx, int note, int vel, float det, float 
     v->pitch = gl ? from : (float)note;
     v->aenv.stage = ST_ATT; v->fenv.stage = ST_ATT;
     v->ph1 = start_phase(p->d[P_W1_PHASE]); v->ph2 = start_phase(p->d[P_W2_PHASE]);
+    v->nrng = ++s->seed * 2246822519u + 3266489917u;
     for (int l = 0; l < 2; l++) {   /* delay: 0 runs free; 1..127 restarts the LFO at the note after 0.1 s per step */
         int dl = p->d[l ? 168 : 161];
         lfo_reset(&v->lfo[l], ++s->seed + idx * 7919u + l, dl == 0, dl > 0 ? dl * 0.1f - 0.004f : 0.0f);   /* measured: 0.1 s per step, retrigger (1) is 0.1 s */
@@ -367,6 +368,23 @@ static float shelf_run(shelf_t *f, float x) {
 }
 #define OUT_GAIN 0.1885f   /* -14.5 dB: measured ratio firmware/ours for one oscillator, notes 36-84 within 0.15 dB */
 
+/* Noise generator (measured): white noise through a pole-zero pair, flat below ~1 kHz and falling to about -13 dB by 12 kHz
+ * (pole 2.5 kHz, zero 12 kHz after removing the output shelf). NOISE_LEVEL is the white noise rms before shaping. */
+#define NOISE_LEVEL 0.756f   /* matched to the firmware: rms 0.0254 at mixer level 127 */
+static float noise_tick(voice_t *v) {
+    static float b0, b1, a1; static int init;
+    if (!init) {
+        const float k = 2.0f * CORE_HZ, wz = 6.2831853f * 12000.0f, wp = 6.2831853f * 2500.0f;
+        b0 = (1.0f + k / wz) / (1.0f + k / wp); b1 = (1.0f - k / wz) / (1.0f + k / wp); a1 = (1.0f - k / wp) / (1.0f + k / wp);
+        init = 1;
+    }
+    v->nrng = v->nrng * 1664525u + 1013904223u;
+    float w = ((int32_t)v->nrng) / 2147483648.0f * 1.7320508f * NOISE_LEVEL;   /* uniform -> unit rms times the level */
+    float y = b0 * w + b1 * v->nx1 - a1 * v->ny1;
+    v->nx1 = w; v->ny1 = y;
+    return y;
+}
+
 /* one 40 kHz core sample, stereo */
 static void core(inst_t *s, float *lr) {
     const patch_t *p = &s->cur;
@@ -423,13 +441,19 @@ static void core(inst_t *s, float *lr) {
         float wk1 = (p->d[30] - 64) * 0.03125f * (note - 64), wk2 = (p->d[40] - 64) * 0.03125f * (note - 64);
         int slot1 = clampi((int)lroundf(p->d[P_W1_START] + wk1 + dest[3]), p->d[31] ? 60 : 63);
         int slot2 = clampi((int)lroundf(p->d[P_W2_START] + wk2 + (p->d[42] ? dest[3] : dest[4])), p->d[41] ? 60 : 63);
-        float w1 = osc_read(s->tab->mip[slot1], v->ph1, hz1);
         float w2 = osc_read(s->tab->mip[slot2], v->ph2, hz2);
-        v->ph1 += 128.0f * hz1 / CORE_HZ;
+        /* Oscillator FM (measured): oscillator 2 scales oscillator 1's frequency by (1 + k*w2) with k = 0.085*(amount/16)^2.8 (sidebands within 3%; the carrier level depends on start phases and is not matched);
+         * the sidebands fall as 1/(modulator/carrier ratio), so it is frequency (not phase) modulation. */
+        float fma = clampf(p->d[7] + dest[34], 127.0f);
+        float hz1m = fma > 0 ? hz1 * (1.0f + 0.085f * powf(fma / 16.0f, 2.8f) * w2) : hz1;
+        float w1 = osc_read(s->tab->mip[slot1], v->ph1, fabsf(hz1m));
+        v->ph1 += 128.0f * hz1m / CORE_HZ;
+        if (v->ph1 < 0) v->ph1 += 128;
         if (v->ph1 >= 128) { v->ph1 -= 128; if (p->d[P_OSC2_SYNC]) v->ph2 = start_phase(p->d[P_W2_PHASE]); }
         v->ph2 += 128.0f * hz2 / CORE_HZ; if (v->ph2 >= 128) v->ph2 -= 128;
         float m1 = clampf(p->d[P_MIX_W1] + dest[5], 127.0f), m2 = clampf(p->d[P_MIX_W2] + dest[6], 127.0f), m3 = clampf(p->d[P_MIX_RING] + dest[7], 127.0f);
-        float mix = (w1 * m1 + w2 * m2 + w1 * w2 * m3) / 128.0f;
+        float m4 = clampf(p->d[P_MIX_NOISE] + dest[8], 127.0f);
+        float mix = (w1 * m1 + w2 * m2 + w1 * w2 * m3 + (m4 > 0 ? noise_tick(v) * m4 : 0.0f)) / 128.0f;
         mix = clip(mix, p->d[P_CLIP]);
         float a = (p->d[P_AMP_VELO] - 64) / 64.0f;
         float vg = a >= 0 ? 1 - a * (1 - v->vel / 127.0f) : 1 + a * (v->vel / 127.0f);
