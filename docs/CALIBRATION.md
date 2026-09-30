@@ -153,3 +153,4 @@ delay 128 samples*(1+depth*sin) (chorus), depth*128*(1+sin) (flanger 1), 128*(1+
 side is half a cycle away; chorus/flanger 1 wet = (x + delayed)/2 (rms ratio 0.70 for uncorrelated noise), flanger 2 wet = delayed/2.
 Flanger 2 feedback gain is a fit (0.83*p2/127) to the rms growth. Still open: the LFO phase at note start, the wahs, and the
 always-available chorus (amp page), which is untouched.
+Amp-page chorus (1 and 2 are identical): one tap, delay 128*(1+sin) samples at 0.5 Hz, sides half a cycle apart, added at full level to the dry signal.

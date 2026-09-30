@@ -23,11 +23,11 @@ void chorus_run(fx_t *f, int mode, float *l, float *r) {
     f->lfo_chorus += 0.5f / FS; if (f->lfo_chorus >= 1) f->lfo_chorus -= 1;
     for (int c = 0; c < 2; c++) f->cdl[c][f->cwr] = in[c];
     for (int c = 0; c < 2; c++) {
-        /* two short delays, modulated by a sine of about 0.5 Hz (manual); centre 12 ms and 18 ms, +-3 ms; the sides in antiphase */
-        float ph = f->lfo_chorus + (c ? 0.5f : 0.0f);
-        float m1 = sinf(TWO_PI * ph), m2 = sinf(TWO_PI * (ph + 0.25f));
-        float d1 = (12.0f + 3.0f * m1) * 0.001f * FS, d2 = (18.0f + 3.0f * m2) * 0.001f * FS;
-        out[c] = 0.5f * in[c] + 0.35f * (dread(f->cdl[c], f->cwr, d1, 2047) + dread(f->cdl[c], f->cwr, d2, 2047));
+        /* measured: one tap, delay 128 samples * (1 + sin) (0..6.4 ms) at 0.5 Hz, the sides half a cycle apart, added to the dry signal at
+         * full level (rms rises by about 1.4 for uncorrelated noise); chorus 1 and 2 behave alike */
+        float d = 128.0f * (1.0f + sinf(TWO_PI * (f->lfo_chorus + 0.5f * c)));
+        if (d < 1.0f) d = 1.0f;
+        out[c] = in[c] + dread(f->cdl[c], f->cwr, d, 2047);
     }
     f->cwr = (f->cwr + 1) & 2047;
     *l = out[0]; *r = out[1];
