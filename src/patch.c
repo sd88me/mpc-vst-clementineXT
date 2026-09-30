@@ -35,3 +35,20 @@ void patch_set_name(patch_t *p, const char *s) {
     size_t n = strlen(s);
     for (int i = 0; i < PATCH_NAME_LEN; i++) p->d[PATCH_NAME_AT + i] = (uint8_t)(i < (int)n && s[i] >= 32 ? s[i] : 32);
 }
+
+int patch_apply_cc(patch_t *p, int cc, int value) {
+    for (const patch_cc_t *m = patch_cc_map; m->cc; m++) {
+        if (m->cc != cc) continue;
+        int v = value & 127;
+        switch (m->kind) {
+        case 1: v = 16 + 12 * (v > 8 ? 8 : v); break;
+        case 2: v = 52 + (v > 24 ? 24 : v); break;
+        case 3: v += 1; break;
+        case 4: v = (v * 76 + 63) / 127; break;
+        }
+        const patch_field_t *f = &patch_fields[m->index];
+        p->d[m->index] = (uint8_t)(v < f->lo ? f->lo : v > f->hi ? f->hi : v);
+        return m->index;
+    }
+    return -1;
+}

@@ -171,6 +171,22 @@ def params_json():
     ps.append({"key": "patch_name", "name": "Sound", "min": 0, "max": 1, "default": 0, "display": "string"})
     print(json.dumps({"name": "Clementine", "params": ps}, indent=1))
 
+# MIDI controller table (Controller Number Assignment, release 2.28): cc -> (SDATA index, conversion).
+# kinds: 0 direct, 1 octave (cc 0..8 -> 16 + 12*cc), 2 semitone (cc 0..24 -> 52 + cc), 3 arp range (cc + 1),
+# 4 oscillator keytrack (cc 0..127 -> 0..76). Bank select, sustain, mod wheel etc. are handled by the engine, not here.
+CC = [(5, 90, 0), (10, 84, 0), (12, 82, 0), (13, 7, 0), (14, 113, 0), (15, 114, 0), (16, 115, 0), (17, 116, 0),
+      (18, 119, 0), (19, 120, 0), (20, 121, 0), (21, 122, 0), (22, 88, 0), (23, 89, 0), (24, 159, 0), (25, 160, 0),
+      (26, 166, 0), (27, 168, 0), (28, 167, 0), (29, 117, 0), (30, 161, 0), (31, 123, 0), (33, 1, 1), (34, 2, 2),
+      (35, 3, 0), (36, 5, 0), (37, 6, 4), (38, 12, 1), (39, 13, 2), (40, 14, 0), (41, 16, 0), (42, 17, 0), (43, 18, 4),
+      (44, 19, 0), (45, 47, 0), (46, 48, 0), (47, 49, 0), (48, 50, 0), (50, 62, 0), (51, 65, 0), (52, 66, 0),
+      (53, 67, 0), (54, 64, 0), (55, 80, 0), (56, 63, 0), (57, 77, 0), (58, 79, 0), (60, 73, 0), (61, 74, 0),
+      (62, 75, 0), (65, 87, 0), (70, 25, 0), (71, 26, 0), (72, 27, 0), (73, 28, 0), (74, 29, 0), (75, 30, 0),
+      (76, 31, 0), (77, 36, 0), (78, 37, 0), (79, 38, 0), (80, 39, 0), (81, 40, 0), (82, 41, 0), (83, 42, 0),
+      (85, 149, 0), (86, 150, 0), (87, 151, 0), (88, 152, 0), (89, 153, 0), (90, 154, 0), (91, 155, 0), (92, 156, 0),
+      (93, 157, 0), (94, 193, 0), (95, 196, 0), (102, 92, 0), (103, 95, 3), (104, 94, 0), (105, 93, 0), (106, 97, 0),
+      (107, 96, 0), (108, 98, 0), (109, 99, 0), (110, 100, 0), (111, 101, 0), (112, 162, 0), (113, 163, 0),
+      (114, 164, 0), (115, 169, 0), (116, 170, 0), (117, 171, 0), (118, 172, 0)]
+
 def main():
     if "--params" in sys.argv:
         return params_json()
@@ -185,5 +201,10 @@ def main():
         else:
             print('  /*%3d*/ { 0, 0, 0, 0, 0 },' % i)   # reserved (and index 0, the format version, handled in patch.c)
     print("};")
+    print("const patch_cc_t patch_cc_map[] = {")
+    for cc, idx, kind in CC:
+        assert idx in F, (cc, idx)
+        print("  { %d, %d, %d }," % (cc, idx, kind))
+    print("  { 0, 0, 0 } };")
     print("const uint8_t patch_init_reserved[][2] = { %s { 0, 0 } };" % " ".join("{ %d, %d }," % kv for kv in sorted(INIT_RESERVED.items())))
 main()

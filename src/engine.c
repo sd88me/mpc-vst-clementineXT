@@ -72,6 +72,11 @@ static void midi(void *p, const uint8_t *m, int len) {
     inst_t *s = p;
     if (len < 3) return;
     int st = m[0] & 0xF0, n = m[1];
+    if (st == 0xB0) {   /* controllers follow the XT's Controller Number Assignment */
+        if (n == 120 || n == 123) { for (int i = 0; i < NV; i++) s->v[i].on = 0; return; }
+        patch_apply_cc(&s->cur, n, m[2]);
+        return;
+    }
     if (st == 0x90 && m[2]) {
         voice_t *v = &s->v[0];
         for (int i = 0; i < NV; i++) if (!s->v[i].on && s->v[i].env < v->env) v = &s->v[i];

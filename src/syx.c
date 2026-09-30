@@ -17,9 +17,9 @@ syx_info_t syx_parse(const uint8_t *m, int len, patch_t *patches) {
     if (m[4] != SYX_SNDD || len < 9) return r;
     int bb = m[5], nn = m[6], n = (bb == 0x10) ? 256 : 1, body = n * PATCH_SIZE;
     if (len != 7 + body + 2) return r;
-    /* Accept the firmware's checksum, the spec's (with BB+NN), or zero (some senders omit it). */
+    /* Accept the firmware's checksum, the spec's (with BB+NN), zero (some senders omit it) or 7Fh (always valid). */
     int sum = xsum(m + 7, body), got = m[7 + body];
-    if (got != sum && got != ((sum + bb + nn) & 0x7F) && got != 0) return r;
+    if (got != sum && got != ((sum + bb + nn) & 0x7F) && got != 0 && got != 0x7F) return r;   /* 7Fh is always valid (manual) */
     for (int i = 0; i < n; i++) { memcpy(patches[i].d, m + 7 + i * PATCH_SIZE, PATCH_SIZE); patch_clamp(&patches[i]); }
     r.bank = bb; r.num = nn; r.kind = n == 256 ? SYX_ALL : SYX_SINGLE;
     return r;
