@@ -1,20 +1,22 @@
-/* Phase 1 skeleton: 10 voices, one stepped 8-bit saw wave read at 40 kHz, released amp. Proves the build path only. */
+/* Phase 1 skeleton: 10 voices, one stepped 8-bit saw wave read at 40 kHz, released amp, out.c resampler. Proves the build path only. */
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "engine.h"
+#include "out.h"
 
 #define NV 10
 #define CORE_HZ 40000.0f
 
 typedef struct { int note, on; float ph, inc, env; } voice_t;
-typedef struct { int volume, release; int8_t wave[128]; voice_t v[NV]; float pos; float last[2]; } inst_t;
+typedef struct { int volume, release; int8_t wave[128]; voice_t v[NV]; rs_t rs; } inst_t;
 
 static void *create(const char *dir) {
     (void)dir;
     inst_t *s = calloc(1, sizeof *s);
     s->volume = 100; s->release = 30;
+    rs_init(&s->rs, RS_CLEAN);
     for (int i = 0; i < 64; i++) s->wave[i] = (int8_t)(i * 2 - 64);   /* saw, first half */
     for (int n = 0; n < 64; n++) s->wave[64 + n] = (int8_t)-s->wave[63 - n];
     return s;
@@ -60,16 +62,16 @@ static float core(inst_t *s) {
     return sum * 0.25f * (s->volume / 127.0f);
 }
 
-/* 40 -> 44.1 kHz by linear interpolation (placeholder for the 160:147 polyphase resampler) */
+static void gen(void *p, float *lr) { lr[0] = lr[1] = core(p); }
+
 static void render(void *p, int16_t *out, int frames) {
     inst_t *s = p;
-    static const float step = CORE_HZ / 44100.0f;
-    for (int i = 0; i < frames; i++) {
-        s->pos += step;
-        while (s->pos >= 1.0f) { s->pos -= 1.0f; s->last[0] = s->last[1]; s->last[1] = core(s); }
-        float y = s->last[0] + (s->last[1] - s->last[0]) * s->pos;
-        int16_t q = (int16_t)fmaxf(-32767, fminf(32767, y * 32767));
-        out[2 * i] = out[2 * i + 1] = q;
+    float buf[256];
+    for (int done = 0; done < frames; ) {
+        int n = frames - done < 128 ? frames - done : 128;
+        rs_render(&s->rs, gen, s, buf, n);
+        for (int i = 0; i < 2 * n; i++) out[2 * done + i] = (int16_t)fmaxf(-32767, fminf(32767, buf[i] * 32767));
+        done += n;
     }
 }
 

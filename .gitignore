@@ -9,3 +9,5 @@ cache/
 *.mid
 *.bin
 oracle-out/
+test/test_out
+test/test_waves

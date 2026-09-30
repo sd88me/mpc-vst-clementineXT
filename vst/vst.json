@@ -7,7 +7,7 @@
   "params": "params.json",
   "build": {
     "root": "..",
-    "sources": ["src/engine.c"],
+    "sources": ["src/engine.c", "src/out.c"],
     "cflags": ["-Isrc", "-I/mv/wrapper", "-I../mpc-vst-plugins/wrapper"],
     "libs": ["-lm"]
   }

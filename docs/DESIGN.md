@@ -92,7 +92,7 @@ Design decisions:
 
 - **Run the core at 40 kHz internally.** gearmulator's XT hardware class runs at 40 kHz (`wLib::Hardware(40000)`). Where
   the hardware aliases, it aliases at 40 kHz; running at the native rate keeps that character and lets the calibration
-  compare against the oracle sample for sample. One polyphase 40 to 44.1 kHz resampler (160:147) on the summed stereo
+  compare against the oracle sample for sample. One polyphase 40 to 44.1 kHz resampler (400:441, so 441 phases) on the summed stereo
   output costs almost nothing next to the voices.
 - **No band-limited oscillator.** The DSP keeps each of a part's 64 waves as a mip pyramid in Y memory
   (128+64+32+...+1 = 256 words per wave, `xtWavePreview.cpp`) and reads from it. The XT's sound *is* stepped 8-bit
@@ -206,8 +206,8 @@ all voices -> stereo sum (24-bit-style fixed point, XT clipping) -> effect -> ch
 - **16-bit output.** Enough at the level MPC mixes, but the resampler and trim run in float and only the last step
   goes to int16, with TPDF dither on quiet signals. If that ever shows up as a limit, a float `render_f32()` field can
   be appended to `mpc_engine_t` (append-only, as the header already says) with the wrapper preferring it.
-- **Resampler.** Polyphase FIR, 160 phases (147 output samples per 160 input samples), about 32 taps, run once on the
-  stereo sum. Two settings: *Clean* (steep, no images above 20 kHz) and *Vintage* (a gentler filter that keeps some of
+- **Resampler.** Polyphase FIR, 441 phases (441 output samples per 400 input samples), 96 taps (32 taps left a 19 kHz tone
+  imaged only 13 dB down; 96 gives 59 dB), run once on the stereo sum. Two settings: *Clean* (steep, no images above 20 kHz) and *Vintage* (a gentler filter that keeps some of
   the XT's 40 kHz grit). Tune *Vintage* against recordings of real hardware, not Xenia, which has its own resampler.
 - **Main/Sub outs.** The XT's second output doesn't map to a stereo VST2 instrument. The instrument sums both; the
   Multi `Output` field is ignored on import.
