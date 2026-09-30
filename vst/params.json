@@ -1,0 +1,4 @@
+{"name": "Clementine", "params": [
+  {"key": "volume", "name": "Volume", "min": 0, "max": 127, "default": 100},
+  {"key": "amp_release", "name": "Release", "min": 0, "max": 127, "default": 30}
+]}

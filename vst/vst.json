@@ -1,0 +1,14 @@
+{
+  "name": "Clementine",
+  "vendor": "sd88me",
+  "uid": "ClmT",
+  "version": 1000,
+  "so": "clementine.so",
+  "params": "params.json",
+  "build": {
+    "root": "..",
+    "sources": ["src/engine.c"],
+    "cflags": ["-Isrc", "-I/mv/wrapper", "-I../mpc-vst-plugins/wrapper"],
+    "libs": ["-lm"]
+  }
+}
