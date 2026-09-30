@@ -14,6 +14,7 @@
 #include "wavedata.h"
 #include "filter.h"
 #include "fx.h"
+#include "mod.h"
 
 #define NV 10
 #define CORE_HZ 40000.0f
@@ -23,7 +24,7 @@ enum { ST_ATT, ST_DEC, ST_SUS, ST_REL };
 typedef struct { int stage; float level; } env_t;
 /* key = the played note that owns the voice; pitch = its current pitch in notes (moves during glide), target = where it glides to,
  * det = unison/dual detune in notes, panoff = its pan offset from the spread (0..1, sign = side). */
-typedef struct { int key, on, vel; float ph1, ph2, pitch, target, det, panoff; env_t aenv, fenv; filt_t flt; } voice_t;
+typedef struct { int key, on, vel; float ph1, ph2, pitch, target, det, panoff; env_t aenv, fenv; filt_t flt; lfo_t lfo[2]; float lfov[2]; } voice_t;
 typedef struct {
     patch_t cur;                 /* the engine state is the XT's SDATA block */
     struct { int note, vel; } held[16];   /* keys currently down, oldest first */
@@ -37,6 +38,12 @@ typedef struct {
     voice_t v[NV];
     shelf_t shelf[2];
     fx_t fx;
+    uint8_t cc[128];             /* last value of each MIDI controller (mod wheel 1, breath 2, foot 4, ...) */
+    float bend, aftertouch;      /* -1..1 and 0..1 */
+    float modgain[16];           /* the 16 matrix amounts as destination-unit multipliers (mod_amount_gain) */
+    lfo_t glfo[2];               /* LFOs shared by all voices when Sync is on */
+    float glfov[2];
+    uint32_t seed;
     rs_t rs;
 } inst_t;
 enum { P_FX_TYPE = 76, P_FX_P1 = 81, P_CHORUS = 82, P_FX_P2 = 83, P_FX_P3 = 86 };
@@ -47,7 +54,10 @@ enum { P_OSC1_OCT = 1, P_OSC1_SEMI = 2, P_OSC1_DET = 3, P_OSC1_KT = 6, P_OSC2_OC
        P_F1_CUTOFF = 62, P_F1_RESO = 63, P_F1_TYPE = 64, P_F1_KT = 65, P_F1_ENV = 66, P_F1_VELO = 67, P_F1_SPECIAL = 70,
        P_F2_CUTOFF = 73, P_F2_TYPE = 74, P_F2_KT = 75, P_FENV_A = 113, P_FENV_D = 114, P_FENV_S = 115, P_FENV_R = 116 };
 
-static void refresh(inst_t *s) { if (s->wd) s->tab = wavedata_table(s->wd, s->cur.d[P_TABLE]); }
+static void refresh(inst_t *s) {
+    if (s->wd) s->tab = wavedata_table(s->wd, s->cur.d[P_TABLE]);
+    for (int n = 0; n < 16; n++) s->modgain[n] = mod_amount_gain(s->cur.d[193 + 3 * n]);
+}
 
 static void bank_cb(const patch_t *p, int bank, int num, void *ctx) {
     inst_t *s = ctx;
@@ -124,6 +134,10 @@ static void start_voice(inst_t *s, int idx, int note, int vel, float det, float 
     v->pitch = gl ? from : (float)note;
     v->aenv.stage = ST_ATT; v->fenv.stage = ST_ATT;
     v->ph1 = start_phase(p->d[P_W1_PHASE]); v->ph2 = start_phase(p->d[P_W2_PHASE]);
+    for (int l = 0; l < 2; l++) {   /* delay: 0 runs free; 1..127 restarts the LFO at the note after 0.1 s per step */
+        int dl = p->d[l ? 168 : 161];
+        lfo_reset(&v->lfo[l], ++s->seed + idx * 7919u + l, dl == 0, dl > 0 ? dl * 0.1f - 0.004f : 0.0f);   /* measured: 0.1 s per step, retrigger (1) is 0.1 s */
+    }
 }
 
 /* Spread of unison/dual voices: n voices evenly across the detune range; returns detune (notes) and pan side (-1..1). */
@@ -193,8 +207,9 @@ static void note_off_now(inst_t *s, int n) {
 
 static void midi(void *p, const uint8_t *m, int len) {
     inst_t *s = p;
-    if (len < 3) return;
+    if (len < 2) return;
     int st = m[0] & 0xF0, n = m[1];
+    if (len < 3 && st != 0xD0) return;
     if (st == 0xB0) {   /* controllers follow the XT's Controller Number Assignment */
         if (n == 120 || n == 123) { for (int i = 0; i < NV; i++) release_voice(&s->v[i]); s->nheld = 0; memset(s->deferred, 0, sizeof s->deferred); return; }
         if (n == 64) {
@@ -203,10 +218,13 @@ static void midi(void *p, const uint8_t *m, int len) {
             s->pedal = down;
             return;
         }
+        s->cc[n & 127] = m[2];
         patch_apply_cc(&s->cur, n, m[2]);
         refresh(s);
         return;
     }
+    if (st == 0xE0) { s->bend = ((m[2] << 7 | m[1]) - 8192) / 8192.0f; return; }
+    if (st == 0xD0) { s->aftertouch = m[1] / 127.0f; return; }
     if (st == 0x90 && m[2]) note_on(s, n, m[2]);
     else if (st == 0x80 || st == 0x90) { if (s->pedal) s->deferred[n] = 1; else note_off_now(s, n); }
 }
@@ -251,9 +269,9 @@ static int get_param(void *p, const char *k, char *buf, int n) {
 
 /* Semitones from A (note 69 = 440 Hz at +100% keytrack): keytrack pivots on note 64, so a keytrack of 0 holds note 64's pitch.
  * Octave and semitone are stored as 64 + offset, detune as 64 + n/128 semitone (all measured/from the manual). */
-static float osc_hz(const patch_t *p, float note, int oct_i, int semi_i, int det_i, int kt_i) {
+static float osc_hz(const patch_t *p, float note, int oct_i, int semi_i, int det_i, int kt_i, float extra) {
     float kt = (-100.0f + 300.0f * p->d[kt_i] / 72.0f) / 100.0f;
-    float st = (note - 64) * kt - 5.0f + (p->d[oct_i] - 64) + (p->d[semi_i] - 64) + (p->d[det_i] - 64) / 128.0f;
+    float st = (note - 64) * kt - 5.0f + (p->d[oct_i] - 64) + (p->d[semi_i] - 64) + (p->d[det_i] - 64) / 128.0f + extra;
     return 440.0f * exp2f(st / 12.0f);
 }
 
@@ -325,6 +343,9 @@ static void glide_step(voice_t *v, const patch_t *p) {
     }
 }
 
+static int clampi(int x, int hi) { return x < 0 ? 0 : x > hi ? hi : x; }
+static float clampf(float x, float hi) { return x < 0 ? 0 : x > hi ? hi : x; }
+
 static float clip(float x, int overflow) {
     if (x > 1) return overflow ? (x > 3 ? 1 : 2 - x) : 1;
     if (x < -1) return overflow ? (x < -3 ? -1 : -2 - x) : -1;
@@ -350,36 +371,80 @@ static float shelf_run(shelf_t *f, float x) {
 static void core(inst_t *s, float *lr) {
     const patch_t *p = &s->cur;
     float suml = 0, sumr = 0;
+    for (int l = 0; l < 2; l++) {   /* LFOs shared by all voices (Sync on) */
+        int o = l ? 166 : 159;
+        s->glfov[l] = lfo_tick(&s->glfo[l], p->d[o + 1], p->d[o], p->d[o + 4], p->d[o + 5]);
+    }
+    if (p->d[172]) s->glfov[1] = lfo_eval(&(lfo_t){ .phase = fmodf(s->glfo[0].phase + (3.0f + (p->d[172] - 1) * 354.0f / 126.0f) / 360.0f, 1.0f) }, p->d[167], p->d[170]);
     for (int i = 0; i < NV; i++) {
         voice_t *v = &s->v[i];
         if (v->aenv.stage == ST_REL && v->aenv.level <= 0) v->on = 0;
         if (!v->on && v->aenv.level == 0) continue;
-        env_step(&v->aenv, p->d[P_AENV_A], p->d[P_AENV_D], p->d[P_AENV_S], p->d[P_AENV_R]);
-        env_step(&v->fenv, p->d[P_FENV_A], p->d[P_FENV_D], p->d[P_FENV_S], p->d[P_FENV_R]);
-        glide_step(v, p);
+        /* modulation sources for this voice (docs/CALIBRATION.md: keytrack/keyfollow are (note-64)/128, amounts use mod_amount_gain) */
         float note = ((p->d[P_GLIDE_ON] && (p->d[P_GLIDE_TYPE] & 1)) ? roundf(v->pitch) : v->pitch) + v->det;   /* gliss types step by semitone */
-        float hz1 = osc_hz(p, note, P_OSC1_OCT, P_OSC1_SEMI, P_OSC1_DET, P_OSC1_KT);
-        float hz2 = osc_hz(p, note, P_OSC2_OCT, P_OSC2_SEMI, P_OSC2_DET, P_OSC2_KT);
-        float w1 = osc_read(s->tab->mip[p->d[P_W1_START]], v->ph1, hz1);
-        float w2 = osc_read(s->tab->mip[p->d[P_W2_START]], v->ph2, hz2);
+        float mw = s->cc[1] / 127.0f, src[32] = { 0 }, dest[36] = { 0 };
+        for (int l = 0; l < 2; l++) {
+            int sync = p->d[l ? 169 : 162] != 0;
+            v->lfov[l] = sync ? s->glfov[l] : v->lfov[l];
+        }
+        src[1] = v->lfov[0]; src[2] = v->lfov[0] * mw; src[3] = v->lfov[0] * s->aftertouch; src[4] = v->lfov[1];
+        src[5] = v->fenv.level; src[6] = v->aenv.level;
+        src[9] = (note - 64) / 128.0f; src[10] = (v->key - 64) / 128.0f;
+        src[11] = v->vel / 127.0f; src[13] = s->aftertouch; src[15] = s->bend; src[16] = mw;
+        src[17] = s->pedal ? 1.0f : 0.0f; src[18] = s->cc[4] / 127.0f; src[19] = s->cc[2] / 127.0f;
+        src[20] = s->cc[4] / 127.0f; src[21] = s->cc[8] / 127.0f; src[22] = s->cc[11] / 127.0f; src[23] = s->cc[12] / 127.0f;   /* Controls W-Z (default CC numbers) */
+        src[31] = 1.0f;
+        for (int n = 0; n < 16; n++) {
+            int si = p->d[192 + 3 * n];
+            if (si && s->modgain[n] != 0.0f) dest[p->d[194 + 3 * n]] += s->modgain[n] * src[si];
+        }
+        /* envelopes (their times can be modulated) */
+        int fa = clampi(p->d[P_FENV_A] + (int)lroundf(dest[14]), 127), fd = clampi(p->d[P_FENV_D] + (int)lroundf(dest[15]), 127);
+        int fs = clampi(p->d[P_FENV_S] + (int)lroundf(dest[16]), 127), fr = clampi(p->d[P_FENV_R] + (int)lroundf(dest[17]), 127);
+        int aa = clampi(p->d[P_AENV_A] + (int)lroundf(dest[18]), 127), ad = clampi(p->d[P_AENV_D] + (int)lroundf(dest[19]), 127);
+        int as = clampi(p->d[P_AENV_S] + (int)lroundf(dest[20]), 127), ar = clampi(p->d[P_AENV_R] + (int)lroundf(dest[21]), 127);
+        env_step(&v->aenv, aa, ad, as, ar);
+        env_step(&v->fenv, fa, fd, fs, fr);
+        glide_step(v, p);
+        for (int l = 0; l < 2; l++) {   /* per-voice LFOs (used when Sync is off) */
+            if (p->d[l ? 169 : 162]) continue;
+            int o = l ? 166 : 159;
+            if (l && p->d[172]) {   /* LFO 2 locked to LFO 1 at a phase offset */
+                v->lfo[1].phase = fmodf(v->lfo[0].phase + (3.0f + (p->d[172] - 1) * 354.0f / 126.0f) / 360.0f, 1.0f);
+                v->lfov[1] = lfo_eval(&v->lfo[1], p->d[o + 1], p->d[o + 4]);
+            } else v->lfov[l] = lfo_tick(&v->lfo[l], p->d[o + 1], p->d[o] + dest[l ? 28 : 26], p->d[o + 4], p->d[o + 5]);
+        }
+        /* pitch: bend range 0..120 semitones, 121 harmonic (treated as 2 here), 122 global (2 until the global range exists) */
+        float bend1 = p->d[5] <= 120 ? p->d[5] : 2.0f, bend2 = p->d[17] <= 120 ? p->d[17] : 2.0f;
+        float st1 = dest[0] + dest[1] + s->bend * bend1, st2 = dest[0] + dest[2] + s->bend * bend2;
+        float hz1 = osc_hz(p, note, P_OSC1_OCT, P_OSC1_SEMI, P_OSC1_DET, P_OSC1_KT, st1);
+        float hz2 = osc_hz(p, note, P_OSC2_OCT, P_OSC2_SEMI, P_OSC2_DET, P_OSC2_KT, p->d[19] ? st1 : st2);   /* Link: osc 2 uses osc 1's modulation */
+        /* wave position: start wave + keytrack (1 slot per semitone at +100%) + matrix; the wave envelope is not implemented yet */
+        float wk1 = (p->d[30] - 64) * 0.03125f * (note - 64), wk2 = (p->d[40] - 64) * 0.03125f * (note - 64);
+        int slot1 = clampi((int)lroundf(p->d[P_W1_START] + wk1 + dest[3]), p->d[31] ? 60 : 63);
+        int slot2 = clampi((int)lroundf(p->d[P_W2_START] + wk2 + (p->d[42] ? dest[3] : dest[4])), p->d[41] ? 60 : 63);
+        float w1 = osc_read(s->tab->mip[slot1], v->ph1, hz1);
+        float w2 = osc_read(s->tab->mip[slot2], v->ph2, hz2);
         v->ph1 += 128.0f * hz1 / CORE_HZ;
         if (v->ph1 >= 128) { v->ph1 -= 128; if (p->d[P_OSC2_SYNC]) v->ph2 = start_phase(p->d[P_W2_PHASE]); }
         v->ph2 += 128.0f * hz2 / CORE_HZ; if (v->ph2 >= 128) v->ph2 -= 128;
-        float mix = (w1 * p->d[P_MIX_W1] + w2 * p->d[P_MIX_W2] + w1 * w2 * p->d[P_MIX_RING]) / 128.0f;
+        float m1 = clampf(p->d[P_MIX_W1] + dest[5], 127.0f), m2 = clampf(p->d[P_MIX_W2] + dest[6], 127.0f), m3 = clampf(p->d[P_MIX_RING] + dest[7], 127.0f);
+        float mix = (w1 * m1 + w2 * m2 + w1 * w2 * m3) / 128.0f;
         mix = clip(mix, p->d[P_CLIP]);
         float a = (p->d[P_AMP_VELO] - 64) / 64.0f;
         float vg = a >= 0 ? 1 - a * (1 - v->vel / 127.0f) : 1 + a * (v->vel / 127.0f);
-        /* Filter 1 cutoff: base value + keytrack (semitones from note 64 at 3.125% per step) + envelope and velocity amounts.
+        /* Filter 1 cutoff: base value + keytrack (semitones from note 64 at 3.125% per step) + envelope and velocity amounts + matrix.
          * Measured: keytrack is 1 cutoff unit per semitone at +100%; the envelope amount is 2 units per step at full envelope
          * (the velocity amount is assumed to use the same scale). */
         float kt = (p->d[P_F1_KT] - 64) * 0.03125f * (note - 64);
         float ea = 2.0f * ((p->d[P_F1_ENV] - 64) * v->fenv.level + (p->d[P_F1_VELO] - 64) * (v->vel / 127.0f));
-        float cut = p->d[P_F1_CUTOFF] + kt + ea;
-        float fl = filter1_run(&v->flt, p->d[P_F1_TYPE], mix, cut, (float)p->d[P_F1_RESO], p->d[P_F1_SPECIAL]);
-        float c2 = p->d[P_F2_CUTOFF] + (p->d[P_F2_KT] - 64) * 0.03125f * (note - 64);
+        float cut = p->d[P_F1_CUTOFF] + kt + ea + dest[9];
+        float fl = filter1_run(&v->flt, p->d[P_F1_TYPE], mix, cut, clampf(p->d[P_F1_RESO] + dest[10], 127.0f), clampi(p->d[P_F1_SPECIAL] + (int)lroundf(dest[35]), 127));
+        float c2 = p->d[P_F2_CUTOFF] + (p->d[P_F2_KT] - 64) * 0.03125f * (note - 64) + dest[11];
         fl = filter2_run(&v->flt, p->d[P_F2_TYPE], fl, c2);
-        float g = fl * v->aenv.level * vg * (p->d[P_VOLUME] / 127.0f);
-        float pan = p->d[P_PAN] + v->panoff * 63.5f;   /* unison/dual spread moves the voice off the sound's pan position */
+        float vol = clampf(p->d[P_VOLUME] + dest[12], 127.0f);
+        float g = fl * v->aenv.level * vg * (vol / 127.0f);
+        float pan = p->d[P_PAN] + v->panoff * 63.5f + dest[13];   /* unison/dual spread moves the voice off the sound's pan position */
         pan = pan < 0 ? 0 : pan > 127 ? 127 : pan;
         suml += g * pan_gain_left((int)(pan + 0.5f));
         sumr += g * pan_gain_left(127 - (int)(pan + 0.5f));

@@ -144,6 +144,17 @@ static void applyOpts(int from, int argc, char** argv)
 	}
 }
 
+// same messages as applyOpts but sent after the note has started: --acc NUM VAL, --abend VAL
+static void applyLateOpts(int from, int argc, char** argv)
+{
+	for (int i = from; i < argc;)
+	{
+		if (!strcmp(argv[i], "--acc") && i + 2 < argc) { sendMidi(0xB0, (uint8_t)atoi(argv[i + 1]), (uint8_t)atoi(argv[i + 2])); run(100); i += 3; }
+		else if (!strcmp(argv[i], "--abend") && i + 1 < argc) { const int v = atoi(argv[i + 1]); sendMidi(0xE0, (uint8_t)(v & 127), (uint8_t)(v >> 7)); run(100); i += 2; }
+		else ++i;
+	}
+}
+
 static std::string lcd()
 {
 	std::array<char, 80> d{};
@@ -270,6 +281,7 @@ int main(int argc, char** argv)
 			}
 		};
 		sendMidi(0x90, (uint8_t)note, (uint8_t)vel);
+		applyLateOpts(8, argc, argv);
 		capture(hold);
 		sendMidi(0x80, (uint8_t)note, 0);
 		capture(tail);

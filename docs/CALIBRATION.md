@@ -68,3 +68,19 @@ Measured with `tools/oracle ext` (white noise through the external input, one fi
   Below -70 dB the firmware is 2-4 dB less steep than two identical sections, which we ignore.
 - **Filter 2** (one pole): pole frequency 108 Hz at cutoff 0, 510 at 32, 2 kHz at 64, 6.9 kHz at 96, open at 127 (`POLE2`).
 - Deep stopband values from the measurement rig floor out near -110 dB; fits are restricted to points above -70 dB.
+
+## 2026-10-01: modulation matrix and LFOs
+Sent MIDI (bend, controllers) must follow the note: the firmware resets them at note-on (oracle `--acc`, `--abend`).
+- **Amount law (all destinations tried):** the stored amount a (64 = 0) scales a full-scale source by 2 * sign * 2^((|a-64|-32)/4)
+  native units: doubling every 4 steps, so amounts below about 16 do almost nothing. Verified for pitch (200 cents at +32, 800 at +40,
+  3200 at +48 = 2 semitones x m), volume (+31.5 units at +48, saturating near 126), Filter 1 and Filter 2 cutoff (+1.9, +3.9, +7.9,
+  +15.9, +31.9 units at +32..+48) and mixer level (+4.1, +8.1, +16.1, +32.6 units at +36..+48). Pan modulation had no effect in Sound mode.
+  `mod_amount_gain` implements it; our pitch matches the firmware to within 1 cent at every amount tried.
+- **Sources:** mod wheel (CC 1) = 127 -> 1.0; keytrack and keyfollow = (note - 64)/128 (amount +56 gives exactly (note-64) semitones on pitch).
+  Pitch bend gives +-200 cents at a bend range of 2.
+- **LFO:** rate in Hz = 0.02608 * 2^(rate/12) (0.416 Hz at 48, 1.051 at 64, 2.65 at 80, 6.67 at 96, 16.8 at 112, 40.0 at 127). Delay 0 free-runs;
+  1..127 restarts the LFO at the note after 0.1 s per step (0.096 s for retrigger, 0.196 s at 2, 6.4 s at 64). Sine, triangle and
+  square start at zero going up (square high first); the saw is a rising ramp that also passes through zero at the start. Rendered
+  through volume the waveforms match the firmware to about 0.5%.
+- **Not measured yet:** symmetry, humanize, sync (shared LFO), LFO 2 phase lock, random and S&H shapes, LFO level destinations, Modifiers,
+  wave envelope, free envelope, the remaining destinations (reso, wave position, FM, envelope times).
