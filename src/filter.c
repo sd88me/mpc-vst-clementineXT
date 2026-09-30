@@ -120,6 +120,8 @@ static float tab2(const float t[128][128], float c, float r) {
     return (1 - fc) * ((1 - fr) * t[ci][ri] + fr * t[ci][ri + 1]) + fc * ((1 - fr) * t[ci + 1][ri] + fr * t[ci + 1][ri + 1]);
 }
 
+void filt_init(void) { if (!g_ready) build_tables(); if (!res_ready) build_res(); }
+
 void filt_res_coefs(float cutoff, float reso, float *g, float *k, float *g24) {
     if (!res_ready) build_res();
     *g = tab2(g_res, cutoff, reso); *k = tab2(k_res, cutoff, reso); *g24 = tab2(g_res24, cutoff, reso);
@@ -132,62 +134,61 @@ static inline void svf_tick(svf_t *s, float x, float g, float k, float *lp, floa
     *lp = v2; *bp = v1; *hp = x - k * v1 - v2;
 }
 
-/* Calibrated: types 0 and 1. Everything else is a plausible structure with a level matched to the firmware's passband; the
- * shapes are within a few dB, not fitted (the firmware's band-pass and high-pass sections are not plain SVF outputs). */
-float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int special) {
-    float g = filt_pole_g(cutoff), k = filt_damping(reso), lp, bp, hp, lp2, bp2, hp2;
+/* Filter coefficients depend only on (type, cutoff, resonance, special), which change slowly: they are recomputed only when one of
+ * them moves (the lookups and tan/pow calls are far too expensive to do at 40 kHz on the 32-bit ARM devices). */
+static void filt_prep(filt_t *f, int type, float cutoff, float reso, int special) {
+    f->kt = type; f->kc = cutoff; f->kr = reso; f->ks = special; f->kvalid = 1;
+    f->cg = filt_pole_g(cutoff); f->ck = filt_damping(reso);
+    filt_res_coefs(cutoff, reso, &f->cgr, &f->ckr, &f->cg24);
     switch (type) {
-    case 0: { /* 24 dB LP: a critically damped section, then the resonant one */
-        float gr, kr, g24;
-        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
-        svf_tick(&f->a, x, g, 2.0f, &lp, &bp, &hp);
-        svf_tick(&f->b, lp, g24, kr, &lp2, &bp2, &hp2);
-        return lp2;
+    case 2:
+        f->cgh = tanf(0.745f * atanf(f->cg)); f->cgq = tanf(0.745f * atanf(f->cgr)); f->cgl = fminf(f->cg * 4.7f, 5.0f);
+        { float cdb = cutoff <= 72 ? 4.5f : cutoff <= 96 ? 4.5f + (cutoff - 72) * 0.096f : 6.8f + (cutoff - 96) * 0.23f;   /* level vs the LP passband, measured */
+          f->cgain = powf(10.0f, cdb / 20.0f); }
+        break;
+    case 7: { float g24; filt_res_coefs(cutoff + (special - 64), reso, &f->cgr2, &f->ckr2, &g24); break; }
+    case 12: f->cgx = filt_pole_g(cutoff + special * 0.25f); break;
+    default: break;
     }
-    case 1: { /* 12 dB LP */
-        float gr, kr, g24;
-        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
+}
+
+/* Calibrated: types 0-4, 7, 10, 11 fitted to the firmware (docs/CALIBRATION.md); 5, 6, 8, 9, 12 are rough. */
+float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int special) {
+    if (!f->kvalid || type != f->kt || cutoff != f->kc || reso != f->kr || special != f->ks) filt_prep(f, type, cutoff, reso, special);
+    float g = f->cg, k = f->ck, gr = f->cgr, kr = f->ckr, lp, bp, hp, lp2, bp2, hp2;
+    switch (type) {
+    case 0: /* 24 dB LP: a critically damped section, then the resonant one */
+        svf_tick(&f->a, x, g, 2.0f, &lp, &bp, &hp);
+        svf_tick(&f->b, lp, f->cg24, kr, &lp2, &bp2, &hp2);
+        return lp2;
+    case 1: /* 12 dB LP */
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
         return lp;
-    }
-    case 2: { /* 24 dB BP (fitted to the firmware): one-pole HP and the resonant 2-pole LP at 0.745x the 12 dB LP's pole, then a critically
-               * damped 2-pole LP at 4.7x the nominal pole (capped below Nyquist) */
-        float gr, kr, g24;
-        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
-        float gh = tanf(0.745f * atanf(g)), gq = tanf(0.745f * atanf(gr));
+    case 2: { /* 24 dB BP (fitted): one-pole HP and the resonant 2-pole LP at 0.745x the 12 dB LP's pole, then a critically damped 2-pole LP at
+               * 4.7x the nominal pole (capped below Nyquist) */
+        float gh = f->cgh;
         float v = (x - f->c.ic1) * (gh / (1.0f + gh)), l1 = v + f->c.ic1; f->c.ic1 = l1 + v;   /* TPT one-pole low-pass state */
-        svf_tick(&f->a, x - l1, gq, kr, &lp, &bp, &hp);
-        svf_tick(&f->b, lp, fminf(g * 4.7f, 5.0f), 2.0f, &lp2, &bp2, &hp2);
-        float cdb = cutoff <= 72 ? 4.5f : cutoff <= 96 ? 4.5f + (cutoff - 72) * 0.096f : 6.8f + (cutoff - 96) * 0.23f;   /* level vs the LP passband, measured */
-        return lp2 * powf(10.0f, cdb / 20.0f);
+        svf_tick(&f->a, x - l1, f->cgq, kr, &lp, &bp, &hp);
+        svf_tick(&f->b, lp, f->cgl, 2.0f, &lp2, &bp2, &hp2);
+        return lp2 * f->cgain;
     }
-    case 3: { /* 12 dB BP (fitted): twice the raw band-pass output of the 12 dB LP's (pole, Q) section, so the peak gain is 2Q */
-        float gr, kr, g24;
-        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
+    case 3: /* 12 dB BP (fitted): twice the raw band-pass output of the 12 dB LP's (pole, Q) section, so the peak gain is 2Q */
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
         return 2.0f * bp;
-    }
-    case 4: { /* 12 dB HP: the 12 dB LP's (pole, Q) set as a high-pass, then a fixed critically damped 2-pole LP near 12.5 kHz (fitted to the firmware, 0.1-1.2 dB rms) */
-        float gr, kr, g24;
-        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
+    case 4: /* 12 dB HP: the 12 dB LP's (pole, Q) set as a high-pass, then a fixed critically damped 2-pole LP near 12.5 kHz (fitted, 0.1-1.2 dB rms) */
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
         svf_tick(&f->b, hp, 1.5f, 2.0f, &lp2, &bp2, &hp2);
         return lp2;
-    }
     case 5:   /* sine waveshaper (about +9.5 dB small-signal) then 12 dB LP */
         svf_tick(&f->a, sinf(3.0f * x), g, k, &lp, &bp, &hp);
         return lp;
     case 6:   /* 12 dB LP then waveshaper; the shaping wave is not modelled yet (soft clip stands in) */
         svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
         return tanhf(6.0f * lp) * 0.17f;
-    case 7: { /* dual: half the 12 dB LP plus the raw band-pass of a second section moved by (special - 64) steps */
-        float gr, kr, g24, gr2, kr2;
-        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
-        filt_res_coefs(cutoff + (special - 64), reso, &gr2, &kr2, &g24);
+    case 7: /* dual: half the 12 dB LP plus the raw band-pass of a second section moved by (special - 64) steps */
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
-        svf_tick(&f->b, x, gr2, kr2, &lp2, &bp2, &hp2);
+        svf_tick(&f->b, x, f->cgr2, f->ckr2, &lp2, &bp2, &hp2);
         return 0.5f * lp + 1.0f * bp2;
-    }
     case 8:   /* FM filter: the oscillator 2 FM of the cutoff is not modelled yet */
         svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
         return lp;
@@ -198,25 +199,18 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
         return lp;
     }
     case 10: { /* 24 dB notch (fitted): a wide notch (critically damped, at the nominal pole) and the 12 dB section's own (pole, Q) notch, unity passband */
-        float gr, kr, g24;
-        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
         svf_tick(&f->a, x, g * 0.95f, 2.0f, &lp, &bp, &hp);
         float y = x - 2.0f * bp;
         svf_tick(&f->b, y, gr, kr, &lp2, &bp2, &hp2);
         return y - kr * bp2;
     }
-    case 11: { /* 12 dB notch (fitted, 0.1-0.6 dB rms at cutoff 48-96): the 12 dB section's (pole, Q) notch at half level */
-        float gr, kr, g24;
-        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
+    case 11: /* 12 dB notch (fitted, 0.1-0.6 dB rms at cutoff 48-96): the 12 dB section's (pole, Q) notch at half level */
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
         return 0.5f * (x - kr * bp);
-    }
-    default: { /* 12: band stop (rough fit at special 64): both sections sit special/4 steps above the cutoff, a notch that passes -6 dB below and +5 dB above */
-        float gx = filt_pole_g(cutoff + special * 0.25f);
-        svf_tick(&f->a, x, gx, 2.0f, &lp, &bp, &hp);
-        svf_tick(&f->b, x, gx * 1.0f, 2.0f, &lp2, &bp2, &hp2);
-        return 0.5f * lp + 1.8f * hp2 - 1.0f * 0.0f * bp;
-    }
+    default: /* 12: band stop (rough fit at special 64): both sections sit special/4 steps above the cutoff, passing -6 dB below and +5 dB above */
+        svf_tick(&f->a, x, f->cgx, 2.0f, &lp, &bp, &hp);
+        svf_tick(&f->b, x, f->cgx, 2.0f, &lp2, &bp2, &hp2);
+        return 0.5f * lp + 1.8f * hp2;
     }
 }
 
@@ -236,7 +230,8 @@ static float filt2_g(float cutoff) {
 }
 
 float filter2_run(filt_t *f, int hp, float x, float cutoff) {
-    float g = filt2_g(cutoff), a = g / (1.0f + g);
+    if (cutoff != f->f2c || f->f2a == 0) { float g = filt2_g(cutoff); f->f2c = cutoff; f->f2a = g / (1.0f + g); }
+    float a = f->f2a;
     float v = (x - f->f2) * a, lp = v + f->f2;
     f->f2 = lp + v;
     return hp ? x - lp : lp;

@@ -14,6 +14,10 @@ typedef struct {
     float shold;              /* sample-and-hold value and phase (type 9) */
     float sphase;
     float f2;                 /* filter 2 one-pole state */
+    int kt, ks, kvalid;       /* coefficient cache: the (type, cutoff, resonance, special) the coefficients below were made for */
+    float kc, kr;
+    float cg, ck, cgr, ckr, cg24, cgh, cgq, cgl, cgain, cgr2, ckr2, cgx;
+    float f2c, f2a;           /* filter 2: cached cutoff and its one-pole coefficient */
 } filt_t;
 
 /* Pole frequency table lookups: `cutoff` is the 0..127 cutoff value plus modulation in the same units (may be fractional). */
@@ -30,3 +34,6 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
 
 /* One Filter 2 sample: 6 dB low-pass (hp = 0) or high-pass (hp = 1). */
 float filter2_run(filt_t *f, int hp, float x, float cutoff);
+
+/* Build the lookup tables now (the first call would otherwise do it on the audio thread). */
+void filt_init(void);

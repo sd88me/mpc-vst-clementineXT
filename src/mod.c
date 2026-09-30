@@ -21,7 +21,7 @@ void lfo_reset(lfo_t *l, uint32_t seed, int free_phase, float delay_s) {
     l->rng = seed * 2654435761u + 12345u;
     l->phase = free_phase ? (rnd(l) * 0.5f + 0.5f) : 0.0f;
     l->held = rnd(l); l->target = rnd(l);
-    l->delay_left = delay_s;
+    l->delay_left = delay_s; l->hz_c = 0; l->rate_c = 0;
 }
 
 /* Symmetry warps the phase so the rising half takes more (positive) or less (negative) of the cycle. */
@@ -42,14 +42,17 @@ float lfo_eval(const lfo_t *l, int shape, int symmetry) {
     }
 }
 
-float lfo_tick(lfo_t *l, int shape, float rate, int symmetry, int humanize) {
-    if (l->delay_left > 0) { l->delay_left -= 1.0f / FS; return 0.0f; }
-    float hz = lfo_rate_hz(rate);
+float lfo_tick_n(lfo_t *l, int shape, float rate, int symmetry, int humanize, int n) {
+    if (l->delay_left > 0) { l->delay_left -= (float)n / FS; return 0.0f; }
+    if (l->hz_c == 0 || rate != l->rate_c) { l->hz_c = lfo_rate_hz(rate); l->rate_c = rate; }
+    float hz = l->hz_c;
     if (humanize) hz *= 1.0f + rnd(l) * 0.002f * humanize;   /* random variation of the speed */
-    l->phase += hz / FS;
+    l->phase += hz * n / FS;
     if (l->phase >= 1.0f) {
         l->phase -= 1.0f;
         l->held = l->target; l->target = rnd(l);
     }
     return lfo_eval(l, shape, symmetry);
 }
+
+float lfo_tick(lfo_t *l, int shape, float rate, int symmetry, int humanize) { return lfo_tick_n(l, shape, rate, symmetry, humanize, 1); }

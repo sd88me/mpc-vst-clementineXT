@@ -143,18 +143,25 @@ wavedata_t *wavedata_load_cache(const char *dir) {
 
 void wavedata_free(wavedata_t *w) {
     if (!w) return;
-    for (int i = 0; i < WD_TABLES; i++) free(w->built[i]);
+    for (int i = 0; i < WD_TABLES; i++) if (w->from_rom[i]) free(w->built[i]);
+    for (int i = 0; i < OPEN_TABLES; i++) free(w->open_b[i]);
     free(w);
 }
+
+void wavedata_prewarm(wavedata_t *w) { for (int n = 0; n < WD_TABLES; n++) wavedata_table(w, n); }
 
 const table_t *wavedata_table(wavedata_t *w, int n) {
     if (n < 0 || n >= WD_TABLES) n = 0;
     if (w->built[n]) return w->built[n];
     /* algorithmic tables (28-51) have no control table, and unloaded data leaves gaps: stand in with an open table so a sound
      * still plays. The real algorithmic tables come from the firmware's memory (docs/DESIGN.md). */
-    static wave_t ow[TABLE_SLOTS]; table_ctl_t c;
-    open_table(n % OPEN_TABLES, ow, &c, NULL);
-    w->built[n] = malloc(sizeof(table_t));
-    table_build(&c, ow, TABLE_SLOTS, w->built[n]);
+    int o = n % OPEN_TABLES;
+    if (!w->open_b[o]) {
+        static wave_t ow[TABLE_SLOTS]; table_ctl_t c;
+        open_table(o, ow, &c, NULL);
+        w->open_b[o] = malloc(sizeof(table_t));
+        table_build(&c, ow, TABLE_SLOTS, w->open_b[o]);
+    }
+    w->built[n] = w->open_b[o];
     return w->built[n];
 }
