@@ -161,9 +161,12 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
         float cdb = cutoff <= 72 ? 4.5f : cutoff <= 96 ? 4.5f + (cutoff - 72) * 0.096f : 6.8f + (cutoff - 96) * 0.23f;   /* level vs the LP passband, measured */
         return lp2 * powf(10.0f, cdb / 20.0f);
     }
-    case 3:   /* 12 dB BP (-2.6 dB) */
-        svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
-        return 0.74f * k * bp;
+    case 3: { /* 12 dB BP (fitted): twice the raw band-pass output of the 12 dB LP's (pole, Q) section, so the peak gain is 2Q */
+        float gr, kr, g24;
+        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
+        svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
+        return 2.0f * bp;
+    }
     case 4: { /* 12 dB HP: the 12 dB LP's (pole, Q) set as a high-pass, then a fixed critically damped 2-pole LP near 12.5 kHz (fitted to the firmware, 0.1-1.2 dB rms) */
         float gr, kr, g24;
         filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
@@ -192,13 +195,20 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
         svf_tick(&f->a, period == 1 ? x : f->shold, g, k, &lp, &bp, &hp);
         return lp;
     }
-    case 10:  /* 24 dB notch: two notch sections */
-        svf_tick(&f->a, x, g, 1.0f, &lp, &bp, &hp);
-        svf_tick(&f->b, x - 1.0f * bp, g, 1.0f, &lp2, &bp2, &hp2);
-        return (x - 1.0f * bp) - 1.0f * bp2;
-    case 11:  /* 12 dB notch */
-        svf_tick(&f->a, x, g, 1.0f, &lp, &bp, &hp);
-        return x - 1.0f * bp;
+    case 10: { /* 24 dB notch (fitted): a wide notch (critically damped, at the nominal pole) and the 12 dB section's own (pole, Q) notch, unity passband */
+        float gr, kr, g24;
+        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
+        svf_tick(&f->a, x, g * 0.95f, 2.0f, &lp, &bp, &hp);
+        float y = x - 2.0f * bp;
+        svf_tick(&f->b, y, gr, kr, &lp2, &bp2, &hp2);
+        return y - kr * bp2;
+    }
+    case 11: { /* 12 dB notch (fitted, 0.1-0.6 dB rms at cutoff 48-96): the 12 dB section's (pole, Q) notch at half level */
+        float gr, kr, g24;
+        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
+        svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
+        return 0.5f * (x - kr * bp);
+    }
     default:  /* 12: band stop, bandwidth from the extra parameter: LP and HP in parallel, HP moved up */
         svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
         svf_tick(&f->b, x, filt_pole_g(cutoff + special * 0.25f), k, &lp2, &bp2, &hp2);
