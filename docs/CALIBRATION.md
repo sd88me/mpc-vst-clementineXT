@@ -130,3 +130,14 @@ Both are implemented from the manual only. Arp tempo (50-300 BPM over 1..127, 0 
 preset rhythms (placeholders) and the 80% gate are guesses; the user pattern uses the four packed nibbles (bit = step on).
 Envelope triggers apply on legato mono notes: normal restarts from zero, single leaves the envelope running, retrigger
 restarts from the current level. All of this needs a firmware comparison.
+
+## Effects (partial)
+Index numbering (oracle, all 36 indices, steady note): 0 off, 1 Chorus, 2 Flanger 1, 3 Flanger 2, 4 AutoWahLP, 5 AutoWahBP,
+6 Overdrive, 7 Amp Mod, 32 Delay, 33 Pan Delay, 34 Mod Delay; every other index leaves the sound untouched (factory sounds use
+8 and 9 too, so those are probably older II types that the XT ignores). The first six assignments follow the manual's order;
+4 and 5 are inferred (a steady 261 Hz tone shows little change for 4).
+Delay (32): echo time 0.12 s * 2^((p1-64)/36) (35 ms to 0.40 s, independent of the tempo setting); repeat ratio 0.744*p2/127;
+mix p3 linear dry/wet (0 = dry). Pan Delay (33): same time and mix; the first repeat is on the right, the second left, and
+the feedback closes after two hops. Mod Delay (34): one repeat at about the same time law, dry and wet both ~0.5; speed and
+depth modulate it (not calibrated; our sine LFO ranges are guesses). Chorus, flangers, wahs, overdrive and amp mod remain
+uncalibrated apart from knowing that mix 0 is dry and that overdrive gain 0 is silent.

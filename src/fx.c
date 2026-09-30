@@ -99,19 +99,21 @@ void fx_run(fx_t *f, int type, int p1, int p2, int p3, float tempo_bpm, float *l
         break;
     }
     case FX_DELAY: case FX_PANDELAY: case FX_MODDELAY: {
-        float time = 0.02f + p1 / 127.0f * 0.9f;   /* placeholder: 20 ms to 0.92 s (the real one is a note value at a tempo) */
-        float fb = type == FX_MODDELAY ? 0.35f : p2 / 127.0f * 0.9f;
+        float time = 0.12f * exp2f((p1 - 64) / 36.0f);   /* measured: 35 ms at 0, 120 ms at 64, 0.40 s at 127 (independent of the tempo setting) */
+        float fb = type == FX_MODDELAY ? 0.35f : p2 * 0.744f / 127.0f;   /* measured: repeat ratio 0.744 * p / 127 */
         float d = time * FS;
         if (type == FX_MODDELAY) {
             f->lfo += (0.05f + p2 / 127.0f * 5.0f) / FS; if (f->lfo >= 1) f->lfo -= 1;
             d += sinf(TWO_PI * f->lfo) * p3 / 127.0f * 0.005f * FS;
         }
         if (d > FX_MAX_DELAY - 2) d = FX_MAX_DELAY - 2;
-        if (type == FX_MODDELAY) { dry = 0.5f; wet = 0.5f; } else dry_wet(p3, &dry, &wet);
+        if (type == FX_MODDELAY) { dry = 0.5f; wet = 0.5f; } else { wet = p3 / 127.0f; dry = 1.0f - wet; }   /* measured: linear dry:wet */
         float w0 = dread(f->dl[0], f->wr, d, N_MASK), w1 = dread(f->dl[1], f->wr, d, N_MASK);
-        if (type == FX_PANDELAY) {   /* the repeats bounce left to right */
-            f->dl[0][f->wr] = in[0] + fb * w1;
-            f->dl[1][f->wr] = in[1] * 0.0f + fb * w0;
+        if (type == FX_PANDELAY) {   /* the first repeat is on the right, then left, right...; feedback closes after the left repeat (measured) */
+            f->dl[0][f->wr] = 0.5f * (in[0] + in[1]) + fb * w1;
+            f->dl[1][f->wr] = w0;
+            out[0] = dry * in[0] + wet * w1; out[1] = dry * in[1] + wet * w0;
+            break;
         } else { f->dl[0][f->wr] = in[0] + fb * w0; f->dl[1][f->wr] = in[1] + fb * w1; }
         out[0] = dry * in[0] + wet * w0; out[1] = dry * in[1] + wet * w1;
         break;
