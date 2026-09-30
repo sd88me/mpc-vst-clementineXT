@@ -63,8 +63,16 @@ algorithmic (computed, no control table).
 - Mod destinations: range says 0..33, but the list has 36 entries (34 FM Amount, 35 F1 Extra). Use 0..35.
 - Arp range: SDATA 1..10, CC 103 0..9 (CC value + 1).
 - MULP: the ID table says 20h, the format says 21h. GLBR: 04h in the format, 14h in the ID list.
-- Effect type: 0..35 on the XT, "subject to change", no list in the document. Take the list from the manual or the
-  oracle (section 4).
+- Effect type: 0..35 on the XT, "subject to change", no list in the SysEx document. The user's manual (covers II, XT
+  and XTk) names 7 types on the II (Chorus, Flanger 1, Flanger 2, AutoWahLP, AutoWahBP, Overdrive, Amp. Mod) and 3 more on
+  the XT (Delay, Pan Delay, Mod Delay), so 10 in total; the range 0..35 leaves room the manual doesn't document. The
+  numeric order, and whether the II's `0-7` means "off" plus these 7, is not stated: confirm with the oracle or a dump.
+  Parameters per type (the three effect parameters SDATA 81/83/86, in the order the manual shows them):
+  Chorus / Flanger 1: speed, depth, mix. Flanger 2: speed, feedback, mix. AutoWahLP / AutoWahBP: sense, cutoff, resonance.
+  Overdrive: drive, gain, amp type (Direct, Combo, Medium, Stack). Amp. Mod: speed, spread, mix (tremolo when dry > 63,
+  low-frequency ring mod when dry < 64). Delay / Pan Delay: time (note value + BPM), feedback, mix. Mod Delay: time,
+  speed, depth. Mix displays as dry:wet (127:0 .. 0:127). Only Instruments 1-3 of a Multi can use effects (irrelevant
+  here: one plugin instance is one part).
 
 ## 3. Engine architecture (C, `wrapper/engine.h`, no JUCE)
 
