@@ -31,4 +31,29 @@ Measured with noise through the external input (`tools/oracle ext`, `tools/filte
 - **Output gain:** firmware/ours = -14.45 dB with our raw scale, constant within 0.15 dB from note 36 to 84 (`OUT_GAIN`).
 - **Oscillator vs firmware after these:** one sine within 0.1 dB at every pitch; saw harmonics within 0.2 dB up to note 60 and within
   about 0.5 dB at note 72-84 once the mip level crossfades with limit 30 kHz (`MIP_LIMIT_HZ`).
-- **Still open:** velocity to gain, pan keytrack, filter 1/2 (next), LFO/mod-matrix, effects, and free-phase behaviour of two waves.
+- **Still open:** velocity to gain, pan keytrack, LFO/mod-matrix, effects, and free-phase behaviour of two waves.
+
+## 2026-09-30 (filters)
+Measured with `tools/oracle ext` (white noise through the external input, one filter at a time) and analysed with
+`tools/filter_response.py` (Welch cross-spectrum); our side is `test/filter_run.c` compared by `tools/filter_compare.py`.
+- **Structure:** Filter 1 low-pass types are second-order sections. 12 dB LP = one section, Q = 0.5 at resonance 0. 24 dB LP =
+  a critically damped section (Q 0.5) followed by a resonant one. Fits are 0.15-0.2 dB rms with the TPT/prewarped-bilinear form.
+- **Resonance:** damping 1/Q falls roughly linearly with the resonance value: Q = 0.51 (0), 0.68 (32), 1.10 (64), 1.59 (80), 2.99 (96),
+  5.5 (104), 11.7 (108), then self-oscillation from about 110-113 (manual: above 113). `filt_damping` is a table of these.
+- **Cutoff law:** for the critically damped case the effective pole frequency is 82 Hz at cutoff 32, 456 Hz at 64, 3.4 kHz at 96 and
+  about 10.6 kHz at 112 (`POLE` in `src/filter.c`); the nominal semitone law (440 Hz * 2^((c-64)/12)) is 4% below it at 48-72 and
+  grows to 1.5x at 112. At high resonance (110) the pole sits exactly on the nominal law, so the pole frequency depends on both
+  cutoff and resonance in the firmware. We use the Q = 0.5 table for all resonances, which leaves 1-2 dB error at cutoff 72 and
+  2-6 dB at cutoff 96+ with resonance. A (cutoff, resonance) table is the fix (data in `filt5.tsv`).
+- **Types 2-12** (band-pass, high-pass, waveshaper, dual, FM, S&H, notches, band stop) are plausible structures with passband
+  levels matched (BP -2.6 dB, 24BP -5.5 dB, HP -3.5 dB, sine shaper +9.5 dB, waveshaper about +16 dB, dual -5.6 dB relative to the
+  LP passband); their shapes are several dB off (a plain SVF band-pass/high-pass does not match: the firmware's HP falls at only
+  ~6-7 dB/octave below cutoff). Type 8 (FM) is noisy and unmodelled.
+- **Filter keytrack:** exactly 1 cutoff unit per semitone at +100% (SDATA 96), pivoting on note 64; +197% (127) gives 1.97 units.
+- **Filter envelope amount:** 2 cutoff units per amount step at full envelope (amount +16 gave +31.7 units); bipolar.
+- **Filter 2:** one-pole 6 dB LP/HP with its own cutoff law (about 510 Hz at cutoff 32, 1.45 kHz at 56, 3.2 kHz at 80, 6.3 kHz at
+  104, open at 127); HP gain sits about 4.5 dB (cutoff 32) to 24 dB (cutoff 127) below unity in the measured band. Not implemented
+  to that law yet (`filter2_run` reuses Filter 1's table).
+- **Mod matrix, first look:** the mod wheel (CC 1) had no effect through the oracle's MIDI input as tried; velocity as a source
+  acted like a constant; volume modulation by a constant source is strongly nonlinear in the amount (nothing below about +32, then
+  x1.97 at +63 from a base volume of 64). LFO 1 rate 64 runs at 1.05 Hz. These need a proper sweep before the matrix is built.

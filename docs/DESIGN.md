@@ -350,10 +350,13 @@ Then the wavetable popup shows the original tables and the status readout says "
 the zip free of Waldorf data and still gives a one-file, on-device setup.
 
 What must be verified first, because the design depends on it:
-1. **Does the OS update contain all waves and control tables?** gearmulator merges a `.mid` update into the upper
-   128 KB of a full ROM, and the user-writable ROM waves start at `0x26501`, inside that half. Whether ROM waves 0-451
-   and the control tables are there too is not known yet. If they aren't, the importer also needs a full ROM dump or a
-   hardware dump, and the docs say so.
+1. **Does the OS update contain all waves and control tables?** **No** (answered by gearmulator's loader, `xtRomLoader.cpp`:
+   an OS-update `.mid` holds "about half of the rom, wavetables are missing so an OS update cannot be used on its own").
+   The importer therefore needs a full 256 KB ROM dump (starts with `C0 DE`; two 128 KB EPROM/flash halves also work) or a
+   hardware dump of waves and control tables (WAVR/WCTR), and the docs must say so. The firmware holds 506 ROM waves
+   (0-505) and control tables for tables 0-27, 52-63 and the user tables 96-127; tables 28-51 are algorithmic
+   (measured, section 4 notes). Where the waves and tables sit inside the ROM image is still to be found (the writable
+   ROM waves start at `0x26501`); until then the dev cache is the oracle's dump.
 2. **Factory sounds inside the OS image.** gearmulator reads ROM singles for banks A and B. If they sit in the OS
    update, the importer can offer the factory banks from the same file.
 3. **Our interpolation vs the firmware's.** Tested with the oracle: our table builder's output against the DSP

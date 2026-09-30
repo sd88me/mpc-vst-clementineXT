@@ -4,7 +4,15 @@ A wavetable synth for Akai MPC OS standalone devices (MPC Live/One/X/Key, Force)
 instrument with its own screen skin and Q-Links. It is modelled on the Waldorf Microwave II/XT: same voice
 architecture, same sound-dump format, and it loads Microwave II/XT `.syx` sound banks as they are.
 
-**Status: design stage, nothing to install yet.** See [docs/DESIGN.md](docs/DESIGN.md).
+**Status: early development, not ready to use.** The plugin builds for armhf and passes its offline tests, but it has not been
+run on a device and much of the sound engine is still missing. See [docs/DESIGN.md](docs/DESIGN.md) for the design and
+[docs/CALIBRATION.md](docs/CALIBRATION.md) for what has been measured against the original firmware.
+
+Working so far: the XT's 256-byte sound format (all 219 fields, `.syx` single/bank import, save), MIDI controller map, the
+wavetable oscillators (real table data, measured mip levels and pitch), mixer, amp and filter envelopes, Filter 1 low-pass types
+(12/24 dB, calibrated), Filter 2, pan, volume, poly/mono/dual/unison voices, glide, and an orange XT-styled skin. Not done: the
+modulation matrix, LFOs, modifiers, wave and free envelopes, most Filter 1 types' exact shapes, effects, arpeggiator, the
+on-device importer for the original wave data, and the open wave set for use without it.
 
 ## Plan in one paragraph
 A new C engine (not a ROM emulator; those need a 64-bit CPU) whose patch format is the XT's 256-byte sound dump,
@@ -17,8 +25,19 @@ No Waldorf ROM or OS files, no waves or wavetables extracted from them, no facto
 panel artwork. The plugin reads those from the user's own files at runtime (docs/DESIGN.md section 10).
 
 ## Building
-Needs a checkout of [mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins) next to this repo (`MPC_VST`);
-build steps will follow the port layout there (`vst/vst.json`, `tools/build_port.sh`).
+Needs a checkout of [mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins) next to this repo (default `../mpc-vst-plugins`,
+override with `MPC_VST`), Docker with QEMU for the armhf build, and Python 3.
+
+```
+tools/make_layout.sh                                   # params.json + skin layout (after editing tools/gen_patch.py)
+../mpc-vst-plugins/tools/test_port.sh vst/vst.json     # offline host test under ASan
+../mpc-vst-plugins/tools/build_port.sh vst/vst.json    # armhf .so + skin in vst/build/
+gcc -O1 -Wall -fsanitize=address,undefined -o test/test_patch test/test_patch.c src/patch.c src/syx.c && test/test_patch
+gcc -O1 -Wall -fsanitize=address,undefined -o test/test_waves test/test_waves.c src/waves.c -lm && test/test_waves
+```
+
+`tools/oracle/` is a dev-only harness that runs the original firmware (through a local gearmulator checkout and your own ROM) to
+measure it; it is never shipped and its output stays off the repo (see `docs/DESIGN.md` section 4 and `tools/oracle/oracle.cpp`).
 
 ## Licence
 GPL-3.0-only (see `LICENSE`). Vendored third-party code is listed in `src/VENDORED.md`.
