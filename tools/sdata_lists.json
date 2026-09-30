@@ -180,14 +180,14 @@
   "24dB BP",
   "12dB BP",
   "12dB HP",
-  "Sine Shaper>12LP",
-  "12LP>Shaper",
-  "Dual 12 LP/BP",
-  "12LP FM",
-  "12LP S&H",
-  "Type 10",
-  "Type 11",
-  "Type 12"
+  "Sin(x)>LP",
+  "WaveShapr",
+  "Dual L/BP",
+  "FM-Filter",
+  "S&H>L12dB",
+  "24dB Notch",
+  "12dB Notch",
+  "Band Stop"
  ],
  "fx_type": [
   "Chorus",

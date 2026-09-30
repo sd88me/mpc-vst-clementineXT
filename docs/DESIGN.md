@@ -54,7 +54,8 @@ Wave data follows the XT layout too: a wave is 128 signed 8-bit samples, stored 
 `w[64+n] = -w[63-n]`); a wavetable is 64 slots referring to wave numbers; slots 61-63 are always triangle, square and
 saw; empty slots are filled by the firmware with a "spectral interpolation" of their neighbours. gearmulator's
 constants: 506 ROM waves, 250 RAM waves (1000-1249), 128 tables (96-127 user), tables 28-51 and 64-95 (0-based) are
-algorithmic (computed, no control table).
+algorithmic (computed, no control table). The manual documents waves 000-299 and 65 ROM tables; the oracle dump shows what the
+firmware actually holds (see the extraction results).
 
 ### Errata to handle in the parser (the SysEx document contradicts itself)
 - Osc semitone: SDATA says 52..76, the CC table says 56..76. Accept the full range, clamp to +-12.
@@ -65,7 +66,7 @@ algorithmic (computed, no control table).
 - MULP: the ID table says 20h, the format says 21h. GLBR: 04h in the format, 14h in the ID list.
 - Found by comparing the spec with the firmware's own 256 sounds (oracle `dumpall`, 2026-09-30; the bank stays local):
   the dump checksum is the sum of the SDATA bytes only, not BB+NN+SDATA as written (`syx.c` writes that form and accepts
-  either); Filter 1 type goes up to 12, not 9 (types 10-12 are undocumented); Chorus (82) takes 0..2; Arp Tempo (93)
+  either); Filter 1 type goes up to 12, not 9 (10-12 are the two notches and band stop, per the manual; see docs/MANUAL_NOTES.md); Chorus (82) takes 0..2; Arp Tempo (93)
   holds 0; and the "reserved" bytes 9, 22, 33, 44, 69, 78 are non-zero in factory sounds (64 in the init sound), so
   they are kept as loaded. Effect types seen in factory sounds: 0, 1, 2, 3, 6, 8, 9, 32, 33, 34, so the XT's list goes
   well past the manual's 10 and the last three are still unnamed. Init defaults in `tools/gen_patch.py` come from the

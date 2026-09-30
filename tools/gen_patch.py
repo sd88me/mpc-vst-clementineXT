@@ -134,7 +134,7 @@ ENUM = {   # key or key prefix -> option names; a 0..1 field with none listed be
     "clipping": ["saturate", "overflow"], "glide_type": ["porta", "gliss", "fp.", "fg."], "glide_mode": ["exp", "linear"],
     "arp_on": ["off", "on", "hold"], "arp_dir": ["up", "down", "alt", "random"], "arp_order": ["note", "n.rev", "played", "p.rev"],
     "arp_velo": ["root note", "last note"], "alloc": ["poly", "mono"], "assign": ["normal", "dual", "unison"],
-    "arp_clock": ["1/1", "1/2", "1/3", "1/4", "1/6", "1/8", "1/12", "1/16", "1/24", "1/32", "1/1T", "1/2T", "1/4T", "1/8T", "1/16T", "1/32T"],
+    "arp_clock": ["Clock %d" % i for i in range(16)],   # note values incl. triplets/dotted; order unconfirmed
     "chorus": ["off", "on", "on 2"],
     "lfo1_shape": ["sin", "tri", "sqr", "saw", "rnd", "S&H"], "lfo2_shape": ["sin", "tri", "sqr", "saw", "rnd", "S&H"],
     "lfo1_sync": ["off", "on", "on 2", "clock"], "lfo2_sync": ["off", "on", "on 2", "clock"],
