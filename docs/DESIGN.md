@@ -355,8 +355,12 @@ What must be verified first, because the design depends on it:
    The importer therefore needs a full 256 KB ROM dump (starts with `C0 DE`; two 128 KB EPROM/flash halves also work) or a
    hardware dump of waves and control tables (WAVR/WCTR), and the docs must say so. The firmware holds 506 ROM waves
    (0-505) and control tables for tables 0-27, 52-63 and the user tables 96-127; tables 28-51 are algorithmic
-   (measured, section 4 notes). Where the waves and tables sit inside the ROM image is still to be found (the writable
-   ROM waves start at `0x26501`); until then the dev cache is the oracle's dump.
+   (measured, section 4 notes). **Layout found and verified** (`src/wavedata.c`, `test/test_rom.c`: 445 waves and all 40 ROM control
+   tables equal the firmware's own): the ROM is two 128 KB chips interleaved byte by byte (chip A even bytes, starts `C0 00`; chip B
+   odd bytes, starts `DE 00`). Waves are 64 samples (^ 0x80): 0-191 in chip A at `0x11000 + 64n`, 192-306 in chip B at `0xE000 + 64n`,
+   368-505 in chip B at `0xC180 + 64n` (307-367 are not waves). Control tables are 64 big-endian 16-bit wave numbers (0xFFFF empty):
+   tables 0-27 in chip A at `0x10000 + 128n`, tables 52-63 in chip B at `0x10000 + 128(n-52)`. The plugin reads the two halves (or a
+   256 KB image) from its data folder at load. Still missing: the 24 algorithmic tables (28-51), which have no control table.
 2. **Factory sounds inside the OS image.** gearmulator reads ROM singles for banks A and B. If they sit in the OS
    update, the importer can offer the factory banks from the same file.
 3. **Our interpolation vs the firmware's.** Tested with the oracle: our table builder's output against the DSP

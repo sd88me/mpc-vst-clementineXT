@@ -12,6 +12,7 @@ typedef struct {
     int from_rom[WD_TABLES];     /* 1 when built from loaded data, 0 for the open fallback */
     int nwaves, ntables;
 } wavedata_t;
-wavedata_t *wavedata_load(const char *dir);              /* dir itself or dir/wavedata; NULL if nothing found */
+wavedata_t *wavedata_load(const char *dir);              /* the user's ROM (256 KB image or two halves) in dir, dir/wavedata or dir/import; else the dev cache; NULL if nothing */
+wavedata_t *wavedata_load_cache(const char *dir);        /* the dev cache written by tools/oracle only */
 void wavedata_free(wavedata_t *w);
 const table_t *wavedata_table(wavedata_t *w, int n);     /* the table, or an open-set stand-in when its data is missing */

@@ -12,7 +12,7 @@ Working so far: the XT's 256-byte sound format (all 219 fields, `.syx` single/ba
 wavetable oscillators (real table data, measured mip levels and pitch), mixer, amp and filter envelopes, Filter 1 low-pass types
 (12/24 dB, calibrated), Filter 2, pan, volume, poly/mono/dual/unison voices, glide, and an orange XT-styled skin. Not done: the
 modulation matrix, LFOs, modifiers, wave and free envelopes, most Filter 1 types' exact shapes, effects, arpeggiator, the
-on-device importer for the original wave data, and the open wave set for use without it.
+algorithmic wave tables 28-51, and the open wave set for use without a ROM. The original waves are read straight from the user's own ROM dump (two halves or one 256 KB image) placed in the plugin folder.
 
 ## Plan in one paragraph
 A new C engine (not a ROM emulator; those need a 64-bit CPU) whose patch format is the XT's 256-byte sound dump,
