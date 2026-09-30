@@ -6,6 +6,7 @@
   "so": "clementine.so",
   "params": "params.json",
   "layout": "layout.conf",
+  "art": "html",
   "defines": {"MODULE_SUBDIR": "\"clementine\""},
   "build": {
     "root": "..",

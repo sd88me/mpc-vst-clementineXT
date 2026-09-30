@@ -5,7 +5,7 @@
 //   oracle waves <out.bin> LO HI                  dump waves by number (records: u16 index + 64 signed bytes)
 //   oracle tables <out.bin>                       dump wave control tables (records: u16 table + 64 x u16 wave numbers)
 //   oracle dspdiff <tabA> <tabB> <out.bin>        DSP Y-memory words that change when the wavetable changes (records: addr, before, after)
-//   oracle render <sound.bin|-> <out.f32> <note> <vel> <hold_blocks> <tail_blocks> [--set IDX VAL]...   float32 left channel, 40 kHz
+//   oracle render <sound.bin|-> <out.f32> <note> <vel> <hold_blocks> <tail_blocks> [--set IDX VAL] [--cc N V] [--bend V]...   float32 left channel, 40 kHz
 //   oracle sweep IDX LO HI                        set IDX to each value, print the value read back and the LCD text
 // Output files stay on the developer's machine (see CLAUDE.md ground rules).
 #include <algorithm>
@@ -131,6 +131,19 @@ static bool loadSound(const char* path)
 	return true;
 }
 
+// options after the fixed arguments: --set IDX VAL (sound parameter by SNDP), --cc NUM VAL (MIDI controller on channel 1),
+// --bend VAL (14-bit pitch bend, 8192 = centre)
+static void applyOpts(int from, int argc, char** argv)
+{
+	for (int i = from; i < argc;)
+	{
+		if (!strcmp(argv[i], "--set") && i + 2 < argc) { setParam(atoi(argv[i + 1]), atoi(argv[i + 2])); i += 3; }
+		else if (!strcmp(argv[i], "--cc") && i + 2 < argc) { sendMidi(0xB0, (uint8_t)atoi(argv[i + 1]), (uint8_t)atoi(argv[i + 2])); run(200); i += 3; }
+		else if (!strcmp(argv[i], "--bend") && i + 1 < argc) { const int v = atoi(argv[i + 1]); sendMidi(0xE0, (uint8_t)(v & 127), (uint8_t)(v >> 7)); run(200); i += 2; }
+		else ++i;
+	}
+}
+
 static std::string lcd()
 {
 	std::array<char, 80> d{};
@@ -240,8 +253,7 @@ int main(int argc, char** argv)
 	if (!strcmp(argv[1], "render") && argc >= 8)
 	{
 		if (strcmp(argv[2], "-") && !loadSound(argv[2])) { fprintf(stderr, "cannot load sound %s\n", argv[2]); return 1; }
-		for (int i = 8; i + 1 < argc; i += 3)
-			if (!strcmp(argv[i], "--set") && i + 2 < argc) setParam(atoi(argv[i + 1]), atoi(argv[i + 2]));
+		applyOpts(8, argc, argv);
 		const int note = atoi(argv[4]), vel = atoi(argv[5]), hold = atoi(argv[6]), tail = atoi(argv[7]);
 		std::ofstream f(argv[3], std::ios::binary);
 		auto capture = [&](int blocks) {
@@ -272,8 +284,7 @@ int main(int argc, char** argv)
 	if (!strcmp(argv[1], "ext") && argc >= 8)
 	{
 		if (strcmp(argv[2], "-") && !loadSound(argv[2])) { fprintf(stderr, "cannot load sound %s\n", argv[2]); return 1; }
-		for (int i = 8; i + 1 < argc; i += 3)
-			if (!strcmp(argv[i], "--set") && i + 2 < argc) setParam(atoi(argv[i + 1]), atoi(argv[i + 2]));
+		applyOpts(8, argc, argv);
 		const int note = atoi(argv[5]), blocks = atoi(argv[6]);
 		const std::string mode = argv[7];
 		std::ofstream fin(argv[3], std::ios::binary), fout(argv[4], std::ios::binary);

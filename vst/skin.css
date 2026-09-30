@@ -1,0 +1,5 @@
+/* Clementine skin stylesheet (loaded after tools/html_art/default.css of mpc-vst-plugins). Colours come from the theme_* lines. */
+:root { --label-size: 14px; --title-size: 19px; --radius: 4px; --sheen: 0.14; }
+.frame-border { stroke: var(--line); stroke-width: 2; }
+.frame-title { font-style: italic; letter-spacing: 0.05em; }
+.knob-track { stroke: var(--knob-ring); }

@@ -3,7 +3,7 @@
  "params": [
   {
    "key": "osc1_oct",
-   "name": "Osc 1 Octave",
+   "name": "Octave",
    "min": 16,
    "max": 112,
    "default": 64,
@@ -11,7 +11,7 @@
   },
   {
    "key": "osc1_semi",
-   "name": "Osc 1 Semitone",
+   "name": "Semi",
    "min": 52,
    "max": 76,
    "default": 64,
@@ -19,7 +19,7 @@
   },
   {
    "key": "osc1_detune",
-   "name": "Osc 1 Detune",
+   "name": "Detune",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -27,7 +27,7 @@
   },
   {
    "key": "osc1_bend",
-   "name": "Osc 1 Bend Range",
+   "name": "Bend",
    "min": 0,
    "max": 122,
    "default": 2,
@@ -35,7 +35,7 @@
   },
   {
    "key": "osc1_keytrack",
-   "name": "Osc 1 Keytrack",
+   "name": "Keytrack",
    "min": 0,
    "max": 76,
    "default": 48,
@@ -43,7 +43,7 @@
   },
   {
    "key": "osc1_fm",
-   "name": "Osc 1 FM Amount",
+   "name": "FM Amt",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -51,7 +51,7 @@
   },
   {
    "key": "osc2_oct",
-   "name": "Osc 2 Octave",
+   "name": "Octave",
    "min": 16,
    "max": 112,
    "default": 64,
@@ -59,7 +59,7 @@
   },
   {
    "key": "osc2_semi",
-   "name": "Osc 2 Semitone",
+   "name": "Semi",
    "min": 52,
    "max": 76,
    "default": 64,
@@ -67,7 +67,7 @@
   },
   {
    "key": "osc2_detune",
-   "name": "Osc 2 Detune",
+   "name": "Detune",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -75,7 +75,7 @@
   },
   {
    "key": "osc2_sync",
-   "name": "Osc 2 Sync",
+   "name": "Sync",
    "options": [
     "off",
     "on"
@@ -84,7 +84,7 @@
   },
   {
    "key": "osc2_bend",
-   "name": "Osc 2 Bend Range",
+   "name": "Bend",
    "min": 0,
    "max": 122,
    "default": 2,
@@ -92,7 +92,7 @@
   },
   {
    "key": "osc2_keytrack",
-   "name": "Osc 2 Keytrack",
+   "name": "Keytrack",
    "min": 0,
    "max": 76,
    "default": 48,
@@ -100,7 +100,7 @@
   },
   {
    "key": "osc2_link",
-   "name": "Osc 2 Link",
+   "name": "Link",
    "options": [
     "off",
     "on"
@@ -117,7 +117,7 @@
   },
   {
    "key": "w1_start",
-   "name": "Wave 1 Start",
+   "name": "Start",
    "min": 0,
    "max": 63,
    "default": 0,
@@ -125,7 +125,7 @@
   },
   {
    "key": "w1_phase",
-   "name": "Wave 1 Phase",
+   "name": "Phase",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -133,7 +133,7 @@
   },
   {
    "key": "w1_env",
-   "name": "Wave 1 Env Amount",
+   "name": "Env Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -141,7 +141,7 @@
   },
   {
    "key": "w1_velo",
-   "name": "Wave 1 Env Velo",
+   "name": "Env Velo",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -149,7 +149,7 @@
   },
   {
    "key": "w1_keytrack",
-   "name": "Wave 1 Keytrack",
+   "name": "Keytrack",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -157,7 +157,7 @@
   },
   {
    "key": "w1_limit",
-   "name": "Wave 1 Limit",
+   "name": "Limit",
    "options": [
     "off",
     "on"
@@ -166,7 +166,7 @@
   },
   {
    "key": "w2_start",
-   "name": "Wave 2 Start",
+   "name": "Start",
    "min": 0,
    "max": 63,
    "default": 0,
@@ -174,7 +174,7 @@
   },
   {
    "key": "w2_phase",
-   "name": "Wave 2 Phase",
+   "name": "Phase",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -182,7 +182,7 @@
   },
   {
    "key": "w2_env",
-   "name": "Wave 2 Env Amount",
+   "name": "Env Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -190,7 +190,7 @@
   },
   {
    "key": "w2_velo",
-   "name": "Wave 2 Env Velo",
+   "name": "Env Velo",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -198,7 +198,7 @@
   },
   {
    "key": "w2_keytrack",
-   "name": "Wave 2 Keytrack",
+   "name": "Keytrack",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -206,7 +206,7 @@
   },
   {
    "key": "w2_limit",
-   "name": "Wave 2 Limit",
+   "name": "Limit",
    "options": [
     "off",
     "on"
@@ -215,7 +215,7 @@
   },
   {
    "key": "w2_link",
-   "name": "Wave 2 Link",
+   "name": "Link",
    "options": [
     "off",
     "on"
@@ -224,7 +224,7 @@
   },
   {
    "key": "mix_w1",
-   "name": "Mix Wave 1",
+   "name": "Wave 1",
    "min": 0,
    "max": 127,
    "default": 80,
@@ -232,7 +232,7 @@
   },
   {
    "key": "mix_w2",
-   "name": "Mix Wave 2",
+   "name": "Wave 2",
    "min": 0,
    "max": 127,
    "default": 80,
@@ -240,7 +240,7 @@
   },
   {
    "key": "mix_ring",
-   "name": "Mix Ringmod",
+   "name": "Ringmod",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -248,7 +248,7 @@
   },
   {
    "key": "mix_noise",
-   "name": "Mix Noise",
+   "name": "Noise",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -256,7 +256,7 @@
   },
   {
    "key": "mix_ext",
-   "name": "Mix External",
+   "name": "External",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -277,7 +277,7 @@
   },
   {
    "key": "quantize",
-   "name": "Time Quantization",
+   "name": "Quantize",
    "options": [
     "off",
     "1",
@@ -308,7 +308,7 @@
   },
   {
    "key": "play1",
-   "name": "Play Parameter 1",
+   "name": "Param 1",
    "options": [
     "Osc 1 Octave",
     "Osc 1 Semitone",
@@ -398,7 +398,7 @@
   },
   {
    "key": "play2",
-   "name": "Play Parameter 2",
+   "name": "Param 2",
    "options": [
     "Osc 1 Octave",
     "Osc 1 Semitone",
@@ -488,7 +488,7 @@
   },
   {
    "key": "play3",
-   "name": "Play Parameter 3",
+   "name": "Param 3",
    "options": [
     "Osc 1 Octave",
     "Osc 1 Semitone",
@@ -578,7 +578,7 @@
   },
   {
    "key": "play4",
-   "name": "Play Parameter 4",
+   "name": "Param 4",
    "options": [
     "Osc 1 Octave",
     "Osc 1 Semitone",
@@ -668,7 +668,7 @@
   },
   {
    "key": "f1_cutoff",
-   "name": "Filter 1 Cutoff",
+   "name": "Cutoff",
    "min": 0,
    "max": 127,
    "default": 127,
@@ -676,7 +676,7 @@
   },
   {
    "key": "f1_reso",
-   "name": "Filter 1 Resonance",
+   "name": "Reso",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -684,7 +684,7 @@
   },
   {
    "key": "f1_type",
-   "name": "Filter 1 Type",
+   "name": "Type",
    "options": [
     "24dB LP",
     "12dB LP",
@@ -704,7 +704,7 @@
   },
   {
    "key": "f1_keytrack",
-   "name": "Filter 1 Keytrack",
+   "name": "Keytrack",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -712,7 +712,7 @@
   },
   {
    "key": "f1_env",
-   "name": "Filter 1 Env Amount",
+   "name": "Env Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -720,7 +720,7 @@
   },
   {
    "key": "f1_velo",
-   "name": "Filter 1 Env Velo",
+   "name": "Env Velo",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -728,7 +728,7 @@
   },
   {
    "key": "f1_special",
-   "name": "Filter 1 Special",
+   "name": "Special",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -736,7 +736,7 @@
   },
   {
    "key": "f2_cutoff",
-   "name": "Filter 2 Cutoff",
+   "name": "Cutoff",
    "min": 0,
    "max": 127,
    "default": 127,
@@ -744,7 +744,7 @@
   },
   {
    "key": "f2_type",
-   "name": "Filter 2 Type",
+   "name": "Type",
    "options": [
     "6dB LP",
     "6dB HP"
@@ -753,7 +753,7 @@
   },
   {
    "key": "f2_keytrack",
-   "name": "Filter 2 Keytrack",
+   "name": "Keytrack",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -761,7 +761,7 @@
   },
   {
    "key": "fx_type",
-   "name": "Effect Type",
+   "name": "Type",
    "options": [
     "Chorus",
     "Flanger 1",
@@ -804,7 +804,7 @@
   },
   {
    "key": "volume",
-   "name": "Amplifier Volume",
+   "name": "Volume",
    "min": 0,
    "max": 127,
    "default": 100,
@@ -812,7 +812,7 @@
   },
   {
    "key": "amp_velo",
-   "name": "Amp Env Velo",
+   "name": "Velo",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -820,7 +820,7 @@
   },
   {
    "key": "amp_keytrack",
-   "name": "Amp Keytrack",
+   "name": "Keytrack",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -828,7 +828,7 @@
   },
   {
    "key": "fx_p1",
-   "name": "Effect Parameter 1",
+   "name": "Param 1",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -846,7 +846,7 @@
   },
   {
    "key": "fx_p2",
-   "name": "Effect Parameter 2",
+   "name": "Param 2",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -862,7 +862,7 @@
   },
   {
    "key": "pan_keytrack",
-   "name": "Panning Keytrack",
+   "name": "Pan Keyt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -870,7 +870,7 @@
   },
   {
    "key": "fx_p3",
-   "name": "Effect Parameter 3",
+   "name": "Param 3",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -878,7 +878,7 @@
   },
   {
    "key": "glide_on",
-   "name": "Glide Active",
+   "name": "Active",
    "options": [
     "off",
     "on"
@@ -887,7 +887,7 @@
   },
   {
    "key": "glide_type",
-   "name": "Glide Type",
+   "name": "Type",
    "options": [
     "porta",
     "gliss",
@@ -898,7 +898,7 @@
   },
   {
    "key": "glide_mode",
-   "name": "Glide Mode",
+   "name": "Mode",
    "options": [
     "exp",
     "linear"
@@ -907,7 +907,7 @@
   },
   {
    "key": "glide_time",
-   "name": "Glide Time",
+   "name": "Time",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -915,7 +915,7 @@
   },
   {
    "key": "arp_on",
-   "name": "Arp Active",
+   "name": "Active",
    "options": [
     "off",
     "on",
@@ -925,7 +925,7 @@
   },
   {
    "key": "arp_tempo",
-   "name": "Arp Tempo",
+   "name": "Tempo",
    "min": 0,
    "max": 127,
    "default": 37,
@@ -933,7 +933,7 @@
   },
   {
    "key": "arp_clock",
-   "name": "Arp Clock",
+   "name": "Clock",
    "options": [
     "Clock 0",
     "Clock 1",
@@ -956,7 +956,7 @@
   },
   {
    "key": "arp_range",
-   "name": "Arp Range",
+   "name": "Range",
    "min": 1,
    "max": 10,
    "default": 1,
@@ -964,7 +964,7 @@
   },
   {
    "key": "arp_pattern",
-   "name": "Arp Pattern",
+   "name": "Pattern",
    "min": 0,
    "max": 16,
    "default": 0,
@@ -972,7 +972,7 @@
   },
   {
    "key": "arp_dir",
-   "name": "Arp Direction",
+   "name": "Direction",
    "options": [
     "up",
     "down",
@@ -983,7 +983,7 @@
   },
   {
    "key": "arp_order",
-   "name": "Arp Note Order",
+   "name": "Note Order",
    "options": [
     "note",
     "n.rev",
@@ -994,7 +994,7 @@
   },
   {
    "key": "arp_velo",
-   "name": "Arp Velocity",
+   "name": "Velo",
    "options": [
     "root note",
     "last note"
@@ -1003,7 +1003,7 @@
   },
   {
    "key": "arp_reset",
-   "name": "Arp Reset",
+   "name": "Reset",
    "options": [
     "off",
     "on"
@@ -1012,7 +1012,7 @@
   },
   {
    "key": "arp_len",
-   "name": "Arp User Length",
+   "name": "Length",
    "min": 0,
    "max": 15,
    "default": 7,
@@ -1020,7 +1020,7 @@
   },
   {
    "key": "arp_user1",
-   "name": "Arp User Pattern 1-4",
+   "name": "Steps 1-4",
    "min": 0,
    "max": 15,
    "default": 8,
@@ -1028,7 +1028,7 @@
   },
   {
    "key": "arp_user2",
-   "name": "Arp User Pattern 5-8",
+   "name": "Steps 5-8",
    "min": 0,
    "max": 15,
    "default": 8,
@@ -1036,7 +1036,7 @@
   },
   {
    "key": "arp_user3",
-   "name": "Arp User Pattern 9-12",
+   "name": "Steps 9-12",
    "min": 0,
    "max": 15,
    "default": 8,
@@ -1044,7 +1044,7 @@
   },
   {
    "key": "arp_user4",
-   "name": "Arp User Pattern 13-16",
+   "name": "Steps 13-16",
    "min": 0,
    "max": 15,
    "default": 8,
@@ -1052,7 +1052,7 @@
   },
   {
    "key": "alloc",
-   "name": "Allocation Mode",
+   "name": "Mode",
    "options": [
     "poly",
     "mono"
@@ -1061,7 +1061,7 @@
   },
   {
    "key": "assign",
-   "name": "Assignment",
+   "name": "Assign",
    "options": [
     "normal",
     "dual",
@@ -1087,7 +1087,7 @@
   },
   {
    "key": "fenv_a",
-   "name": "Filter Env Attack",
+   "name": "Attack",
    "min": 0,
    "max": 127,
    "default": 10,
@@ -1095,7 +1095,7 @@
   },
   {
    "key": "fenv_d",
-   "name": "Filter Env Decay",
+   "name": "Decay",
    "min": 0,
    "max": 127,
    "default": 50,
@@ -1103,7 +1103,7 @@
   },
   {
    "key": "fenv_s",
-   "name": "Filter Env Sustain",
+   "name": "Sustain",
    "min": 0,
    "max": 127,
    "default": 127,
@@ -1111,7 +1111,7 @@
   },
   {
    "key": "fenv_r",
-   "name": "Filter Env Release",
+   "name": "Release",
    "min": 0,
    "max": 127,
    "default": 10,
@@ -1119,7 +1119,7 @@
   },
   {
    "key": "fenv_trig",
-   "name": "Filter Env Trigger",
+   "name": "Trigger",
    "options": [
     "normal",
     "single",
@@ -1129,7 +1129,7 @@
   },
   {
    "key": "aenv_a",
-   "name": "Amp Env Attack",
+   "name": "Attack",
    "min": 0,
    "max": 127,
    "default": 10,
@@ -1137,7 +1137,7 @@
   },
   {
    "key": "aenv_d",
-   "name": "Amp Env Decay",
+   "name": "Decay",
    "min": 0,
    "max": 127,
    "default": 50,
@@ -1145,7 +1145,7 @@
   },
   {
    "key": "aenv_s",
-   "name": "Amp Env Sustain",
+   "name": "Sustain",
    "min": 0,
    "max": 127,
    "default": 127,
@@ -1153,7 +1153,7 @@
   },
   {
    "key": "aenv_r",
-   "name": "Amp Env Release",
+   "name": "Release",
    "min": 0,
    "max": 127,
    "default": 10,
@@ -1161,7 +1161,7 @@
   },
   {
    "key": "aenv_trig",
-   "name": "Amp Env Trigger",
+   "name": "Trigger",
    "options": [
     "normal",
     "single",
@@ -1171,7 +1171,7 @@
   },
   {
    "key": "wenv_t1",
-   "name": "Wave Env Time 1",
+   "name": "Time 1",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1179,7 +1179,7 @@
   },
   {
    "key": "wenv_l1",
-   "name": "Wave Env Level 1",
+   "name": "Level 1",
    "min": 0,
    "max": 127,
    "default": 127,
@@ -1187,7 +1187,7 @@
   },
   {
    "key": "wenv_t2",
-   "name": "Wave Env Time 2",
+   "name": "Time 2",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1195,7 +1195,7 @@
   },
   {
    "key": "wenv_l2",
-   "name": "Wave Env Level 2",
+   "name": "Level 2",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1203,7 +1203,7 @@
   },
   {
    "key": "wenv_t3",
-   "name": "Wave Env Time 3",
+   "name": "Time 3",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1211,7 +1211,7 @@
   },
   {
    "key": "wenv_l3",
-   "name": "Wave Env Level 3",
+   "name": "Level 3",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -1219,7 +1219,7 @@
   },
   {
    "key": "wenv_t4",
-   "name": "Wave Env Time 4",
+   "name": "Time 4",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1227,7 +1227,7 @@
   },
   {
    "key": "wenv_l4",
-   "name": "Wave Env Level 4",
+   "name": "Level 4",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1235,7 +1235,7 @@
   },
   {
    "key": "wenv_t5",
-   "name": "Wave Env Time 5",
+   "name": "Time 5",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1243,7 +1243,7 @@
   },
   {
    "key": "wenv_l5",
-   "name": "Wave Env Level 5",
+   "name": "Level 5",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -1251,7 +1251,7 @@
   },
   {
    "key": "wenv_t6",
-   "name": "Wave Env Time 6",
+   "name": "Time 6",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1259,7 +1259,7 @@
   },
   {
    "key": "wenv_l6",
-   "name": "Wave Env Level 6",
+   "name": "Level 6",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1267,7 +1267,7 @@
   },
   {
    "key": "wenv_t7",
-   "name": "Wave Env Time 7",
+   "name": "Time 7",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1275,7 +1275,7 @@
   },
   {
    "key": "wenv_l7",
-   "name": "Wave Env Level 7",
+   "name": "Level 7",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -1283,7 +1283,7 @@
   },
   {
    "key": "wenv_t8",
-   "name": "Wave Env Time 8",
+   "name": "Time 8",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1291,7 +1291,7 @@
   },
   {
    "key": "wenv_l8",
-   "name": "Wave Env Level 8",
+   "name": "Level 8",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1299,7 +1299,7 @@
   },
   {
    "key": "wenv_trig",
-   "name": "Wave Env Trigger",
+   "name": "Trigger",
    "options": [
     "normal",
     "single",
@@ -1309,7 +1309,7 @@
   },
   {
    "key": "wenv_on_loop",
-   "name": "Wave Key On Loop",
+   "name": "On Loop",
    "options": [
     "off",
     "on"
@@ -1318,7 +1318,7 @@
   },
   {
    "key": "wenv_on_loop_start",
-   "name": "Wave Key On Loop Start",
+   "name": "On Start",
    "min": 0,
    "max": 7,
    "default": 0,
@@ -1326,7 +1326,7 @@
   },
   {
    "key": "wenv_on_loop_end",
-   "name": "Wave Key On Loop End",
+   "name": "On End",
    "min": 0,
    "max": 7,
    "default": 0,
@@ -1334,7 +1334,7 @@
   },
   {
    "key": "wenv_off_loop",
-   "name": "Wave Key Off Loop",
+   "name": "Off Loop",
    "options": [
     "off",
     "on"
@@ -1343,7 +1343,7 @@
   },
   {
    "key": "wenv_off_loop_start",
-   "name": "Wave Key Off Loop Start",
+   "name": "Off Start",
    "min": 0,
    "max": 7,
    "default": 0,
@@ -1351,7 +1351,7 @@
   },
   {
    "key": "wenv_off_loop_end",
-   "name": "Wave Key Off Loop End",
+   "name": "Off End",
    "min": 0,
    "max": 7,
    "default": 0,
@@ -1359,7 +1359,7 @@
   },
   {
    "key": "fre_t1",
-   "name": "Free Env Time 1",
+   "name": "Time 1",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1367,7 +1367,7 @@
   },
   {
    "key": "fre_l1",
-   "name": "Free Env Level 1",
+   "name": "Level 1",
    "min": 0,
    "max": 127,
    "default": 127,
@@ -1375,7 +1375,7 @@
   },
   {
    "key": "fre_t2",
-   "name": "Free Env Time 2",
+   "name": "Time 2",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1383,7 +1383,7 @@
   },
   {
    "key": "fre_l2",
-   "name": "Free Env Level 2",
+   "name": "Level 2",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1391,7 +1391,7 @@
   },
   {
    "key": "fre_t3",
-   "name": "Free Env Time 3",
+   "name": "Time 3",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1399,7 +1399,7 @@
   },
   {
    "key": "fre_l3",
-   "name": "Free Env Level 3",
+   "name": "Level 3",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1407,7 +1407,7 @@
   },
   {
    "key": "fre_rt",
-   "name": "Free Env Release Time",
+   "name": "Rel Time",
    "min": 0,
    "max": 127,
    "default": 32,
@@ -1415,7 +1415,7 @@
   },
   {
    "key": "fre_rl",
-   "name": "Free Env Release Level",
+   "name": "Rel Level",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1423,7 +1423,7 @@
   },
   {
    "key": "fre_trig",
-   "name": "Free Env Trigger",
+   "name": "Trigger",
    "options": [
     "normal",
     "single",
@@ -1433,7 +1433,7 @@
   },
   {
    "key": "lfo1_rate",
-   "name": "LFO 1 Rate",
+   "name": "Rate",
    "min": 0,
    "max": 127,
    "default": 100,
@@ -1441,7 +1441,7 @@
   },
   {
    "key": "lfo1_shape",
-   "name": "LFO 1 Shape",
+   "name": "Shape",
    "options": [
     "sin",
     "tri",
@@ -1454,7 +1454,7 @@
   },
   {
    "key": "lfo1_delay",
-   "name": "LFO 1 Delay",
+   "name": "Delay",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1462,7 +1462,7 @@
   },
   {
    "key": "lfo1_sync",
-   "name": "LFO 1 Sync",
+   "name": "Sync",
    "options": [
     "off",
     "on",
@@ -1473,7 +1473,7 @@
   },
   {
    "key": "lfo1_sym",
-   "name": "LFO 1 Symmetry",
+   "name": "Symm",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -1481,7 +1481,7 @@
   },
   {
    "key": "lfo1_human",
-   "name": "LFO 1 Humanize",
+   "name": "Human",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1489,7 +1489,7 @@
   },
   {
    "key": "lfo2_rate",
-   "name": "LFO 2 Rate",
+   "name": "Rate",
    "min": 0,
    "max": 127,
    "default": 100,
@@ -1497,7 +1497,7 @@
   },
   {
    "key": "lfo2_shape",
-   "name": "LFO 2 Shape",
+   "name": "Shape",
    "options": [
     "sin",
     "tri",
@@ -1510,7 +1510,7 @@
   },
   {
    "key": "lfo2_delay",
-   "name": "LFO 2 Delay",
+   "name": "Delay",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1518,7 +1518,7 @@
   },
   {
    "key": "lfo2_sync",
-   "name": "LFO 2 Sync",
+   "name": "Sync",
    "options": [
     "off",
     "on",
@@ -1529,7 +1529,7 @@
   },
   {
    "key": "lfo2_sym",
-   "name": "LFO 2 Symmetry",
+   "name": "Symm",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -1537,7 +1537,7 @@
   },
   {
    "key": "lfo2_human",
-   "name": "LFO 2 Humanize",
+   "name": "Human",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1545,7 +1545,7 @@
   },
   {
    "key": "lfo2_phase",
-   "name": "LFO 2 Phase",
+   "name": "Phase",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1553,7 +1553,7 @@
   },
   {
    "key": "mdelay_src",
-   "name": "Modifier Delay Source",
+   "name": "Source",
    "options": [
     "off",
     "LFO1",
@@ -1592,7 +1592,7 @@
   },
   {
    "key": "mdelay_time",
-   "name": "Modifier Delay Time",
+   "name": "Time",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1600,7 +1600,7 @@
   },
   {
    "key": "mod1_src1",
-   "name": "Modifier 1 Source 1",
+   "name": "Src 1",
    "options": [
     "off",
     "LFO1",
@@ -1639,7 +1639,7 @@
   },
   {
    "key": "mod1_src2",
-   "name": "Modifier 1 Source 2",
+   "name": "Src 2",
    "options": [
     "off",
     "LFO1",
@@ -1678,7 +1678,7 @@
   },
   {
    "key": "mod1_op",
-   "name": "Modifier 1 Type",
+   "name": "Type",
    "options": [
     "+",
     "-",
@@ -1701,7 +1701,7 @@
   },
   {
    "key": "mod1_par",
-   "name": "Modifier 1 Parameter",
+   "name": "Param",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1709,7 +1709,7 @@
   },
   {
    "key": "mod2_src1",
-   "name": "Modifier 2 Source 1",
+   "name": "Src 1",
    "options": [
     "off",
     "LFO1",
@@ -1748,7 +1748,7 @@
   },
   {
    "key": "mod2_src2",
-   "name": "Modifier 2 Source 2",
+   "name": "Src 2",
    "options": [
     "off",
     "LFO1",
@@ -1787,7 +1787,7 @@
   },
   {
    "key": "mod2_op",
-   "name": "Modifier 2 Type",
+   "name": "Type",
    "options": [
     "+",
     "-",
@@ -1810,7 +1810,7 @@
   },
   {
    "key": "mod2_par",
-   "name": "Modifier 2 Parameter",
+   "name": "Param",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1818,7 +1818,7 @@
   },
   {
    "key": "mod3_src1",
-   "name": "Modifier 3 Source 1",
+   "name": "Src 1",
    "options": [
     "off",
     "LFO1",
@@ -1857,7 +1857,7 @@
   },
   {
    "key": "mod3_src2",
-   "name": "Modifier 3 Source 2",
+   "name": "Src 2",
    "options": [
     "off",
     "LFO1",
@@ -1896,7 +1896,7 @@
   },
   {
    "key": "mod3_op",
-   "name": "Modifier 3 Type",
+   "name": "Type",
    "options": [
     "+",
     "-",
@@ -1919,7 +1919,7 @@
   },
   {
    "key": "mod3_par",
-   "name": "Modifier 3 Parameter",
+   "name": "Param",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -1927,7 +1927,7 @@
   },
   {
    "key": "mod4_src1",
-   "name": "Modifier 4 Source 1",
+   "name": "Src 1",
    "options": [
     "off",
     "LFO1",
@@ -1966,7 +1966,7 @@
   },
   {
    "key": "mod4_src2",
-   "name": "Modifier 4 Source 2",
+   "name": "Src 2",
    "options": [
     "off",
     "LFO1",
@@ -2005,7 +2005,7 @@
   },
   {
    "key": "mod4_op",
-   "name": "Modifier 4 Type",
+   "name": "Type",
    "options": [
     "+",
     "-",
@@ -2028,7 +2028,7 @@
   },
   {
    "key": "mod4_par",
-   "name": "Modifier 4 Parameter",
+   "name": "Param",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -2036,7 +2036,7 @@
   },
   {
    "key": "m1_src",
-   "name": "Mod 1 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2075,7 +2075,7 @@
   },
   {
    "key": "m1_amt",
-   "name": "Mod 1 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2083,7 +2083,7 @@
   },
   {
    "key": "m1_dst",
-   "name": "Mod 1 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -2126,7 +2126,7 @@
   },
   {
    "key": "m2_src",
-   "name": "Mod 2 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2165,7 +2165,7 @@
   },
   {
    "key": "m2_amt",
-   "name": "Mod 2 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2173,7 +2173,7 @@
   },
   {
    "key": "m2_dst",
-   "name": "Mod 2 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -2216,7 +2216,7 @@
   },
   {
    "key": "m3_src",
-   "name": "Mod 3 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2255,7 +2255,7 @@
   },
   {
    "key": "m3_amt",
-   "name": "Mod 3 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2263,7 +2263,7 @@
   },
   {
    "key": "m3_dst",
-   "name": "Mod 3 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -2306,7 +2306,7 @@
   },
   {
    "key": "m4_src",
-   "name": "Mod 4 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2345,7 +2345,7 @@
   },
   {
    "key": "m4_amt",
-   "name": "Mod 4 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2353,7 +2353,7 @@
   },
   {
    "key": "m4_dst",
-   "name": "Mod 4 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -2396,7 +2396,7 @@
   },
   {
    "key": "m5_src",
-   "name": "Mod 5 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2435,7 +2435,7 @@
   },
   {
    "key": "m5_amt",
-   "name": "Mod 5 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2443,7 +2443,7 @@
   },
   {
    "key": "m5_dst",
-   "name": "Mod 5 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -2486,7 +2486,7 @@
   },
   {
    "key": "m6_src",
-   "name": "Mod 6 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2525,7 +2525,7 @@
   },
   {
    "key": "m6_amt",
-   "name": "Mod 6 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2533,7 +2533,7 @@
   },
   {
    "key": "m6_dst",
-   "name": "Mod 6 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -2576,7 +2576,7 @@
   },
   {
    "key": "m7_src",
-   "name": "Mod 7 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2615,7 +2615,7 @@
   },
   {
    "key": "m7_amt",
-   "name": "Mod 7 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2623,7 +2623,7 @@
   },
   {
    "key": "m7_dst",
-   "name": "Mod 7 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -2666,7 +2666,7 @@
   },
   {
    "key": "m8_src",
-   "name": "Mod 8 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2705,7 +2705,7 @@
   },
   {
    "key": "m8_amt",
-   "name": "Mod 8 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2713,7 +2713,7 @@
   },
   {
    "key": "m8_dst",
-   "name": "Mod 8 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -2756,7 +2756,7 @@
   },
   {
    "key": "m9_src",
-   "name": "Mod 9 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2795,7 +2795,7 @@
   },
   {
    "key": "m9_amt",
-   "name": "Mod 9 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2803,7 +2803,7 @@
   },
   {
    "key": "m9_dst",
-   "name": "Mod 9 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -2846,7 +2846,7 @@
   },
   {
    "key": "m10_src",
-   "name": "Mod 10 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2885,7 +2885,7 @@
   },
   {
    "key": "m10_amt",
-   "name": "Mod 10 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2893,7 +2893,7 @@
   },
   {
    "key": "m10_dst",
-   "name": "Mod 10 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -2936,7 +2936,7 @@
   },
   {
    "key": "m11_src",
-   "name": "Mod 11 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -2975,7 +2975,7 @@
   },
   {
    "key": "m11_amt",
-   "name": "Mod 11 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -2983,7 +2983,7 @@
   },
   {
    "key": "m11_dst",
-   "name": "Mod 11 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -3026,7 +3026,7 @@
   },
   {
    "key": "m12_src",
-   "name": "Mod 12 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -3065,7 +3065,7 @@
   },
   {
    "key": "m12_amt",
-   "name": "Mod 12 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -3073,7 +3073,7 @@
   },
   {
    "key": "m12_dst",
-   "name": "Mod 12 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -3116,7 +3116,7 @@
   },
   {
    "key": "m13_src",
-   "name": "Mod 13 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -3155,7 +3155,7 @@
   },
   {
    "key": "m13_amt",
-   "name": "Mod 13 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -3163,7 +3163,7 @@
   },
   {
    "key": "m13_dst",
-   "name": "Mod 13 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -3206,7 +3206,7 @@
   },
   {
    "key": "m14_src",
-   "name": "Mod 14 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -3245,7 +3245,7 @@
   },
   {
    "key": "m14_amt",
-   "name": "Mod 14 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -3253,7 +3253,7 @@
   },
   {
    "key": "m14_dst",
-   "name": "Mod 14 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -3296,7 +3296,7 @@
   },
   {
    "key": "m15_src",
-   "name": "Mod 15 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -3335,7 +3335,7 @@
   },
   {
    "key": "m15_amt",
-   "name": "Mod 15 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -3343,7 +3343,7 @@
   },
   {
    "key": "m15_dst",
-   "name": "Mod 15 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -3386,7 +3386,7 @@
   },
   {
    "key": "m16_src",
-   "name": "Mod 16 Source",
+   "name": "Src",
    "options": [
     "off",
     "LFO1",
@@ -3425,7 +3425,7 @@
   },
   {
    "key": "m16_amt",
-   "name": "Mod 16 Amount",
+   "name": "Amt",
    "min": 0,
    "max": 127,
    "default": 64,
@@ -3433,7 +3433,7 @@
   },
   {
    "key": "m16_dst",
-   "name": "Mod 16 Destination",
+   "name": "Dest",
    "options": [
     "Pitch",
     "Osc 1 Pitch",
@@ -3480,15 +3480,473 @@
    "min": 0,
    "max": 255,
    "default": 0,
-   "display": "int"
+   "display": "int",
+   "type": "stepper"
   },
   {
    "key": "patch_name",
    "name": "Sound",
    "min": 0,
+   "max": 0,
+   "default": 0,
+   "display": "string",
+   "type": "readout"
+  },
+  {
+   "key": "program_prev",
+   "name": "Program <",
+   "min": 0,
    "max": 1,
    "default": 0,
-   "display": "string"
+   "momentary": true,
+   "type": "trigger",
+   "step_of": "program",
+   "step_delta": -1
+  },
+  {
+   "key": "program_next",
+   "name": "Program >",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "type": "trigger",
+   "step_of": "program",
+   "step_delta": 1
+  }
+ ],
+ "sections": [
+  {
+   "label": "PLAY",
+   "keys": [
+    "program",
+    "program_prev",
+    "program_next",
+    "patch_name",
+    "play1",
+    "play2",
+    "play3",
+    "play4"
+   ]
+  },
+  {
+   "label": "OSC 1",
+   "keys": [
+    "osc1_oct",
+    "osc1_semi",
+    "osc1_detune",
+    "osc1_bend",
+    "osc1_keytrack",
+    "osc1_fm"
+   ]
+  },
+  {
+   "label": "OSC 2",
+   "keys": [
+    "osc2_oct",
+    "osc2_semi",
+    "osc2_detune",
+    "osc2_bend",
+    "osc2_keytrack",
+    "osc2_sync",
+    "osc2_link"
+   ]
+  },
+  {
+   "label": "WAVETABLE",
+   "keys": [
+    "wavetable"
+   ]
+  },
+  {
+   "label": "WAVE 1",
+   "keys": [
+    "w1_start",
+    "w1_phase",
+    "w1_env",
+    "w1_velo",
+    "w1_keytrack",
+    "w1_limit"
+   ]
+  },
+  {
+   "label": "WAVE 2",
+   "keys": [
+    "w2_start",
+    "w2_phase",
+    "w2_env",
+    "w2_velo",
+    "w2_keytrack",
+    "w2_limit",
+    "w2_link"
+   ]
+  },
+  {
+   "label": "MIXER",
+   "keys": [
+    "mix_w1",
+    "mix_w2",
+    "mix_ring",
+    "mix_noise",
+    "mix_ext"
+   ]
+  },
+  {
+   "label": "QUALITY",
+   "keys": [
+    "aliasing",
+    "quantize",
+    "clipping",
+    "accuracy"
+   ]
+  },
+  {
+   "label": "FILTER 1",
+   "keys": [
+    "f1_cutoff",
+    "f1_reso",
+    "f1_type",
+    "f1_keytrack",
+    "f1_env",
+    "f1_velo",
+    "f1_special"
+   ]
+  },
+  {
+   "label": "FILTER 2",
+   "keys": [
+    "f2_cutoff",
+    "f2_type",
+    "f2_keytrack"
+   ]
+  },
+  {
+   "label": "FILTER ENV",
+   "keys": [
+    "fenv_a",
+    "fenv_d",
+    "fenv_s",
+    "fenv_r",
+    "fenv_trig"
+   ]
+  },
+  {
+   "label": "AMPLIFIER",
+   "keys": [
+    "volume",
+    "amp_velo",
+    "amp_keytrack",
+    "pan",
+    "pan_keytrack",
+    "chorus"
+   ]
+  },
+  {
+   "label": "AMP ENV",
+   "keys": [
+    "aenv_a",
+    "aenv_d",
+    "aenv_s",
+    "aenv_r",
+    "aenv_trig"
+   ]
+  },
+  {
+   "label": "WAVE ENV TIMES",
+   "keys": [
+    "wenv_t1",
+    "wenv_t2",
+    "wenv_t3",
+    "wenv_t4",
+    "wenv_t5",
+    "wenv_t6",
+    "wenv_t7",
+    "wenv_t8"
+   ]
+  },
+  {
+   "label": "WAVE ENV LEVELS",
+   "keys": [
+    "wenv_l1",
+    "wenv_l2",
+    "wenv_l3",
+    "wenv_l4",
+    "wenv_l5",
+    "wenv_l6",
+    "wenv_l7",
+    "wenv_l8"
+   ]
+  },
+  {
+   "label": "WAVE ENV",
+   "keys": [
+    "wenv_trig",
+    "wenv_on_loop",
+    "wenv_on_loop_start",
+    "wenv_on_loop_end",
+    "wenv_off_loop",
+    "wenv_off_loop_start",
+    "wenv_off_loop_end"
+   ]
+  },
+  {
+   "label": "FREE ENV",
+   "keys": [
+    "fre_t1",
+    "fre_l1",
+    "fre_t2",
+    "fre_l2",
+    "fre_t3",
+    "fre_l3",
+    "fre_rt",
+    "fre_rl",
+    "fre_trig"
+   ]
+  },
+  {
+   "label": "LFO 1",
+   "keys": [
+    "lfo1_rate",
+    "lfo1_shape",
+    "lfo1_delay",
+    "lfo1_sync",
+    "lfo1_sym",
+    "lfo1_human"
+   ]
+  },
+  {
+   "label": "LFO 2",
+   "keys": [
+    "lfo2_rate",
+    "lfo2_shape",
+    "lfo2_delay",
+    "lfo2_sync",
+    "lfo2_sym",
+    "lfo2_human",
+    "lfo2_phase"
+   ]
+  },
+  {
+   "label": "GLIDE",
+   "keys": [
+    "glide_on",
+    "glide_type",
+    "glide_mode",
+    "glide_time"
+   ]
+  },
+  {
+   "label": "VOICES",
+   "keys": [
+    "alloc",
+    "assign",
+    "detune",
+    "depan"
+   ]
+  },
+  {
+   "label": "EFFECT",
+   "keys": [
+    "fx_type",
+    "fx_p1",
+    "fx_p2",
+    "fx_p3"
+   ]
+  },
+  {
+   "label": "ARP",
+   "keys": [
+    "arp_on",
+    "arp_tempo",
+    "arp_clock",
+    "arp_range",
+    "arp_pattern",
+    "arp_dir",
+    "arp_order",
+    "arp_velo"
+   ]
+  },
+  {
+   "label": "ARP PATTERN",
+   "keys": [
+    "arp_reset",
+    "arp_len",
+    "arp_user1",
+    "arp_user2",
+    "arp_user3",
+    "arp_user4"
+   ]
+  },
+  {
+   "label": "MOD DELAY",
+   "keys": [
+    "mdelay_src",
+    "mdelay_time"
+   ]
+  },
+  {
+   "label": "MODIFIER 1",
+   "keys": [
+    "mod1_src1",
+    "mod1_src2",
+    "mod1_op",
+    "mod1_par"
+   ]
+  },
+  {
+   "label": "MODIFIER 2",
+   "keys": [
+    "mod2_src1",
+    "mod2_src2",
+    "mod2_op",
+    "mod2_par"
+   ]
+  },
+  {
+   "label": "MODIFIER 3",
+   "keys": [
+    "mod3_src1",
+    "mod3_src2",
+    "mod3_op",
+    "mod3_par"
+   ]
+  },
+  {
+   "label": "MODIFIER 4",
+   "keys": [
+    "mod4_src1",
+    "mod4_src2",
+    "mod4_op",
+    "mod4_par"
+   ]
+  },
+  {
+   "label": "MOD 1",
+   "keys": [
+    "m1_src",
+    "m1_amt",
+    "m1_dst"
+   ]
+  },
+  {
+   "label": "MOD 2",
+   "keys": [
+    "m2_src",
+    "m2_amt",
+    "m2_dst"
+   ]
+  },
+  {
+   "label": "MOD 3",
+   "keys": [
+    "m3_src",
+    "m3_amt",
+    "m3_dst"
+   ]
+  },
+  {
+   "label": "MOD 4",
+   "keys": [
+    "m4_src",
+    "m4_amt",
+    "m4_dst"
+   ]
+  },
+  {
+   "label": "MOD 5",
+   "keys": [
+    "m5_src",
+    "m5_amt",
+    "m5_dst"
+   ]
+  },
+  {
+   "label": "MOD 6",
+   "keys": [
+    "m6_src",
+    "m6_amt",
+    "m6_dst"
+   ]
+  },
+  {
+   "label": "MOD 7",
+   "keys": [
+    "m7_src",
+    "m7_amt",
+    "m7_dst"
+   ]
+  },
+  {
+   "label": "MOD 8",
+   "keys": [
+    "m8_src",
+    "m8_amt",
+    "m8_dst"
+   ]
+  },
+  {
+   "label": "MOD 9",
+   "keys": [
+    "m9_src",
+    "m9_amt",
+    "m9_dst"
+   ]
+  },
+  {
+   "label": "MOD 10",
+   "keys": [
+    "m10_src",
+    "m10_amt",
+    "m10_dst"
+   ]
+  },
+  {
+   "label": "MOD 11",
+   "keys": [
+    "m11_src",
+    "m11_amt",
+    "m11_dst"
+   ]
+  },
+  {
+   "label": "MOD 12",
+   "keys": [
+    "m12_src",
+    "m12_amt",
+    "m12_dst"
+   ]
+  },
+  {
+   "label": "MOD 13",
+   "keys": [
+    "m13_src",
+    "m13_amt",
+    "m13_dst"
+   ]
+  },
+  {
+   "label": "MOD 14",
+   "keys": [
+    "m14_src",
+    "m14_amt",
+    "m14_dst"
+   ]
+  },
+  {
+   "label": "MOD 15",
+   "keys": [
+    "m15_src",
+    "m15_amt",
+    "m15_dst"
+   ]
+  },
+  {
+   "label": "MOD 16",
+   "keys": [
+    "m16_src",
+    "m16_amt",
+    "m16_dst"
+   ]
   }
  ]
 }

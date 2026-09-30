@@ -23,7 +23,16 @@ def response(xin, xout, skip=20000, n=2048):
             pxx[k] += (a[k] * a[k].conjugate()).real; pxy[k] += b[k] * a[k].conjugate()
     return [abs(pxy[k]) / max(pxx[k], 1e-30) for k in range(n // 2 + 1)]
 
+FREQS = [round(30 * (19000 / 30) ** (i / 47)) for i in range(48)]
+
+def tsv_row(xin, xout, skip=20000, n=2048):
+    h = response(xin, xout, skip, n)
+    return [round(20 * math.log10(max(h[min(n // 2, round(f * n / 40000))], 1e-9)), 2) for f in FREQS]
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == '--tsv':   # --tsv <in> <out> <label...>: one line of dB at FREQS
+        print('\t'.join(sys.argv[4:] + [str(v) for v in tsv_row(load(sys.argv[2]), load(sys.argv[3]))]))
+        return
     xin, xout = load(sys.argv[1]), load(sys.argv[2])
     skip = int(sys.argv[3]) if len(sys.argv) > 3 else 20000
     h = response(xin, xout, skip)

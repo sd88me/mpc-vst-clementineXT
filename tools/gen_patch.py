@@ -153,12 +153,70 @@ def options(k, lo, hi):
     if (lo, hi) == (0, 1): return ["off", "on"]
     return None
 
+def _slots(prefix, n, keys):
+    return [prefix % (i + 1) + k for i in range(n) for k in keys]
+
+# Skin sections, in page order (studio.py auto packs them into pages of 2 rows x 8 slots). Labels follow the XT's own page names.
+SECTIONS = [
+    ("PLAY", ["program", "program_prev", "program_next", "patch_name", "play1", "play2", "play3", "play4"]),
+    ("OSC 1", ["osc1_oct", "osc1_semi", "osc1_detune", "osc1_bend", "osc1_keytrack", "osc1_fm"]),
+    ("OSC 2", ["osc2_oct", "osc2_semi", "osc2_detune", "osc2_bend", "osc2_keytrack", "osc2_sync", "osc2_link"]),
+    ("WAVETABLE", ["wavetable"]),
+    ("WAVE 1", ["w1_start", "w1_phase", "w1_env", "w1_velo", "w1_keytrack", "w1_limit"]),
+    ("WAVE 2", ["w2_start", "w2_phase", "w2_env", "w2_velo", "w2_keytrack", "w2_limit", "w2_link"]),
+    ("MIXER", ["mix_w1", "mix_w2", "mix_ring", "mix_noise", "mix_ext"]),
+    ("QUALITY", ["aliasing", "quantize", "clipping", "accuracy"]),
+    ("FILTER 1", ["f1_cutoff", "f1_reso", "f1_type", "f1_keytrack", "f1_env", "f1_velo", "f1_special"]),
+    ("FILTER 2", ["f2_cutoff", "f2_type", "f2_keytrack"]),
+    ("FILTER ENV", ["fenv_a", "fenv_d", "fenv_s", "fenv_r", "fenv_trig"]),
+    ("AMPLIFIER", ["volume", "amp_velo", "amp_keytrack", "pan", "pan_keytrack", "chorus"]),
+    ("AMP ENV", ["aenv_a", "aenv_d", "aenv_s", "aenv_r", "aenv_trig"]),
+    ("WAVE ENV TIMES", ["wenv_t%d" % i for i in range(1, 9)]),
+    ("WAVE ENV LEVELS", ["wenv_l%d" % i for i in range(1, 9)]),
+    ("WAVE ENV", ["wenv_trig", "wenv_on_loop", "wenv_on_loop_start", "wenv_on_loop_end", "wenv_off_loop", "wenv_off_loop_start", "wenv_off_loop_end"]),
+    ("FREE ENV", ["fre_t1", "fre_l1", "fre_t2", "fre_l2", "fre_t3", "fre_l3", "fre_rt", "fre_rl", "fre_trig"]),
+    ("LFO 1", ["lfo1_rate", "lfo1_shape", "lfo1_delay", "lfo1_sync", "lfo1_sym", "lfo1_human"]),
+    ("LFO 2", ["lfo2_rate", "lfo2_shape", "lfo2_delay", "lfo2_sync", "lfo2_sym", "lfo2_human", "lfo2_phase"]),
+    ("GLIDE", ["glide_on", "glide_type", "glide_mode", "glide_time"]),
+    ("VOICES", ["alloc", "assign", "detune", "depan"]),
+    ("EFFECT", ["fx_type", "fx_p1", "fx_p2", "fx_p3"]),
+    ("ARP", ["arp_on", "arp_tempo", "arp_clock", "arp_range", "arp_pattern", "arp_dir", "arp_order", "arp_velo"]),
+    ("ARP PATTERN", ["arp_reset", "arp_len", "arp_user1", "arp_user2", "arp_user3", "arp_user4"]),
+    ("MOD DELAY", ["mdelay_src", "mdelay_time"]),
+] + [("MODIFIER %d" % n, ["mod%d_src1" % n, "mod%d_src2" % n, "mod%d_op" % n, "mod%d_par" % n]) for n in range(1, 5)] \
+  + [("MOD %d" % n, ["m%d_src" % n, "m%d_amt" % n, "m%d_dst" % n]) for n in range(1, 17)]
+
+_STRIP = ("Osc 1 ", "Osc 2 ", "Wave 1 ", "Wave 2 ", "Filter 1 ", "Filter 2 ", "Filter Env ", "Amp Env ", "Amplifier Env ", "Amplifier ",
+          "Wave Env ", "Free Env ", "LFO 1 ", "LFO 2 ", "Arp ", "Glide ", "Effect ", "Modifier ")
+_ABBR = (("Velocity", "Velo"), ("Amount", "Amt"), ("Envelope", "Env"), ("Keytrack", "Keytrack"), ("Resonance", "Reso"), ("Attack", "Attack"),
+         ("Parameter", "Param"), ("Symmetry", "Symm"), ("Humanize", "Human"), ("Semitone", "Semi"), ("Pitchbend", "Bend"), ("Bend Range", "Bend"),
+         ("Startwave", "Start"), ("Start Phase", "Phase"), ("Allocation Mode", "Mode"), ("Assignment", "Assign"), ("Destination", "Dest"),
+         ("Source", "Src"), ("Trigger", "Trigger"), ("Effect Parameter", "Param"), ("Time Quantization", "Quantize"), ("Amplifier Volume", "Volume"),
+         ("Panning Keytrack", "Pan Keyt"), ("Modifier Delay ", "Mdly "))
+
+_OVERRIDE = {"mix_w1": "Wave 1", "mix_w2": "Wave 2", "mix_ring": "Ringmod", "mix_noise": "Noise", "mix_ext": "External",
+             "play1": "Param 1", "play2": "Param 2", "play3": "Param 3", "play4": "Param 4", "amp_keytrack": "Keytrack",
+             "arp_len": "Length", "arp_user1": "Steps 1-4", "arp_user2": "Steps 5-8", "arp_user3": "Steps 9-12", "arp_user4": "Steps 13-16",
+             "wenv_on_loop": "On Loop", "wenv_on_loop_start": "On Start", "wenv_on_loop_end": "On End", "wenv_off_loop": "Off Loop",
+             "wenv_off_loop_start": "Off Start", "wenv_off_loop_end": "Off End", "fre_rt": "Rel Time", "fre_rl": "Rel Level",
+             "pan_keytrack": "Pan Keyt", "aliasing": "Aliasing", "mdelay_src": "Source", "mdelay_time": "Time", "depan": "De-Pan"}
+
+def short_label(key, name):
+    """A short control label (about 10 characters): the frame title already says which module it belongs to."""
+    import re
+    if key in _OVERRIDE: return _OVERRIDE[key]
+    out = re.sub(r"^(Mod|Modifier) \d+ ", "", name)
+    for pre in _STRIP:
+        if out.startswith(pre): out = out[len(pre):]; break
+    for a, b in _ABBR: out = out.replace(a, b)
+    return out.strip()
+
 def params_json():
     ps = []
     for i in range(1, 240):
         if i not in F: continue
         k, nm, lo, hi, d = F[i]
-        p = {"key": k, "name": nm}
+        p = {"key": k, "name": short_label(k, nm)}
         o = options(k, lo, hi)
         if o:
             o = o[lo:hi + 1] if len(o) > hi - lo + 1 and not k.startswith("play") and k not in ("fx_type", "f1_type") else o
@@ -167,9 +225,17 @@ def params_json():
             p.update({"min": lo, "max": hi, "default": d, "display": "int"})
         ps.append(p)
     # appended controls (never reorder or insert above this line once a release ships)
-    ps.append({"key": "program", "name": "Program", "min": 0, "max": 255, "default": 0, "display": "int"})
-    ps.append({"key": "patch_name", "name": "Sound", "min": 0, "max": 1, "default": 0, "display": "string"})
-    print(json.dumps({"name": "Clementine", "params": ps}, indent=1))
+    ps.append({"key": "program", "name": "Program", "min": 0, "max": 255, "default": 0, "display": "int", "type": "stepper"})
+    ps.append({"key": "patch_name", "name": "Sound", "min": 0, "max": 0, "default": 0, "display": "string", "type": "readout"})
+    ps.append({"key": "program_prev", "name": "Program <", "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger", "step_of": "program", "step_delta": -1})
+    ps.append({"key": "program_next", "name": "Program >", "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger", "step_of": "program", "step_delta": 1})
+    have = {p["key"] for p in ps}
+    secs = []
+    for label, keys in SECTIONS:
+        ks = [k for k in keys if k in have]
+        assert len(ks) == len(keys), (label, [k for k in keys if k not in have])
+        secs.append({"label": label, "keys": ks})
+    print(json.dumps({"name": "Clementine", "params": ps, "sections": secs}, indent=1))
 
 # MIDI controller table (Controller Number Assignment, release 2.28): cc -> (SDATA index, conversion).
 # kinds: 0 direct, 1 octave (cc 0..8 -> 16 + 12*cc), 2 semitone (cc 0..24 -> 52 + cc), 3 arp range (cc + 1),
