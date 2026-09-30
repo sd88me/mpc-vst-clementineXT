@@ -14,3 +14,4 @@ test/test_waves
 test/test_patch
 .claude/settings.local.json
 test/test_engine
+test/render_cmp
