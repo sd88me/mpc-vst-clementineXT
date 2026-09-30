@@ -1,0 +1,11 @@
+build/
+dist/
+*.o
+*.so
+# user data and anything derived from Waldorf files
+import/
+cache/
+*.syx
+*.mid
+*.bin
+oracle-out/
