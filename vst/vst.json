@@ -5,9 +5,11 @@
   "version": 1000,
   "so": "clementine.so",
   "params": "params.json",
+  "layout": "layout.conf",
+  "defines": {"MODULE_SUBDIR": "\"clementine\""},
   "build": {
     "root": "..",
-    "sources": ["src/engine.c", "src/out.c"],
+    "sources": ["src/engine.c", "src/out.c", "src/patch.c", "src/syx.c"],
     "cflags": ["-Isrc", "-I/mv/wrapper", "-I../mpc-vst-plugins/wrapper"],
     "libs": ["-lm"]
   }
