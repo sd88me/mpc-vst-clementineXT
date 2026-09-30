@@ -334,6 +334,23 @@ int main(int argc, char** argv)
 		printf("ext %s: %d blocks\n", mode.c_str(), blocks);
 		return 0;
 	}
+	// tabledump <lo> <hi> <out.bin>: for each wavetable number lo..hi (0-based), select it on the sound and record the firmware's built table
+	// (64 waves x 256 words of DSP Y memory at 0x20000): records of u16 table + 16384 x u32
+	if (!strcmp(argv[1], "tabledump") && argc == 5)
+	{
+		std::ofstream f(argv[4], std::ios::binary);
+		for (int t = atoi(argv[2]); t <= atoi(argv[3]); ++t)
+		{
+			setParam(25, t); run(3000);
+			const auto v = snapshotY(0x20000, 0x24000);
+			const uint16_t id = (uint16_t)t; f.write((const char*)&id, 2);
+			f.write((const char*)v.data(), v.size() * sizeof(uint32_t));
+		}
+		f.flush();
+		if (!f) { fprintf(stderr, "could not write %s\n", argv[4]); return 1; }
+		printf("tables %s..%s -> %s\n", argv[2], argv[3], argv[4]);
+		return 0;
+	}
 	if (!strcmp(argv[1], "dumpall") && argc == 3)
 	{
 		auto d = dumpAll();

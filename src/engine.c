@@ -26,7 +26,7 @@ typedef struct { int stage; float level; } env_t;
 typedef struct { int seg, phase; float level, timer; } xenv_t;   /* phase: 0 running (sustain part), 1 held at the sustain end, 2 release part, 3 finished */
 /* key = the played note that owns the voice; pitch = its current pitch in notes (moves during glide), target = where it glides to,
  * det = unison/dual detune in notes, panoff = its pan offset from the spread (0..1, sign = side). */
-typedef struct { int key, on, vel; float ug, ph1, ph2, pitch, target, det, panoff; env_t aenv, fenv; filt_t flt; lfo_t lfo[2]; float lfov[2]; uint32_t nrng; float nx1, ny1; xenv_t wenv, fren; } voice_t;
+typedef struct { int key, on, vel; float ug, ph1, ph2, pitch, target, det, panoff; env_t aenv, fenv; filt_t flt; lfo_t lfo[2]; float lfov[2]; uint32_t nrng; float nx1, ny1; xenv_t wenv, fren; float mst[4][2]; } voice_t;
 typedef struct {
     patch_t cur;                 /* the engine state is the XT's SDATA block */
     struct { int note, vel; } held[16];   /* keys currently down, oldest first */
@@ -418,6 +418,33 @@ static float noise_tick(voice_t *v) {
 }
 
 /* one 40 kHz core sample, stereo */
+/* Modifier operations. The stateless ones are calibrated against the firmware (docs/CALIBRATION.md, "Modifiers"); the
+ * stateful ones (S&H, ramp, lag, filter, differentiator) follow the manual and are not yet measured. a, b, par are 0..1. */
+static float mod_op(int op, float a, float b, float par, float st[2]) {
+    int ia = (int)lroundf(a * 127), ib = (int)lroundf(b * 127);
+    float w;
+    switch (op) {
+    case 0: w = a + b; return w >= 1.0f ? w - 2.0f : 1.0f;      /* wraps at +1 like the firmware; below 1 it reads full scale */
+    case 1: w = a - b; return w < 0 ? w : 1.0f;
+    case 2: return a * b;
+    case 3: return 0.0f;                                        /* measured about 0.01-0.03 for every input tried */
+    case 4: return (ia ^ ib) / 128.0f;
+    case 5: return (ia | ib) / 128.0f;
+    case 6: return (ia & ib) / 128.0f;
+    case 7: if (st[1] <= 0) { st[0] = a; st[1] = 0.001f + par * par * 2.0f; } st[1] -= 1.0f / 40000.0f; return st[0];
+    case 8: if (a > 0.5f && st[1] < 0.5f) st[0] = 0;
+            st[1] = a; st[0] += 1.0f / (40000.0f * (0.01f + par * par * 10.0f)); if (st[0] > 1) st[0] = 1; return st[0];
+    case 9: return a >= par ? 1.0f : 0.0f;
+    case 10: return fabsf(a);
+    case 11: w = 2.0f * par; return w >= 1.0f ? w - 2.0f : w;  /* depends on the parameter only (measured) */
+    case 12: return a;
+    case 13: { float step = 1.0f / (40000.0f * (0.005f + par * par * 10.0f)), d = a - st[0];
+               st[0] += d > step ? step : d < -step ? -step : d; return st[0]; }
+    case 14: st[0] += (a - st[0]) * (0.0001f + par * par * 0.2f); return st[0];
+    default: { float d = a - st[0]; st[0] = a; return d * 40.0f; }
+    }
+}
+
 static void core(inst_t *s, float *lr) {
     const patch_t *p = &s->cur;
     float suml = 0, sumr = 0;
@@ -444,6 +471,10 @@ static void core(inst_t *s, float *lr) {
         src[17] = s->pedal ? 1.0f : 0.0f; src[18] = s->cc[4] / 127.0f; src[19] = s->cc[2] / 127.0f;
         src[20] = s->cc[4] / 127.0f; src[21] = s->cc[8] / 127.0f; src[22] = s->cc[11] / 127.0f; src[23] = s->cc[12] / 127.0f;   /* Controls W-Z (default CC numbers) */
         src[31] = 1.0f;
+        for (int m = 0; m < 4; m++) {   /* modifiers 1-4 are sources 25-28 (sources 0 and 31 read 0 and 1) */
+            int o = 176 + 4 * m;
+            src[25 + m] = mod_op(p->d[o + 2], src[p->d[o]], src[p->d[o + 1]], p->d[o + 3] / 127.0f, v->mst[m]);
+        }
         for (int n = 0; n < 16; n++) {
             int si = p->d[192 + 3 * n];
             if (si && s->modgain[n] != 0.0f) dest[p->d[194 + 3 * n]] += s->modgain[n] * src[si];

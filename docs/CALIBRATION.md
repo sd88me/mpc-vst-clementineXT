@@ -114,3 +114,13 @@ Slot identification (`/home/sam/oracle/fit/slotfind.py`, spectrum match against 
   glide covers an octave in roughly 1.6x that constant (3.2 semitones/s at value 60). The first note after start glides from an unknown
   default pitch; ours starts on pitch.
 - **Oracle:** `--stereo` (interleaved L,R) and `--n2 NOTE BLOCKS` (a second key while the first is held) added to `render`.
+
+## Modifiers (partial)
+Rig: modifier 1 on modwheel (A) and breath CC2 (B) or velocity, routed to volume through a matrix slot; r is the level change
+in units of the full-scale volume effect. Findings (A, B, parameter P all 0..1):
+- `*` = A*B. `XOR`/`OR`/`AND` act bitwise on the 7-bit values (/128). `abs` = |A|. Type 12 (listed "max") returned A whatever B was.
+- `+` wraps like a signed byte: A+B >= 1 gives A+B-2; below 1 it reads full scale (+1). `-` gives A-B when negative, +1 otherwise.
+- `Switch` gives 1 when A >= P (equality at .787 gave 1), else 0. Not yet separated from a fixed threshold of 0.5.
+- Type 11 ("min") depends on P only: 2P wrapped into -1..+1. `/` stayed at 0.01-0.03.
+- Not measured, implemented from the manual as guesses: S&H, ramp, lag, filter, differentiator, modifier delay (source 24).
+The type numbering or the manual's names may be off for 11 and 12; the behaviour is reproduced as measured.

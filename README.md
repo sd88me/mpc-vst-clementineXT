@@ -9,10 +9,14 @@ run on a device and much of the sound engine is still missing. See [docs/DESIGN.
 [docs/CALIBRATION.md](docs/CALIBRATION.md) for what has been measured against the original firmware.
 
 Working so far: the XT's 256-byte sound format (all 219 fields, `.syx` single/bank import, save), MIDI controller map, the
-wavetable oscillators (real table data, measured mip levels and pitch), mixer, amp and filter envelopes, Filter 1 low-pass types
-(12/24 dB, calibrated), Filter 2, pan, volume, poly/mono/dual/unison voices, glide, and an orange XT-styled skin. Not done: the
-modulation matrix, LFOs, modifiers, wave and free envelopes, most Filter 1 types' exact shapes, effects, arpeggiator, the
-algorithmic wave tables 28-51, and the open wave set for use without a ROM. The original waves are read straight from the user's own ROM dump (two halves or one 256 KB image) placed in the plugin folder.
+wavetable oscillators (real table data, measured mip levels and pitch, FM, ring mod, noise), amp, filter, wave and free envelopes,
+Filter 1 low-pass types (12/24 dB, calibrated) and Filter 2, the modulation matrix and both LFOs, pan, volume, poly/mono/dual/unison
+voices, glide, an effects module, and an orange XT-styled skin. The original waves and control tables are read straight from the
+user's own ROM dump (two 128 KB halves or one 256 KB image, placed in the plugin folder).
+
+Not done: the modifier delay and the timed modifiers (S&H, ramp, lag, filter, differentiator are unmeasured guesses), exact shapes of Filter 1's band-pass/high-pass/other types, effect calibration (and the
+firmware's effect numbering), the arpeggiator, trigger modes, the algorithmic wave tables 28-51, an open wave set for use without a
+ROM, and any test on a device (CPU load is unmeasured).
 
 ## Plan in one paragraph
 A new C engine (not a ROM emulator; those need a 64-bit CPU) whose patch format is the XT's 256-byte sound dump,
