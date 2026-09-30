@@ -218,7 +218,7 @@ all voices -> stereo sum (24-bit-style fixed point, XT clipping) -> effect -> ch
 ## 9. Controls and skin
 
 ### Parameters
-- Around 190 non-reserved SDATA fields, in SDATA order, keyed by readable names (`osc1_oct`, `w1_start`,
+- 203 non-reserved SDATA parameters (index 1..239; the name bytes 240-255 are a display string), in SDATA order, keyed by readable names (`osc1_oct`, `w1_start`,
   `f1_type`, `mod3_src`, ...). Reserved bytes and the name aren't parameters; the name is a display string.
 - Appended after them: `bank` (file popup), `program` (stepper with name readout), `polyphony`, `output_trim`,
   `resampler`, `limiter`, `mod_view`, the wave-data status readout, and the skin's `__open` popups.
