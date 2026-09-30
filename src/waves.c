@@ -64,7 +64,7 @@ void table_build(const table_ctl_t *ctl, const wave_t *waves, int nwaves, table_
 }
 
 /* ---- open set ---- */
-static const char *names[OPEN_TABLES] = { "Saw Harmonics", "Pulse Width", "Sync Sweep", "Formant" };
+static const char *names[OPEN_TABLES] = { "Saw Harmonics", "Pulse Width", "Sync Sweep", "Formant", "Odd Harmonics", "Wave Fold", "Soft Pulse", "Saw Pair", "Comb Saw", "Bell Partials", "Vowel Sweep", "Fuzz Morph" };
 
 static void additive(int8_t out[WAVE_LEN], int nh, int mode) {
     double buf[WAVE_LEN] = {0}, peak = 1e-9;
@@ -72,6 +72,12 @@ static void additive(int8_t out[WAVE_LEN], int nh, int mode) {
         double a = mode == 0 ? 1.0 / h : mode == 1 ? (h & 1) / (double)h : 1.0 / h;
         for (int i = 0; i < WAVE_LEN; i++) buf[i] += a * sin(2 * M_PI * h * (i + 0.5) / WAVE_LEN);
     }
+    for (int i = 0; i < WAVE_LEN; i++) if (fabs(buf[i]) > peak) peak = fabs(buf[i]);
+    for (int i = 0; i < WAVE_LEN; i++) out[i] = clamp8(127 * buf[i] / peak);
+}
+
+static void norm(int8_t out[WAVE_LEN], const double buf[WAVE_LEN]) {
+    double peak = 1e-9;
     for (int i = 0; i < WAVE_LEN; i++) if (fabs(buf[i]) > peak) peak = fabs(buf[i]);
     for (int i = 0; i < WAVE_LEN; i++) out[i] = clamp8(127 * buf[i] / peak);
 }
@@ -86,6 +92,20 @@ int open_table(int n, wave_t *waves, table_ctl_t *ctl, const char **name) {
         case 0: additive(f, 1 + (int)(t * 31), 0); break;
         case 1: for (int i = 0; i < WAVE_LEN; i++) f[i] = (i + 0.5) / WAVE_LEN < 0.5 - 0.45 * t ? 100 : -100; break;
         case 2: for (int i = 0; i < WAVE_LEN; i++) f[i] = clamp8(127 * (2 * fmod((i + 0.5) / WAVE_LEN * (1 + 7 * t), 1.0) - 1)); break;
+        case 4: { double buf[WAVE_LEN] = {0}; int nh = 1 + 2 * (int)(t * 15); for (int h = 1; h <= nh; h += 2) for (int i = 0; i < WAVE_LEN; i++) buf[i] += sin(2 * M_PI * h * (i + 0.5) / WAVE_LEN) / h; norm(f, buf); break; }
+        case 5: { double buf[WAVE_LEN]; double a = 0.2 + 6.0 * t; for (int i = 0; i < WAVE_LEN; i++) buf[i] = sin(a * sin(2 * M_PI * (i + 0.5) / WAVE_LEN)); norm(f, buf); break; }
+        case 6: { double buf[WAVE_LEN]; for (int i = 0; i < WAVE_LEN; i++) buf[i] = tanh(6.0 * (sin(2 * M_PI * (i + 0.5) / WAVE_LEN) - 0.9 * t)); norm(f, buf); break; }
+        case 7: { double buf[WAVE_LEN] = {0}; for (int h = 1; h <= 24; h++) for (int i = 0; i < WAVE_LEN; i++) { double p = (i + 0.5) / WAVE_LEN; buf[i] += (sin(2 * M_PI * h * p) + t * sin(2 * M_PI * h * 2 * p + 1.0)) / h; } norm(f, buf); break; }
+        case 8: { double buf[WAVE_LEN] = {0}; for (int h = 1; h <= 30; h++) for (int i = 0; i < WAVE_LEN; i++) buf[i] += (1.0 - cos(M_PI * h * (0.04 + 0.92 * t))) / h * sin(2 * M_PI * h * (i + 0.5) / WAVE_LEN); norm(f, buf); break; }
+        case 9: { double buf[WAVE_LEN] = {0}; for (int h = 1; h <= 16; h++) for (int i = 0; i < WAVE_LEN; i++) buf[i] += exp(-h * (0.6 - 0.5 * t)) * (h % 2 ? 1.0 : 0.6 + 0.4 * t) * sin(2 * M_PI * h * (i + 0.5) / WAVE_LEN); norm(f, buf); break; }
+        case 10: { double buf[WAVE_LEN] = {0}; double c[3] = { 2 + 2 * t, 5 + 4 * t, 9 + 3 * t };
+                   for (int h = 1; h <= 20; h++) { double a = 0; for (int k = 0; k < 3; k++) a += exp(-(h - c[k]) * (h - c[k]) / 2.4) / (1 + k);
+                                                   for (int i = 0; i < WAVE_LEN; i++) buf[i] += a * sin(2 * M_PI * h * (i + 0.5) / WAVE_LEN); }
+                   norm(f, buf); break; }
+        case 11: { double buf[WAVE_LEN] = {0}; uint32_t r = 2463534242u;
+                   for (int h = 1; h <= 24; h++) { r = r * 1664525u + 1013904223u; double ph = (r >> 8) / 16777216.0 * 2 * M_PI, rw = pow(h, -0.7);
+                                                   for (int i = 0; i < WAVE_LEN; i++) buf[i] += (h == 1 ? (1 - t) : t * rw) * sin(2 * M_PI * h * (i + 0.5) / WAVE_LEN + ph * (h == 1 ? 0 : 1)); }
+                   norm(f, buf); break; }
         default: for (int i = 0; i < WAVE_LEN; i++) { double p = (i + 0.5) / WAVE_LEN, c = 3 + 10 * t; f[i] = clamp8(127 * (sin(2 * M_PI * p) + 0.6 * sin(2 * M_PI * c * p)) / 1.6); }
         }
         /* the stored half must be antisymmetric-consistent: rebuild from the first half */

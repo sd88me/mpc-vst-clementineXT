@@ -28,5 +28,5 @@ void wave_mips(const int8_t level0[WAVE_LEN], int8_t mip[WAVE_MIPS]);   /* level
 void table_build(const table_ctl_t *ctl, const wave_t *waves, int nwaves, table_t *out);
 
 /* Open set: original tables, ours. Returns 0 on success. */
-#define OPEN_TABLES 4
+#define OPEN_TABLES 12
 int open_table(int n, wave_t *waves /* [TABLE_SLOTS] */, table_ctl_t *ctl, const char **name);
