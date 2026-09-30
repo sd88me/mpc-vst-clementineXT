@@ -22,6 +22,8 @@
 #include "xtLib/xtHardware.h"
 #include "dsp56kEmu/dsp.h"
 #include "dsp56kEmu/memory.h"
+#include "dsp56kEmu/audio.h"
+#include <cmath>
 
 static std::unique_ptr<xt::Xt> g_xt;
 static std::vector<uint8_t> g_rx;
@@ -262,6 +264,40 @@ int main(int argc, char** argv)
 		f.flush();
 		if (!f) { fprintf(stderr, "could not write %s\n", argv[3]); return 1; }
 		printf("rendered %d blocks -> %s\n", hold + tail, argv[3]);
+		return 0;
+	}
+	// ext <sound.bin> <in.f32> <out.f32> <note> <blocks> <mode> [--set IDX VAL]...
+	// Feed a test signal into the external input (mix External must be up in the sound) with a note held, and record the left
+	// output. mode: noise (white, fixed seed), impulse (one click per 8192 samples), sine:<Hz>. Both files float32, 40 kHz.
+	if (!strcmp(argv[1], "ext") && argc >= 8)
+	{
+		if (strcmp(argv[2], "-") && !loadSound(argv[2])) { fprintf(stderr, "cannot load sound %s\n", argv[2]); return 1; }
+		for (int i = 8; i + 1 < argc; i += 3)
+			if (!strcmp(argv[i], "--set") && i + 2 < argc) setParam(atoi(argv[i + 1]), atoi(argv[i + 2]));
+		const int note = atoi(argv[5]), blocks = atoi(argv[6]);
+		const std::string mode = argv[7];
+		std::ofstream fin(argv[3], std::ios::binary), fout(argv[4], std::ios::binary);
+		uint32_t rng = 12345; uint64_t n = 0;
+		auto sig = [&]() -> float {
+			if (mode == "noise") { rng = rng * 1664525u + 1013904223u; return ((int32_t)rng / 2147483648.0f) * 0.3f; }
+			if (mode == "impulse") return (n % 8192 == 0) ? 0.5f : 0.0f;
+			return 0.3f * sinf(6.2831853f * (float)atof(mode.c_str() + 5) * (float)n / 40000.0f);
+		};
+		sendMidi(0x90, (uint8_t)note, 100);
+		for (int b = 0; b < blocks; ++b)
+		{
+			auto& ins = g_xt->getAudioInputs();
+			float in[64];
+			for (int i = 0; i < 64; ++i) { in[i] = sig(); ++n; ins[0][i] = ins[1][i] = dsp56k::sample2dsp(in[i]); }
+			g_xt->process(64);
+			auto& outs = g_xt->getAudioOutputs();
+			float o[64];
+			for (int i = 0; i < 64; ++i) o[i] = (float)((int32_t)((uint32_t)outs[0][i] << 8) >> 8) / 8388608.0f;
+			fin.write((const char*)in, sizeof in); fout.write((const char*)o, sizeof o);
+		}
+		fin.flush(); fout.flush();
+		if (!fin || !fout) { fprintf(stderr, "could not write outputs\n"); return 1; }
+		printf("ext %s: %d blocks\n", mode.c_str(), blocks);
 		return 0;
 	}
 	if (!strcmp(argv[1], "dumpall") && argc == 3)

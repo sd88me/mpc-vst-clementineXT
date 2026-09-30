@@ -17,6 +17,7 @@
 #define CORE_HZ 40000.0f
 
 typedef struct { int note, on, vel, stage; float ph1, ph2, env; } voice_t;
+typedef struct { float x1, y1; } shelf_t;
 enum { ST_ATT, ST_DEC, ST_SUS, ST_REL };
 typedef struct {
     patch_t cur;                 /* the engine state is the XT's SDATA block */
@@ -25,11 +26,12 @@ typedef struct {
     wavedata_t *wd;
     const table_t *tab;
     voice_t v[NV];
+    shelf_t shelf[2];
     rs_t rs;
 } inst_t;
 enum { P_OSC1_OCT = 1, P_OSC1_SEMI = 2, P_OSC1_DET = 3, P_OSC1_KT = 6, P_OSC2_OCT = 12, P_OSC2_SEMI = 13, P_OSC2_DET = 14,
        P_OSC2_SYNC = 16, P_OSC2_KT = 18, P_TABLE = 25, P_W1_START = 26, P_W1_PHASE = 27, P_W2_START = 36, P_W2_PHASE = 37,
-       P_MIX_W1 = 47, P_MIX_W2 = 48, P_MIX_RING = 49, P_CLIP = 55, P_VOLUME = 77, P_AMP_VELO = 79,
+       P_MIX_W1 = 47, P_MIX_W2 = 48, P_MIX_RING = 49, P_CLIP = 55, P_VOLUME = 77, P_AMP_VELO = 79, P_PAN = 84,
        P_AENV_A = 119, P_AENV_D = 120, P_AENV_S = 121, P_AENV_R = 122 };
 
 static void refresh(inst_t *s) { if (s->wd) s->tab = wavedata_table(s->wd, s->cur.d[P_TABLE]); }
@@ -152,10 +154,10 @@ static float osc_hz(const patch_t *p, int note, int oct_i, int semi_i, int det_i
     return 440.0f * exp2f(st / 12.0f);
 }
 
-/* One oscillator sample: pick the mip level whose harmonics still fit under 20 kHz, then interpolate linearly. */
-static float osc_read(const int8_t *mip, float ph, float hz) {
-    int lvl = 0;
-    while (lvl < 7 && (64 >> lvl) * hz > 20000.0f && (64 >> lvl) > 1) lvl++;
+#ifndef MIP_LIMIT_HZ
+#define MIP_LIMIT_HZ 30000.0f   /* tuned against firmware saw renders: within 0.5 dB at notes 60-84 */
+#endif
+static float mip_read(const int8_t *mip, float ph, int lvl) {
     static const int off[8] = { 0, 128, 192, 224, 240, 248, 252, 254 };
     int n = 128 >> lvl;
     float x = ph * n / 128.0f; int i = (int)x; float fr = x - i;
@@ -163,8 +165,36 @@ static float osc_read(const int8_t *mip, float ph, float hz) {
     return ((1 - fr) * w[i % n] + fr * w[(i + 1) % n]) / 128.0f;
 }
 
-/* Placeholder envelope timing: exponential in the 0..127 rate value (to be calibrated against the firmware). */
-static float env_step(int r) { return 1.0f / (CORE_HZ * 0.001f * expf(r * 0.075f)); }
+/* One oscillator sample. The mip level follows the pitch continuously (harmonics must stay under MIP_LIMIT_HZ) and the two
+ * neighbouring levels are crossfaded: a hard switch was 2-3 dB off the firmware at high pitch (docs/CALIBRATION.md). */
+static float osc_read(const int8_t *mip, float ph, float hz) {
+    float lf = log2f(64.0f * hz / MIP_LIMIT_HZ);
+    if (lf <= 0) return mip_read(mip, ph, 0);
+    if (lf >= 7) return mip_read(mip, ph, 7);
+    int l = (int)lf; float fr = lf - l;
+    return (1 - fr) * mip_read(mip, ph, l) + fr * mip_read(mip, ph, l + 1);
+}
+
+/* Envelope timing, measured on the firmware (docs/CALIBRATION.md): attack is a linear ramp, decay and release are exponential
+ * (toward the sustain level, toward zero), sustain is linear in the value. Times in seconds, interpolated in log domain
+ * between measured points every 8 steps of the 0..127 rate value. */
+static float interp_log(const float *t, int v) {   /* 17 points: v = 0, 8, ..., 120, 128 */
+    int i = v >> 3; float f = (v & 7) / 8.0f;
+    return t[i] * powf(t[i + 1] / t[i], f);
+}
+static float attack_seconds(int v) {   /* time for the full 0..1 ramp */
+    static const float t[17] = { 0.001f, 0.012f, 0.03f, 0.069f, 0.156f, 0.30f, 0.487f, 0.731f, 1.038f, 1.431f, 1.906f, 2.475f, 3.162f, 4.3f, 6.5f, 10.475f, 17.0f };
+    return interp_log(t, v);
+}
+static float decay_tau(int v) {        /* time constant of decay and release (identical in the firmware); 127 is effectively a hold */
+    static const float t[17] = { 0.010f, 0.020f, 0.043f, 0.09f, 0.20f, 0.40f, 0.82f, 1.64f, 3.29f, 6.6f, 7.9f, 9.8f, 12.0f, 16.4f, 24.1f, 90.0f, 500.0f };
+    return interp_log(t, v);
+}
+static float att_step(int v) { return 1.0f / (CORE_HZ * attack_seconds(v)); }
+static float dec_coef(int v) { return 1.0f - expf(-1.0f / (CORE_HZ * decay_tau(v))); }
+
+/* Pan law (measured): amplitude falls linearly from 1 at hard left to 0.75 at centre and to 0 at hard right. */
+static float pan_gain_left(int pan) { return pan <= 64 ? 1.0f - pan / 256.0f : 0.75f * (127 - pan) / 63.0f; }
 
 static float clip(float x, int overflow) {
     if (x > 1) return overflow ? (x > 3 ? 1 : 2 - x) : 1;
@@ -172,18 +202,33 @@ static float clip(float x, int overflow) {
     return x;
 }
 
-/* one 40 kHz core sample */
-static float core(inst_t *s) {
+/* Output shelf, measured on the firmware for every signal path: one pole at 280 Hz and one zero at 437 Hz (-3.86 dB at high
+ * frequencies). Bilinear transform at 40 kHz. */
+static float shelf_run(shelf_t *f, float x) {
+    static float b0, b1, a1; static int init;
+    if (!init) {
+        const float k = 2.0f * CORE_HZ, wz = 6.2831853f * 437.0f, wp = 6.2831853f * 280.0f;
+        b0 = (1.0f + k / wz) / (1.0f + k / wp); b1 = (1.0f - k / wz) / (1.0f + k / wp); a1 = (1.0f - k / wp) / (1.0f + k / wp);
+        init = 1;
+    }
+    float y = b0 * x + b1 * f->x1 - a1 * f->y1;
+    f->x1 = x; f->y1 = y;
+    return y;
+}
+#define OUT_GAIN 0.1885f   /* -14.5 dB: measured ratio firmware/ours for one oscillator, notes 36-84 within 0.15 dB */
+
+/* one 40 kHz core sample, stereo */
+static void core(inst_t *s, float *lr) {
     const patch_t *p = &s->cur;
-    float sum = 0;
+    float suml = 0, sumr = 0;
     for (int i = 0; i < NV; i++) {
         voice_t *v = &s->v[i];
         if (v->stage == ST_REL && v->env <= 1e-5f) { v->env = 0; v->on = 0; }
         if (!v->on && v->env == 0) continue;
         switch (v->stage) {
-        case ST_ATT: v->env += env_step(p->d[P_AENV_A]); if (v->env >= 1) { v->env = 1; v->stage = ST_DEC; } break;
-        case ST_DEC: v->env -= env_step(p->d[P_AENV_D]); if (v->env <= p->d[P_AENV_S] / 127.0f) { v->env = p->d[P_AENV_S] / 127.0f; v->stage = ST_SUS; } break;
-        case ST_REL: v->env -= env_step(p->d[P_AENV_R]) * v->env * 4; break;
+        case ST_ATT: v->env += att_step(p->d[P_AENV_A]); if (v->env >= 1) { v->env = 1; v->stage = ST_DEC; } break;
+        case ST_DEC: { float sus = p->d[P_AENV_S] / 127.0f; v->env += (sus - v->env) * dec_coef(p->d[P_AENV_D]); if (v->env - sus < 1e-4f && v->env >= sus) { v->env = sus; v->stage = ST_SUS; } break; }
+        case ST_REL: v->env -= v->env * dec_coef(p->d[P_AENV_R]); break;
         default: break;
         }
         float hz1 = osc_hz(p, v->note, P_OSC1_OCT, P_OSC1_SEMI, P_OSC1_DET, P_OSC1_KT);
@@ -197,15 +242,18 @@ static float core(inst_t *s) {
         mix = clip(mix, p->d[P_CLIP]);
         float a = (p->d[P_AMP_VELO] - 64) / 64.0f;
         float vg = a >= 0 ? 1 - a * (1 - v->vel / 127.0f) : 1 + a * (v->vel / 127.0f);
-        sum += mix * v->env * vg;
+        float g = mix * v->env * vg * (p->d[P_VOLUME] / 127.0f);
+        suml += g * pan_gain_left(p->d[P_PAN]);
+        sumr += g * pan_gain_left(127 - p->d[P_PAN]);
     }
-    return sum * 0.1125f * (p->d[P_VOLUME] / 127.0f);   /* placeholder gain: matches the firmware at mid pitch (docs/CALIBRATION.md) */
+    lr[0] = shelf_run(&s->shelf[0], suml * OUT_GAIN);
+    lr[1] = shelf_run(&s->shelf[1], sumr * OUT_GAIN);
 }
 
 /* Test hook: render the 40 kHz core directly (not exported from the plugin). */
-void clementine_render40k(void *inst, float *out, int n) { for (int i = 0; i < n; i++) out[i] = core(inst); }
+void clementine_render40k(void *inst, float *out, int n) { for (int i = 0; i < n; i++) { float lr[2]; core(inst, lr); out[i] = lr[0]; } }
 
-static void gen(void *p, float *lr) { lr[0] = lr[1] = core(p); }
+static void gen(void *p, float *lr) { core(p, lr); }
 
 static void render(void *p, int16_t *out, int frames) {
     inst_t *s = p;
