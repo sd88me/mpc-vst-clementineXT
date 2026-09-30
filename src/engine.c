@@ -516,6 +516,14 @@ static float mod_op(int op, float a, float b, float par, float st[2]) {
     }
 }
 
+/* The firmware's effect numbering (measured with the oracle: every other index leaves the sound untouched): 0 off, 1 Chorus,
+ * 2 Flanger 1, 3 Flanger 2, 4 AutoWahLP, 5 AutoWahBP, 6 Overdrive, 7 Amp Mod, 32 Delay, 33 Pan Delay, 34 Mod Delay. */
+static int fx_type_from_index(int i) {
+    if (i >= 1 && i <= 7) return i - 1 + FX_CHORUS;
+    if (i >= 32 && i <= 34) return FX_DELAY + (i - 32);
+    return -1;
+}
+
 static void core(inst_t *s, float *lr) {
     arp_tick(s);
     const patch_t *p = &s->cur;
@@ -619,7 +627,8 @@ static void core(inst_t *s, float *lr) {
     }
     float l = suml * OUT_GAIN, r = sumr * OUT_GAIN;
     /* Effect index order follows the manual's list for 0..9 (the firmware's real numbering is to be confirmed); others are off. */
-    if (p->d[P_FX_TYPE] < FX_TYPES) fx_run(&s->fx, p->d[P_FX_TYPE], p->d[P_FX_P1], p->d[P_FX_P2], p->d[P_FX_P3], 120.0f, &l, &r);
+    int fxt = fx_type_from_index(p->d[P_FX_TYPE]);
+    if (fxt >= 0) fx_run(&s->fx, fxt, p->d[P_FX_P1], p->d[P_FX_P2], p->d[P_FX_P3], 120.0f, &l, &r);
     chorus_run(&s->fx, p->d[P_CHORUS], &l, &r);
     lr[0] = shelf_run(&s->shelf[0], l);
     lr[1] = shelf_run(&s->shelf[1], r);
