@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include "out.h"
 #include "patch.h"
+#include "presets.h"
 #include "syx.h"
 #include "wavedata.h"
 #include "filter.h"
@@ -100,6 +101,7 @@ static void *create(const char *dir) {
     if (s) s->arp_sound = -1;
     patch_init(&s->cur);
     load_bank(s, dir);
+    if (!s->have_bank) { presets_fill(s->bank); s->have_bank = 1; s->cur = s->bank[0]; }   /* built-in sounds when no bank is found */
     if (s->have_bank) s->cur = s->bank[0];
     rs_init(&s->rs, RS_CLEAN);
     s->wd = wavedata_load(dir);

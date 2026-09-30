@@ -8,14 +8,14 @@ architecture, same sound-dump format, and it loads Microwave II/XT `.syx` sound 
 run on a device and much of the sound engine is still missing. See [docs/DESIGN.md](docs/DESIGN.md) for the design and
 [docs/CALIBRATION.md](docs/CALIBRATION.md) for what has been measured against the original firmware.
 
-Working so far: the XT's 256-byte sound format (all 219 fields, `.syx` single/bank import, save), MIDI controller map, the
+Working so far: 12 built-in presets on four open wave tables (used when no bank is found), the XT's 256-byte sound format (all 219 fields, `.syx` single/bank import, save), MIDI controller map, the
 wavetable oscillators (real table data, measured mip levels and pitch, FM, ring mod, noise), amp, filter, wave and free envelopes,
 Filter 1 low-pass types (12/24 dB, calibrated) and Filter 2, the modulation matrix and both LFOs, pan, volume, poly/mono/dual/unison
 voices, glide, an effects module, and an orange XT-styled skin. The original waves and control tables are read straight from the
 user's own ROM dump (two 128 KB halves or one 256 KB image, placed in the plugin folder).
 
 Not done (guesses only, unmeasured: arpeggiator and trigger modes): the modifier delay and the timed modifiers (S&H, ramp, lag, filter, differentiator are unmeasured guesses), exact shapes of Filter 1's band-pass/high-pass/other types, effect calibration (and the
-firmware's effect numbering), the algorithmic wave tables 28-51, an open wave set for use without a
+firmware's effect numbering), the algorithmic wave tables 28-51, a larger open wave set for use without a
 ROM, and any test on a device (CPU load is unmeasured).
 
 ## Plan in one paragraph
