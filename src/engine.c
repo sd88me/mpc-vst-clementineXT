@@ -22,9 +22,11 @@
 typedef struct { float x1, y1; } shelf_t;
 enum { ST_ATT, ST_DEC, ST_SUS, ST_REL };
 typedef struct { int stage; float level; } env_t;
+/* multi-segment envelope state (wave envelope: 8 segments, free envelope: 3 + release) */
+typedef struct { int seg, phase; float level, timer; } xenv_t;   /* phase: 0 running (sustain part), 1 held at the sustain end, 2 release part, 3 finished */
 /* key = the played note that owns the voice; pitch = its current pitch in notes (moves during glide), target = where it glides to,
  * det = unison/dual detune in notes, panoff = its pan offset from the spread (0..1, sign = side). */
-typedef struct { int key, on, vel; float ph1, ph2, pitch, target, det, panoff; env_t aenv, fenv; filt_t flt; lfo_t lfo[2]; float lfov[2]; uint32_t nrng; float nx1, ny1; } voice_t;
+typedef struct { int key, on, vel; float ph1, ph2, pitch, target, det, panoff; env_t aenv, fenv; filt_t flt; lfo_t lfo[2]; float lfov[2]; uint32_t nrng; float nx1, ny1; xenv_t wenv, fren; } voice_t;
 typedef struct {
     patch_t cur;                 /* the engine state is the XT's SDATA block */
     struct { int note, vel; } held[16];   /* keys currently down, oldest first */
@@ -113,7 +115,7 @@ static float start_phase(int v) {
  * The detune spread and the glide time law are placeholders (not measured against the firmware yet). */
 enum { P_GLIDE_ON = 87, P_GLIDE_TYPE = 88, P_GLIDE_MODE = 89, P_GLIDE_TIME = 90, P_ALLOC = 108, P_ASSIGN = 109, P_DETUNE = 110, P_DEPAN = 112 };
 
-static void release_voice(voice_t *v) { v->on = 0; v->aenv.stage = ST_REL; v->fenv.stage = ST_REL; }
+static void release_voice(voice_t *v) { v->on = 0; v->aenv.stage = ST_REL; v->fenv.stage = ST_REL; v->wenv.phase = v->wenv.phase == 3 ? 3 : 4; v->fren.phase = v->fren.phase == 3 ? 3 : 4; }   /* 4 = release requested; the core moves to the release segments */
 
 static int steal_voice(inst_t *s) {
     int best = 0;
@@ -368,6 +370,32 @@ static float shelf_run(shelf_t *f, float x) {
 }
 #define OUT_GAIN 0.1885f   /* -14.5 dB: measured ratio firmware/ours for one oscillator, notes 36-84 within 0.15 dB */
 
+/* Segment time constant (measured on the wave envelope: 90% of a step takes 0.084 s at 24, 0.35 s at 40, 1.34 s at 56, doubling every 8
+ * steps, so the segments are exponential approaches with tau = 0.0365 s * 2^((t-24)/8)). The rule that hands over to the next segment
+ * (here: after three time constants) and the level/loop handling are approximations, not measured. */
+static float xseg_tau(int t) { return 0.0365f * exp2f((t - 24) / 8.0f); }
+
+/* One step of a segment envelope. times/levels are the raw SDATA values; `nseg` segments in the run, `sus_end`/`rel_end` are segment
+ * indices; `loop_on`/`loop_start` implement key-on loop; bipolar levels map -64..63 to -1..1, otherwise 0..127 to 0..1. */
+static void xenv_step(xenv_t *e, const uint8_t *times, const uint8_t *levels, int stride, int sus_end, int loop_on, int loop_start,
+                      int rel_end, int rel_loop_on, int rel_loop_start, int bipolar) {
+    if (e->phase == 3 || e->phase == 1) return;
+    float target = bipolar ? (levels[e->seg * stride] - 64) / 64.0f : levels[e->seg * stride] / 127.0f;
+    float tau = xseg_tau(times[e->seg * stride]);
+    e->level += (target - e->level) * (1.0f - expf(-1.0f / (CORE_HZ * tau)));
+    e->timer += 1.0f / CORE_HZ;
+    if (e->timer < 3.0f * tau) return;
+    e->timer = 0;
+    if (e->phase == 0) {
+        if (e->seg >= sus_end) { if (loop_on) e->seg = loop_start; else e->phase = 1; }
+        else e->seg++;
+    } else {
+        if (e->seg >= rel_end) { if (rel_loop_on) e->seg = rel_loop_start; else e->phase = 3; }
+        else e->seg++;
+    }
+}
+static void xenv_release(xenv_t *e, int sus_end, int max_seg) { if (e->phase == 0 || e->phase == 1 || e->phase == 4) { e->phase = 2; e->seg = sus_end + 1 > max_seg ? max_seg : sus_end + 1; e->timer = 0; } }
+
 /* Noise generator (measured): white noise through a pole-zero pair, flat below ~1 kHz and falling to about -13 dB by 12 kHz
  * (pole 2.5 kHz, zero 12 kHz after removing the output shelf). NOISE_LEVEL is the white noise rms before shaping. */
 #define NOISE_LEVEL 0.756f   /* matched to the firmware: rms 0.0254 at mixer level 127 */
@@ -406,7 +434,7 @@ static void core(inst_t *s, float *lr) {
             v->lfov[l] = sync ? s->glfov[l] : v->lfov[l];
         }
         src[1] = v->lfov[0]; src[2] = v->lfov[0] * mw; src[3] = v->lfov[0] * s->aftertouch; src[4] = v->lfov[1];
-        src[5] = v->fenv.level; src[6] = v->aenv.level;
+        src[5] = v->fenv.level; src[6] = v->aenv.level; src[7] = v->wenv.level; src[8] = v->fren.level;
         src[9] = (note - 64) / 128.0f; src[10] = (v->key - 64) / 128.0f;
         src[11] = v->vel / 127.0f; src[13] = s->aftertouch; src[15] = s->bend; src[16] = mw;
         src[17] = s->pedal ? 1.0f : 0.0f; src[18] = s->cc[4] / 127.0f; src[19] = s->cc[2] / 127.0f;
@@ -423,6 +451,10 @@ static void core(inst_t *s, float *lr) {
         int as = clampi(p->d[P_AENV_S] + (int)lroundf(dest[20]), 127), ar = clampi(p->d[P_AENV_R] + (int)lroundf(dest[21]), 127);
         env_step(&v->aenv, aa, ad, as, ar);
         env_step(&v->fenv, fa, fd, fs, fr);
+        if (v->wenv.phase == 4) xenv_release(&v->wenv, p->d[144], 7);
+        xenv_step(&v->wenv, p->d + 125, p->d + 126, 2, p->d[144], p->d[142], p->d[143], p->d[147], p->d[145], p->d[146], 0);
+        if (v->fren.phase == 4) xenv_release(&v->fren, 2, 3);
+        xenv_step(&v->fren, p->d + 149, p->d + 150, 2, 2, 0, 0, 3, 0, 0, 1);
         glide_step(v, p);
         for (int l = 0; l < 2; l++) {   /* per-voice LFOs (used when Sync is off) */
             if (p->d[l ? 169 : 162]) continue;
@@ -438,9 +470,14 @@ static void core(inst_t *s, float *lr) {
         float hz1 = osc_hz(p, note, P_OSC1_OCT, P_OSC1_SEMI, P_OSC1_DET, P_OSC1_KT, st1);
         float hz2 = osc_hz(p, note, P_OSC2_OCT, P_OSC2_SEMI, P_OSC2_DET, P_OSC2_KT, p->d[19] ? st1 : st2);   /* Link: osc 2 uses osc 1's modulation */
         /* wave position: start wave + keytrack (1 slot per semitone at +100%) + matrix; the wave envelope is not implemented yet */
-        float wk1 = (p->d[30] - 64) * 0.03125f * (note - 64), wk2 = (p->d[40] - 64) * 0.03125f * (note - 64);
-        int slot1 = clampi((int)lroundf(p->d[P_W1_START] + wk1 + dest[3]), p->d[31] ? 60 : 63);
-        int slot2 = clampi((int)lroundf(p->d[P_W2_START] + wk2 + (p->d[42] ? dest[3] : dest[4])), p->d[41] ? 60 : 63);
+        /* wave 2 with Link uses wave 1's keytrack, envelope amounts and matrix; the envelope amounts move the position by about 1 slot per step
+         * at full envelope (measured); the position destination is 1 slot per m (half the other destinations' 2 units) */
+        int lk = p->d[42];
+        float wk1 = (p->d[30] - 64) * 0.03125f * (note - 64), wk2 = (p->d[lk ? 30 : 40] - 64) * 0.03125f * (note - 64);
+        float we1 = 1.1f * ((p->d[28] - 64) * v->wenv.level + (p->d[29] - 64) * (v->vel / 127.0f));   /* 1.1 slots per step: fits the firmware at +16 and +32 */
+        float we2 = 1.1f * ((p->d[lk ? 28 : 38] - 64) * v->wenv.level + (p->d[lk ? 29 : 39] - 64) * (v->vel / 127.0f));
+        int slot1 = clampi((int)lroundf(p->d[P_W1_START] + wk1 + we1 + 0.5f * dest[3]), p->d[31] ? 60 : 63);
+        int slot2 = clampi((int)lroundf(p->d[P_W2_START] + wk2 + we2 + 0.5f * (lk ? dest[3] : dest[4])), p->d[41] ? 60 : 63);
         float w2 = osc_read(s->tab->mip[slot2], v->ph2, hz2);
         /* Oscillator FM (measured): oscillator 2 scales oscillator 1's frequency by (1 + k*w2) with k = 0.085*(amount/16)^2.8 (sidebands within 3%; the carrier level depends on start phases and is not matched);
          * the sidebands fall as 1/(modulator/carrier ratio), so it is frequency (not phase) modulation. */

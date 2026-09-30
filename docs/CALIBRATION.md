@@ -94,3 +94,13 @@ Sent MIDI (bend, controllers) must follow the note: the firmware resets them at 
   level differs (start-phase dependent) and amounts above about 48 are not compared.
 - **Velocity to volume:** positive amounts match 1 - a*(1 - vel/127) with a = amount/64 (2.3% at vel 1 with +63). Negative amounts (which make
   loud notes quiet) follow a steeper law that is not modelled: at -64 the level reaches zero near velocity 100, not 127.
+
+## 2026-10-01: wave position, wave and free envelopes
+Slot identification (`/home/sam/oracle/fit/slotfind.py`, spectrum match against the table's slots) reads the firmware's played slot to +-1.
+- **Wave keytrack** is exactly (percent) * (note - 64) slots: start 30 at +100% plays slots 2, 14, 26 at notes 36, 48, 60 (ours identical).
+- **Matrix -> wave position** is 1 slot per m (not the 2 units of the other destinations): +1, +2, +4, +9, +17 slots at amounts +32..+48.
+- **Wave envelope amount** moves the slot about 1.1 per step at full envelope (start 16: +17 at +16, +35 at +32, clamped at 63); velocity amount assumed alike.
+- **Wave envelope segments** approach their level exponentially: 90% of a step takes 0.084 s at time 24, 0.35 s at 40, 1.34 s at 56 (doubling every
+  8 steps): tau = 0.0365 s * 2^((t-24)/8). The rules for handing over to the next segment, for loops and for the free envelope are
+  **approximations** (three time constants per segment); the firmware's sustain-end and loop behaviour was not resolved.
+- **Resonance destination** = 2 units per m, like cutoff (checked at +36..+48).
