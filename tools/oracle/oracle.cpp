@@ -4,8 +4,10 @@
 //   oracle dumpall <out.syx>                      dump all 256 sounds (a bank file)
 //   oracle waves <out.bin> LO HI                  dump waves by number (records: u16 index + 64 signed bytes)
 //   oracle tables <out.bin>                       dump wave control tables (records: u16 table + 64 x u16 wave numbers)
+//   oracle dspdiff <tabA> <tabB> <out.bin>        DSP Y-memory words that change when the wavetable changes (records: addr, before, after)
 //   oracle sweep IDX LO HI                        set IDX to each value, print the value read back and the LCD text
 // Output files stay on the developer's machine (see CLAUDE.md ground rules).
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -16,6 +18,9 @@
 
 #include "synthLib/midiTypes.h"
 #include "xtLib/xt.h"
+#include "xtLib/xtHardware.h"
+#include "dsp56kEmu/dsp.h"
+#include "dsp56kEmu/memory.h"
 
 static std::unique_ptr<xt::Xt> g_xt;
 static std::vector<uint8_t> g_rx;
@@ -91,6 +96,15 @@ static std::vector<uint8_t> waveReq(int n)   // ROM 0..511 and user 1000..1249 b
 	return {0xf0, 0x3e, 0x0e, 0x7f, 0x02, (uint8_t)hh, (uint8_t)ll, (uint8_t)((hh + ll) & 127), 0xf7};
 }
 
+static dsp56k::Memory& dspMem() { return g_xt->getHardware()->getDSP(0).dsp().memory(); }
+
+static std::vector<uint32_t> snapshotY(uint32_t lo, uint32_t hi)
+{
+	std::vector<uint32_t> v(hi - lo);
+	for (uint32_t i = lo; i < hi; ++i) v[i - lo] = dspMem().get(dsp56k::MemArea_Y, i);
+	return v;
+}
+
 static std::string lcd()
 {
 	std::array<char, 80> d{};
@@ -162,6 +176,37 @@ int main(int argc, char** argv)
 		f.flush();
 		if (!f) { fprintf(stderr, "could not write %s\n", argv[2]); return 1; }
 		printf("%d control tables -> %s\n", got, argv[2]);
+		return 0;
+	}
+	// dspdiff <tableA> <tableB> <out.bin>: which Y-memory words change when the sound's wavetable changes A -> B (0-based table numbers)
+	if (!strcmp(argv[1], "dspdiff") && argc == 5)
+	{
+		const uint32_t hi = std::min<uint32_t>(dspMem().size(dsp56k::MemArea_Y), 0x100000);
+		setParam(25, atoi(argv[2])); run(4000);
+		const auto a = snapshotY(0, hi);
+		setParam(25, atoi(argv[3])); run(4000);
+		const auto b = snapshotY(0, hi);
+		for (int side = 0; side < 2; ++side)   // the wave region of part 0 for each table: 64 waves x 256 words
+		{
+			std::ofstream w(std::string(argv[4]) + (side ? ".b" : ".a"), std::ios::binary);
+			const auto& v = side ? b : a;
+			w.write((const char*)&v[0x20000], 0x4000 * sizeof(uint32_t));
+		}
+		std::ofstream f(argv[4], std::ios::binary);
+		uint32_t changed = 0, runStart = 0, runLen = 0, runs = 0;
+		auto flush = [&]() { if (runLen) { printf("run at 0x%06x len %u\n", runStart, runLen); ++runs; } runLen = 0; };
+		for (uint32_t i = 0; i < hi; ++i)
+		{
+			if (a[i] != b[i])
+			{
+				++changed;
+				if (runLen && runStart + runLen == i) ++runLen; else { flush(); runStart = i; runLen = 1; }
+				const uint32_t rec[3] = {i, a[i], b[i]};
+				f.write((const char*)rec, sizeof rec);
+			}
+		}
+		flush();
+		printf("Y size 0x%x scanned 0x%x, %u words changed in %u runs\n", dspMem().size(dsp56k::MemArea_Y), hi, changed, runs);
 		return 0;
 	}
 	if (!strcmp(argv[1], "dumpall") && argc == 3)

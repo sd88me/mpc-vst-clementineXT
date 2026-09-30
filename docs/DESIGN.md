@@ -57,6 +57,26 @@ constants: 506 ROM waves, 250 RAM waves (1000-1249), 128 tables (96-127 user), t
 algorithmic (computed, no control table). The manual documents waves 000-299 and 65 ROM tables; the oracle dump shows what the
 firmware actually holds (see the extraction results).
 
+### Wave data as the firmware holds it (measured with the oracle, 2026-09-30)
+Read from DSP Y memory at `0x20000 + slot*256` after selecting a table (`oracle dspdiff`), checked against the raw waves
+(`oracle waves`, 506 ROM waves 0-505) and control tables (`oracle tables`). Implemented in `src/waves.c`; the local test
+`test/test_waves.c` (with `CLEMENTINE_ORACLE_DIR`) rebuilds table 1 and compares it with the firmware.
+- **Which tables have control tables:** 0-27, 52-63 and the user tables 96-127. Tables 28-51 are the 24 algorithmic ones (no control
+  table) and 64-95 are reserved. Slots hold a wave number or 0xFFFF for empty; user table entries above 1249 (seen: 4830,
+  49374 in table 96) are invalid and count as empty. ROM tables reference waves up to 421.
+- **Level 0** is the raw 128-sample wave (half stored, second half mirrored and negated) **rotated by 3**: `level0[i] = raw[(i-3) mod 128]`.
+  Exact for every key slot.
+- **Mips:** 128, 64, 32, 16, 8, 4, 2, 1 samples, then one zero word (256). Each level is the previous one filtered by [1 2 1]/4
+  (centred at sample 2i-2) and decimated by 2, run at full precision from level 0 and floored per level. Exact for levels 1-4 and
+  all but one word of level 5 on key slots. Simple pair averaging (gearmulator's preview code) is wrong.
+- **Fixed slots 61-63** (identical in every table, stored half then mirrored): triangle `3*min(i,63-i)+2` (peak 95), square +64,
+  saw `64-i` (64 down to 1, then -1 down to -64). Amplitudes are not full scale.
+- **Empty slots** are a linear blend of the neighbouring key waves by slot position, close but **not exact**: about three
+  quarters of level-0 samples match truncating integer division, and the worst deviation is 2 LSB at level 0 and 6 LSB in the
+  deeper mips. The SysEx spec calls it "spectral interpolation"; the true rule is still to be found (open item).
+- The design's "read the firmware's memory for the algorithmic tables" still needs doing: tables 28-51 have no control table, so their
+  waves exist only in DSP memory after selection.
+
 ### Errata to handle in the parser (the SysEx document contradicts itself)
 - Osc semitone: SDATA says 52..76, the CC table says 56..76. Accept the full range, clamp to +-12.
 - Wave start phase: "3-257 degree" in SDATA is a typo for 3..357.
