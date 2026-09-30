@@ -124,3 +124,9 @@ in units of the full-scale volume effect. Findings (A, B, parameter P all 0..1):
 - Type 11 ("min") depends on P only: 2P wrapped into -1..+1. `/` stayed at 0.01-0.03.
 - Not measured, implemented from the manual as guesses: S&H, ramp, lag, filter, differentiator, modifier delay (source 24).
 The type numbering or the manual's names may be off for 11 and 12; the behaviour is reproduced as measured.
+
+## Arpeggiator and trigger modes (not measured)
+Both are implemented from the manual only. Arp tempo (50-300 BPM over 1..127, 0 = 120), the 16 clock note values, the 15
+preset rhythms (placeholders) and the 80% gate are guesses; the user pattern uses the four packed nibbles (bit = step on).
+Envelope triggers apply on legato mono notes: normal restarts from zero, single leaves the envelope running, retrigger
+restarts from the current level. All of this needs a firmware comparison.

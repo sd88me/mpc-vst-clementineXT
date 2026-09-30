@@ -14,8 +14,8 @@ Filter 1 low-pass types (12/24 dB, calibrated) and Filter 2, the modulation matr
 voices, glide, an effects module, and an orange XT-styled skin. The original waves and control tables are read straight from the
 user's own ROM dump (two 128 KB halves or one 256 KB image, placed in the plugin folder).
 
-Not done: the modifier delay and the timed modifiers (S&H, ramp, lag, filter, differentiator are unmeasured guesses), exact shapes of Filter 1's band-pass/high-pass/other types, effect calibration (and the
-firmware's effect numbering), the arpeggiator, trigger modes, the algorithmic wave tables 28-51, an open wave set for use without a
+Not done (guesses only, unmeasured: arpeggiator and trigger modes): the modifier delay and the timed modifiers (S&H, ramp, lag, filter, differentiator are unmeasured guesses), exact shapes of Filter 1's band-pass/high-pass/other types, effect calibration (and the
+firmware's effect numbering), the algorithmic wave tables 28-51, an open wave set for use without a
 ROM, and any test on a device (CPU load is unmeasured).
 
 ## Plan in one paragraph

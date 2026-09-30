@@ -47,6 +47,9 @@ typedef struct {
     float glfov[2];
     uint32_t seed;
     rs_t rs;
+    struct { int note, vel; } arp_keys[20];   /* arpeggiator: keys in the order played */
+    int arp_n, arp_down, arp_step, arp_idx, arp_dirn, arp_sound, arp_hold_clear;
+    double arp_timer;
 } inst_t;
 enum { P_FX_TYPE = 76, P_FX_P1 = 81, P_CHORUS = 82, P_FX_P2 = 83, P_FX_P3 = 86 };
 enum { P_OSC1_OCT = 1, P_OSC1_SEMI = 2, P_OSC1_DET = 3, P_OSC1_KT = 6, P_OSC2_OCT = 12, P_OSC2_SEMI = 13, P_OSC2_DET = 14,
@@ -94,6 +97,7 @@ static void load_bank(inst_t *s, const char *dir) {
 
 static void *create(const char *dir) {
     inst_t *s = calloc(1, sizeof *s);
+    if (s) s->arp_sound = -1;
     patch_init(&s->cur);
     load_bank(s, dir);
     if (s->have_bank) s->cur = s->bank[0];
@@ -220,6 +224,65 @@ static void note_off_now(inst_t *s, int n) {
     for (int i = 0; i < NV; i++) if (s->v[i].on && (s->v[i].key == n || p->d[P_ALLOC] || p->d[P_ASSIGN] == 2)) release_voice(&s->v[i]);
 }
 
+
+/* Arpeggiator. Tempo, clock values and the 15 preset rhythms are not yet measured: the mappings below are guesses (docs/CALIBRATION.md). */
+static const float ARP_BEATS[16] = { 0.0417f, 0.0625f, 0.0833f, 0.125f, 0.1667f, 0.25f, 0.3333f, 0.375f, 0.5f, 0.6667f, 0.75f, 1.0f, 1.333f, 1.5f, 2.0f, 4.0f };
+static const uint16_t ARP_PRESET[16] = { 0xFFFF, 0xFFFF, 0x5555, 0x9249, 0xB6DB, 0x8888, 0xAAAA, 0xEEEE, 0xF0F0, 0x1111, 0xDDDD, 0xABAB, 0x7777, 0x9999, 0xF5F5, 0x6666 };
+
+static int arp_step_on(const patch_t *p, int step) {
+    if (p->d[96] == 16) { int len = p->d[101] + 1; int k = step % len; return (p->d[102 + k / 4] >> (k % 4)) & 1; }
+    return (ARP_PRESET[p->d[96] & 15] >> (step & 15)) & 1;
+}
+
+static void arp_stop_sound(inst_t *s) { if (s->arp_sound >= 0) { note_off_now(s, s->arp_sound); s->arp_sound = -1; } }
+
+static void arp_tick(inst_t *s) {
+    const patch_t *p = &s->cur;
+    if (!p->d[92]) { if (s->arp_sound >= 0) arp_stop_sound(s); if (s->arp_n) s->arp_n = 0; return; }
+    float bpm = p->d[93] == 0 ? 120.0f : 50.0f + (p->d[93] - 1) * 250.0f / 126.0f;
+    double step_s = ARP_BEATS[p->d[94] & 15] * 60.0 / bpm * 40000.0;
+    if (s->arp_n == 0) { arp_stop_sound(s); s->arp_timer = 0; s->arp_step = 0; s->arp_idx = -1; return; }
+    if (s->arp_sound >= 0 && s->arp_timer >= step_s * 0.8) arp_stop_sound(s);
+    if (s->arp_timer < step_s && s->arp_timer > 0) { s->arp_timer += 1; return; }
+    s->arp_timer = 1;
+    arp_stop_sound(s);
+    int n = s->arp_n, ord[20];
+    for (int i = 0; i < n; i++) { ord[i] = s->arp_keys[i].note; }
+    int mode = p->d[98];
+    if (mode == 0 || mode == 1) for (int i = 1; i < n; i++) for (int j = i; j > 0 && ord[j] < ord[j - 1]; j--) { int t = ord[j]; ord[j] = ord[j - 1]; ord[j - 1] = t; }
+    if (mode == 1 || mode == 3) for (int i = 0; i < n / 2; i++) { int t = ord[i]; ord[i] = ord[n - 1 - i]; ord[n - 1 - i] = t; }
+    int range = p->d[95] < 1 ? 1 : p->d[95], total = n * range;
+    int idx = s->arp_idx;
+    switch (p->d[97]) {
+    case 0: idx = idx < 0 ? 0 : (idx + 1) % total; break;
+    case 1: idx = idx < 0 ? total - 1 : (idx + total - 1) % total; break;
+    case 2: if (idx < 0) { idx = 0; s->arp_dirn = 1; } else if (total > 1) { idx += s->arp_dirn ? 1 : -1; if (idx >= total) { idx = total - 2; s->arp_dirn = 0; } else if (idx < 0) { idx = 1; s->arp_dirn = 1; } } break;
+    default: s->seed = s->seed * 1664525u + 1013904223u; idx = (int)((s->seed >> 8) % (unsigned)total); break;
+    }
+    if (idx >= total) idx = total - 1;
+    s->arp_idx = idx;
+    int on = arp_step_on(p, s->arp_step++);
+    if (!on) return;
+    int note = ord[idx % n] + 12 * (idx / n);
+    if (note > 127) note %= 12 + 108;
+    int vel = p->d[99] ? s->arp_keys[n - 1].vel : s->arp_keys[0].vel;   /* root note or last note */
+    note_on(s, note, vel); s->arp_sound = note;
+}
+
+static void arp_key(inst_t *s, int note, int vel, int down) {
+    if (down) {
+        if (s->arp_down == 0 && (s->cur.d[92] != 2 || s->arp_hold_clear)) { s->arp_n = 0; s->arp_hold_clear = 0; if (s->cur.d[100]) { s->arp_step = 0; s->arp_timer = 0; } }
+        s->arp_down++;
+        for (int i = 0; i < s->arp_n; i++) if (s->arp_keys[i].note == note) return;
+        if (s->arp_n == 20) { memmove(&s->arp_keys[0], &s->arp_keys[1], 19 * sizeof s->arp_keys[0]); s->arp_n = 19; }
+        s->arp_keys[s->arp_n].note = note; s->arp_keys[s->arp_n].vel = vel; s->arp_n++;
+    } else {
+        if (s->arp_down > 0) s->arp_down--;
+        if (s->cur.d[92] == 2) { if (s->arp_down == 0) s->arp_hold_clear = 1; return; }
+        for (int i = 0; i < s->arp_n; i++) if (s->arp_keys[i].note == note) { memmove(&s->arp_keys[i], &s->arp_keys[i + 1], (s->arp_n - i - 1) * sizeof s->arp_keys[0]); s->arp_n--; break; }
+    }
+}
+
 static void midi(void *p, const uint8_t *m, int len) {
     inst_t *s = p;
     if (len < 2) return;
@@ -240,6 +303,7 @@ static void midi(void *p, const uint8_t *m, int len) {
     }
     if (st == 0xE0) { s->bend = ((m[2] << 7 | m[1]) - 8192) / 8192.0f; return; }
     if (st == 0xD0) { s->aftertouch = m[1] / 127.0f; return; }
+    if (s->cur.d[92] && (st == 0x90 || st == 0x80)) { arp_key(s, n, m[2], st == 0x90 && m[2]); return; }
     if (st == 0x90 && m[2]) note_on(s, n, m[2]);
     else if (st == 0x80 || st == 0x90) { if (s->pedal) s->deferred[n] = 1; else note_off_now(s, n); }
 }
@@ -453,6 +517,7 @@ static float mod_op(int op, float a, float b, float par, float st[2]) {
 }
 
 static void core(inst_t *s, float *lr) {
+    arp_tick(s);
     const patch_t *p = &s->cur;
     float suml = 0, sumr = 0;
     for (int l = 0; l < 2; l++) {   /* LFOs shared by all voices (Sync on) */
