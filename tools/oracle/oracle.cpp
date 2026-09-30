@@ -5,6 +5,7 @@
 //   oracle waves <out.bin> LO HI                  dump waves by number (records: u16 index + 64 signed bytes)
 //   oracle tables <out.bin>                       dump wave control tables (records: u16 table + 64 x u16 wave numbers)
 //   oracle dspdiff <tabA> <tabB> <out.bin>        DSP Y-memory words that change when the wavetable changes (records: addr, before, after)
+//   oracle render <sound.bin|-> <out.f32> <note> <vel> <hold_blocks> <tail_blocks> [--set IDX VAL]...   float32 left channel, 40 kHz
 //   oracle sweep IDX LO HI                        set IDX to each value, print the value read back and the LCD text
 // Output files stay on the developer's machine (see CLAUDE.md ground rules).
 #include <algorithm>
@@ -103,6 +104,29 @@ static std::vector<uint32_t> snapshotY(uint32_t lo, uint32_t hi)
 	std::vector<uint32_t> v(hi - lo);
 	for (uint32_t i = lo; i < hi; ++i) v[i - lo] = dspMem().get(dsp56k::MemArea_Y, i);
 	return v;
+}
+
+static void sendMidi(uint8_t a, uint8_t b, uint8_t c)
+{
+	synthLib::SMidiEvent e(synthLib::MidiEventSource::Host, a, b, c);
+	g_xt->sendMidiEvent(e);
+}
+
+// switch to Sound mode and load a 256-byte SDATA file into the edit buffer (checksum = SDATA sum, the firmware's form)
+static bool loadSound(const char* path)
+{
+	std::ifstream f(path, std::ios::binary);
+	std::vector<uint8_t> d((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+	if (d.size() != 256) return false;
+	sendSysex({0xf0, 0x3e, 0x0e, 0x7f, 0x17, 0x00, 0xf7});
+	run(3000);
+	std::vector<uint8_t> m = {0xf0, 0x3e, 0x0e, 0x7f, 0x10, 0x20, 0x00};
+	int sum = 0;
+	for (auto b : d) { m.push_back(b); sum += b; }
+	m.push_back((uint8_t)(sum & 127)); m.push_back(0xf7);
+	sendSysex(std::move(m));
+	run(3000);
+	return true;
 }
 
 static std::string lcd()
@@ -207,6 +231,37 @@ int main(int argc, char** argv)
 		}
 		flush();
 		printf("Y size 0x%x scanned 0x%x, %u words changed in %u runs\n", dspMem().size(dsp56k::MemArea_Y), hi, changed, runs);
+		return 0;
+	}
+	// render <sound.bin|-> <out.f32> <note> <vel> <hold_blocks> <tail_blocks> [--set IDX VAL]...
+	// raw little-endian float32, left channel, 40 kHz, 64-frame blocks; the sound file is 256 SDATA bytes
+	if (!strcmp(argv[1], "render") && argc >= 8)
+	{
+		if (strcmp(argv[2], "-") && !loadSound(argv[2])) { fprintf(stderr, "cannot load sound %s\n", argv[2]); return 1; }
+		for (int i = 8; i + 1 < argc; i += 3)
+			if (!strcmp(argv[i], "--set") && i + 2 < argc) setParam(atoi(argv[i + 1]), atoi(argv[i + 2]));
+		const int note = atoi(argv[4]), vel = atoi(argv[5]), hold = atoi(argv[6]), tail = atoi(argv[7]);
+		std::ofstream f(argv[3], std::ios::binary);
+		auto capture = [&](int blocks) {
+			for (int b = 0; b < blocks; ++b)
+			{
+				g_xt->process(64);
+				auto& outs = g_xt->getAudioOutputs();
+				for (int i = 0; i < 64; ++i)
+				{
+					const int32_t w = (int32_t)((uint32_t)outs[0][i] << 8) >> 8;   // 24-bit signed in a 32-bit word
+					const float v = (float)w / 8388608.0f;
+					f.write((const char*)&v, 4);
+				}
+			}
+		};
+		sendMidi(0x90, (uint8_t)note, (uint8_t)vel);
+		capture(hold);
+		sendMidi(0x80, (uint8_t)note, 0);
+		capture(tail);
+		f.flush();
+		if (!f) { fprintf(stderr, "could not write %s\n", argv[3]); return 1; }
+		printf("rendered %d blocks -> %s\n", hold + tail, argv[3]);
 		return 0;
 	}
 	if (!strcmp(argv[1], "dumpall") && argc == 3)

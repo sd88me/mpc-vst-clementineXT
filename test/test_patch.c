@@ -41,7 +41,7 @@ int main(void) {
     CHECK(patch_apply_cc(&q, 33, 8) == 1 && q.d[1] == 112 && patch_apply_cc(&q, 33, 4) == 1 && q.d[1] == 64, "CC 33 octave: 4 -> 64 (0), 8 -> 112 (+4)");
     CHECK(patch_apply_cc(&q, 34, 12) == 2 && q.d[2] == 64, "CC 34 semitone: 12 -> 64 (0)");
     CHECK(patch_apply_cc(&q, 103, 0) == 95 && q.d[95] == 1, "CC 103 arp range 0 -> 1");
-    CHECK(patch_apply_cc(&q, 37, 127) == 6 && q.d[6] == 76 && patch_apply_cc(&q, 50, 99) == 62 && q.d[62] == 99, "CC 37 keytrack scaled, CC 50 cutoff direct");
+    CHECK(patch_apply_cc(&q, 37, 127) == 6 && q.d[6] == 72 && patch_apply_cc(&q, 50, 99) == 62 && q.d[62] == 99, "CC 37 keytrack scaled, CC 50 cutoff direct");
     CHECK(patch_apply_cc(&q, 1, 5) == -1 && patch_apply_cc(&q, 99, 5) == -1, "mod wheel and unknown CCs are not sound parameters");
     uint8_t sndp[10] = { 0xF0, 0x3E, 0x0E, 0, 0x20, 0, 1, 5, 99, 0xF7 };
     r = syx_parse(sndp, 10, out); CHECK(r.kind == SYX_PARAM && r.index == 133 && r.value == 99, "SNDP index = HH*128+PP");

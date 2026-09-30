@@ -173,7 +173,7 @@ def params_json():
 
 # MIDI controller table (Controller Number Assignment, release 2.28): cc -> (SDATA index, conversion).
 # kinds: 0 direct, 1 octave (cc 0..8 -> 16 + 12*cc), 2 semitone (cc 0..24 -> 52 + cc), 3 arp range (cc + 1),
-# 4 oscillator keytrack (cc 0..127 -> 0..76). Bank select, sustain, mod wheel etc. are handled by the engine, not here.
+# 4 oscillator keytrack (cc 0..127 -> 0..72). Bank select, sustain, mod wheel etc. are handled by the engine, not here.
 CC = [(5, 90, 0), (10, 84, 0), (12, 82, 0), (13, 7, 0), (14, 113, 0), (15, 114, 0), (16, 115, 0), (17, 116, 0),
       (18, 119, 0), (19, 120, 0), (20, 121, 0), (21, 122, 0), (22, 88, 0), (23, 89, 0), (24, 159, 0), (25, 160, 0),
       (26, 166, 0), (27, 168, 0), (28, 167, 0), (29, 117, 0), (30, 161, 0), (31, 123, 0), (33, 1, 1), (34, 2, 2),

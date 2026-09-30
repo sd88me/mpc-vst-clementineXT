@@ -44,7 +44,7 @@ int patch_apply_cc(patch_t *p, int cc, int value) {
         case 1: v = 16 + 12 * (v > 8 ? 8 : v); break;
         case 2: v = 52 + (v > 24 ? 24 : v); break;
         case 3: v += 1; break;
-        case 4: v = (v * 76 + 63) / 127; break;
+        case 4: v = (v * 72 + 63) / 127; break;   /* -100%..+200% is 0..72; 48 is +100% (measured) */
         }
         const patch_field_t *f = &patch_fields[m->index];
         p->d[m->index] = (uint8_t)(v < f->lo ? f->lo : v > f->hi ? f->hi : v);

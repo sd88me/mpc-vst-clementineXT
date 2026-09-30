@@ -72,3 +72,8 @@ Where the SysEx spec, the manual and the firmware disagree, the firmware wins (s
 ## Play access and effects
 - Four play parameters per sound pick any of the 83 listed parameters (SysEx list 3.11); Controls W-Z appear as the
   last four entries. Effects: see DESIGN.md section 2 (10 documented types; factory sounds also use indices 32-34).
+
+## Measured on the firmware (oracle `render`)
+- Init sound, notes 48/60/72/84: fundamental within 0.1 cent of standard MIDI pitch (note 69 = 440 Hz), so oscillator keytrack
+  SDATA 48 is exactly +100%. Oscillator keytrack is therefore `-100% + 300% * v / 72` (v 0..72; the spec's range 0..76 runs a
+  little past +200%). Filter, wave and amp keytrack (0..127) are `(v - 64) * 3.125%` (96 = +100%).
