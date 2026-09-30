@@ -5,14 +5,16 @@ void patch_init(patch_t *p) {
     memset(p, 0, sizeof *p);
     p->d[0] = 1;
     for (int i = 1; i < PATCH_SIZE; i++) if (patch_fields[i].key) p->d[i] = (uint8_t)patch_fields[i].def;
+    for (int i = 0; patch_init_reserved[i][0]; i++) p->d[patch_init_reserved[i][0]] = patch_init_reserved[i][1];
     patch_set_name(p, "Init");
 }
 
+/* Reserved bytes are left alone: the firmware writes non-zero values there (9, 22, 33, 44, 69, 78 in factory sounds), and a
+ * loaded sound must save back byte for byte. patch_init leaves them 0. */
 void patch_clamp(patch_t *p) {
-    p->d[0] = 1;   /* format 0 is unpublished; we only read format 1 layout */
     for (int i = 1; i < PATCH_SIZE; i++) {
         const patch_field_t *f = &patch_fields[i];
-        if (!f->key) { p->d[i] = 0; continue; }
+        if (!f->key) continue;
         if (p->d[i] < f->lo) p->d[i] = (uint8_t)f->lo;
         else if (p->d[i] > f->hi) p->d[i] = (uint8_t)f->hi;
     }

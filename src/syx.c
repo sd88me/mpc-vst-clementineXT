@@ -2,8 +2,10 @@
 #include <string.h>
 #include "syx.h"
 
-static int xsum(int bb, int nn, const uint8_t *d, int n) {
-    int s = bb + nn;
+/* The spec says (BB+NN+SDATA)&7F, but the firmware (checked against Xenia's dumps) sums the SDATA bytes only, for single and
+ * all-sounds dumps alike. Write the firmware's form; accept either on read. */
+static int xsum(const uint8_t *d, int n) {
+    int s = 0;
     for (int i = 0; i < n; i++) s += d[i];
     return s & 0x7F;
 }
@@ -15,9 +17,9 @@ syx_info_t syx_parse(const uint8_t *m, int len, patch_t *patches) {
     if (m[4] != SYX_SNDD || len < 9) return r;
     int bb = m[5], nn = m[6], n = (bb == 0x10) ? 256 : 1, body = n * PATCH_SIZE;
     if (len != 7 + body + 2) return r;
-    /* Some senders write a zero checksum; accept a wrong one only when it is exactly the omitted value. */
-    int sum = xsum(bb, nn, m + 7, body);
-    if (m[7 + body] != sum && m[7 + body] != 0) return r;
+    /* Accept the firmware's checksum, the spec's (with BB+NN), or zero (some senders omit it). */
+    int sum = xsum(m + 7, body), got = m[7 + body];
+    if (got != sum && got != ((sum + bb + nn) & 0x7F) && got != 0) return r;
     for (int i = 0; i < n; i++) { memcpy(patches[i].d, m + 7 + i * PATCH_SIZE, PATCH_SIZE); patch_clamp(&patches[i]); }
     r.bank = bb; r.num = nn; r.kind = n == 256 ? SYX_ALL : SYX_SINGLE;
     return r;
@@ -26,7 +28,7 @@ syx_info_t syx_parse(const uint8_t *m, int len, patch_t *patches) {
 int syx_write_single(const patch_t *p, int dev, int bb, int nn, uint8_t out[265]) {
     out[0] = 0xF0; out[1] = 0x3E; out[2] = 0x0E; out[3] = (uint8_t)dev; out[4] = SYX_SNDD; out[5] = (uint8_t)bb; out[6] = (uint8_t)nn;
     for (int i = 0; i < PATCH_SIZE; i++) out[7 + i] = p->d[i] & 0x7F;
-    out[263] = (uint8_t)xsum(bb, nn, out + 7, PATCH_SIZE);
+    out[263] = (uint8_t)xsum(out + 7, PATCH_SIZE);
     out[264] = 0xF7;
     return 265;
 }

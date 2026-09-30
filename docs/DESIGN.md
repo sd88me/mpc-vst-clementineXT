@@ -63,6 +63,13 @@ algorithmic (computed, no control table).
 - Mod destinations: range says 0..33, but the list has 36 entries (34 FM Amount, 35 F1 Extra). Use 0..35.
 - Arp range: SDATA 1..10, CC 103 0..9 (CC value + 1).
 - MULP: the ID table says 20h, the format says 21h. GLBR: 04h in the format, 14h in the ID list.
+- Found by comparing the spec with the firmware's own 256 sounds (oracle `dumpall`, 2026-09-30; the bank stays local):
+  the dump checksum is the sum of the SDATA bytes only, not BB+NN+SDATA as written (`syx.c` writes that form and accepts
+  either); Filter 1 type goes up to 12, not 9 (types 10-12 are undocumented); Chorus (82) takes 0..2; Arp Tempo (93)
+  holds 0; and the "reserved" bytes 9, 22, 33, 44, 69, 78 are non-zero in factory sounds (64 in the init sound), so
+  they are kept as loaded. Effect types seen in factory sounds: 0, 1, 2, 3, 6, 8, 9, 32, 33, 34, so the XT's list goes
+  well past the manual's 10 and the last three are still unnamed. Init defaults in `tools/gen_patch.py` come from the
+  firmware's init sound.
 - Effect type: 0..35 on the XT, "subject to change", no list in the SysEx document. The user's manual (covers II, XT
   and XTk) names 7 types on the II (Chorus, Flanger 1, Flanger 2, AutoWahLP, AutoWahBP, Overdrive, Amp. Mod) and 3 more on
   the XT (Delay, Pan Delay, Mod Delay), so 10 in total; the range 0..35 leaves room the manual doesn't document. The
