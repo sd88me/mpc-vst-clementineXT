@@ -141,3 +141,7 @@ mix p3 linear dry/wet (0 = dry). Pan Delay (33): same time and mix; the first re
 the feedback closes after two hops. Mod Delay (34): one repeat at about the same time law, dry and wet both ~0.5; speed and
 depth modulate it (not calibrated; our sine LFO ranges are guesses). Chorus, flangers, wahs, overdrive and amp mod remain
 uncalibrated apart from knowing that mix 0 is dry and that overdrive gain 0 is silent.
+
+Overdrive (6): output = 6.5*g/(50+1.57*p1) * clip((1+p1)*x, +-0.19), x in firmware output units, g = p2/64 up to 64 and
+1+0.874*(p2-64)/63 above it. The third parameter ("amp type") changed neither level nor harmonic content in any test, so it is
+ignored. Checked against the firmware for four drive/volume settings: rms within 3% (hard knee; the real one is a little softer).

@@ -35,15 +35,6 @@ void chorus_run(fx_t *f, int mode, float *l, float *r) {
     *l = out[0]; *r = out[1];
 }
 
-static float speaker(fx_t *f, int c, float x, int amp) {
-    /* Direct, Combo, Medium, Stack: progressively wider band limiting */
-    static const float lo[4] = { 0, 180, 100, 60 }, hi[4] = { 0, 4500, 6500, 9000 };
-    if (!amp) return x;
-    float a = expf(-TWO_PI * hi[amp] / FS), b = expf(-TWO_PI * lo[amp] / FS);
-    f->od_lp[c] = f->od_lp[c] * a + x * (1 - a);
-    f->od_hp[c] = f->od_hp[c] * b + f->od_lp[c] * (1 - b);
-    return f->od_lp[c] - f->od_hp[c];
-}
 
 void fx_run(fx_t *f, int type, int p1, int p2, int p3, float tempo_bpm, float *l, float *r) {
     float in[2] = { *l, *r }, out[2] = { *l, *r };
@@ -82,10 +73,11 @@ void fx_run(fx_t *f, int type, int p1, int p2, int p3, float tempo_bpm, float *l
         break;
     }
     case FX_OVERDRIVE: {
-        /* p1 drive, p2 output gain, p3 speaker type (Direct, Combo, Medium, Stack in quarters of the range) */
-        float pre = 1.0f + p1 / 127.0f * 24.0f, post = p2 / 127.0f * 1.5f;
-        int amp = p3 * 4 / 128;
-        for (int c = 0; c < 2; c++) out[c] = speaker(f, c, tanhf(pre * in[c]) * post, amp);
+        /* Measured (docs/CALIBRATION.md): hard clip of (1+drive)*x at +-0.1915 (firmware output units), scaled by 6.5*gain/(50+1.57*drive).
+         * The amp type (p3) changed neither level nor harmonic content in any test, so it is ignored. */
+        float d = 1.0f + p1, g = p2 <= 64 ? p2 / 64.0f : 1.0f + (p2 - 64) / 63.0f * 0.874f;
+        float k = 6.5f * g / (50.0f + 1.57f * p1);
+        for (int c = 0; c < 2; c++) { float y = d * in[c]; y = y > 0.1915f ? 0.1915f : y < -0.1915f ? -0.1915f : y; out[c] = k * y; }
         break;
     }
     case FX_AMPMOD: {
