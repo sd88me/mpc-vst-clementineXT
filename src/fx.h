@@ -16,6 +16,7 @@ typedef struct {
     float od_lp[2], od_hp[2];    /* overdrive speaker filter state */
     float cdl[2][2048];          /* the chorus' own short delay lines */
     int cwr;
+    float wg[2]; int wtick;      /* wah: cached filter coefficient, refreshed every 8 samples */
 } fx_t;
 
 enum { FX_CHORUS, FX_FLANGER1, FX_FLANGER2, FX_WAH_LP, FX_WAH_BP, FX_OVERDRIVE, FX_AMPMOD, FX_DELAY, FX_PANDELAY, FX_MODDELAY, FX_TYPES };

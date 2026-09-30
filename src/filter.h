@@ -7,7 +7,7 @@
 
 #define F1_TYPES 13
 
-typedef struct { float ic1, ic2; } svf_t;
+typedef struct { float ic1, ic2; float g, k, a1, a2, a3; } svf_t;   /* state, plus the coefficients last made for (g, k) */
 
 typedef struct {
     svf_t a, b, c;            /* up to three sections in series/parallel, depending on the type */

@@ -60,13 +60,17 @@ void fx_run(fx_t *f, int type, int p1, int p2, int p3, float tempo_bpm, float *l
         break;
     }
     case FX_WAH_LP: case FX_WAH_BP: {
-        /* p1 sense, p2 minimum cutoff, p3 resonance: a filter whose cutoff follows the signal level */
+        /* p1 sense, p2 cutoff (62.5 Hz per step), p3 resonance: a filter whose cutoff follows the signal level */
+        int upd = (f->wtick++ & 7) == 0;
         for (int c = 0; c < 2; c++) {
             float a = fabsf(in[c]);
             f->env[c] += (a - f->env[c]) * (a > f->env[c] ? 0.01f : 0.0005f);
-            float hz = 62.5f * p2 + p1 / 127.0f * 4000.0f * fminf(f->env[c] * 8.0f, 1.0f);   /* measured (steady noise): cutoff 62.5 Hz per step of p2, 12 dB/oct; the sense term is a guess */
-            if (hz > 16000.0f) hz = 16000.0f;
-            float g = tanf(3.14159265f * hz / FS), k = filt_damping((float)p3);
+            if (upd) {
+                float hz = 62.5f * p2 + p1 / 127.0f * 4000.0f * fminf(f->env[c] * 8.0f, 1.0f);   /* measured (steady noise): cutoff 62.5 Hz per step of p2, 12 dB/oct; the sense term is a guess */
+                if (hz > 16000.0f) hz = 16000.0f;
+                f->wg[c] = tanf(3.14159265f * hz / FS);
+            }
+            float g = f->wg[c], k = filt_damping((float)p3);
             float a1 = 1.0f / (1.0f + g * (g + k)), a2 = g * a1, a3 = g * a2;
             float v3 = in[c] - f->svf_ic2[c], v1 = a1 * f->svf_ic1[c] + a2 * v3, v2 = f->svf_ic2[c] + a2 * f->svf_ic1[c] + a3 * v3;
             f->svf_ic1[c] = 2 * v1 - f->svf_ic1[c]; f->svf_ic2[c] = 2 * v2 - f->svf_ic2[c];

@@ -340,7 +340,7 @@ static void set_param(void *p, const char *k, const char *val) {
     if (i < 0) return;
     const patch_field_t *f = &patch_fields[i];
     s->cur.d[i] = (uint8_t)(x < f->lo ? f->lo : x > f->hi ? f->hi : x);
-    if (i == P_TABLE) refresh(s);
+    refresh(s);   /* table choice and the matrix amounts (the gains are cached) */
 }
 static int get_param(void *p, const char *k, char *buf, int n) {
     inst_t *s = p;
@@ -367,17 +367,27 @@ static float osc_hz(const patch_t *p, float note, int oct_i, int semi_i, int det
 #ifndef MIP_LIMIT_HZ
 #define MIP_LIMIT_HZ 30000.0f   /* tuned against firmware saw renders: within 0.5 dB at notes 60-84 */
 #endif
-static float mip_read(const int8_t *mip, float ph, int lvl) {
+static inline float mip_read(const int8_t *mip, float ph, int lvl) {
     static const int off[8] = { 0, 128, 192, 224, 240, 248, 252, 254 };
-    int n = 128 >> lvl;
-    float x = ph * n / 128.0f; int i = (int)x; float fr = x - i;
+    static const float scale[8] = { 1.0f, 0.5f, 0.25f, 0.125f, 0.0625f, 0.03125f, 0.015625f, 0.0078125f };   /* n / 128 for n = 128 >> lvl */
+    int mask = (128 >> lvl) - 1;
+    float x = ph * scale[lvl]; int i = (int)x; float fr = x - i;
     const int8_t *w = mip + off[lvl];
-    return ((1 - fr) * w[i % n] + fr * w[(i + 1) % n]) / 128.0f;
+    float a = w[i & mask], b = w[(i + 1) & mask];
+    return (a + fr * (b - a)) * (1.0f / 128.0f);
 }
 
 /* One oscillator sample. The mip level follows the pitch continuously (harmonics must stay under MIP_LIMIT_HZ) and the two
  * neighbouring levels are crossfaded: a hard switch was 2-3 dB off the firmware at high pitch (docs/CALIBRATION.md). */
-static float mip_lf(float hz) { return log2f(64.0f * hz / MIP_LIMIT_HZ); }
+/* log2 from the float's exponent and a polynomial for the mantissa (error < 2e-5): log2f is a libm call, slow per sample on the ARM devices. */
+static inline float fast_log2(float x) {
+    union { float f; uint32_t u; } v = { x };
+    float e = (float)((int)(v.u >> 23) - 127);
+    v.u = (v.u & 0x007FFFFF) | 0x3F800000;
+    float m = v.f;
+    return e + (-2.79415209f + (5.06975074f + (-3.52021112f + (1.61017228f + (-0.409473816f + 0.0439283931f * m) * m) * m) * m) * m);   /* degree-5 fit, error 1.5e-5 */
+}
+static float mip_lf(float hz) { return hz > 1e-6f ? fast_log2(64.0f * hz / MIP_LIMIT_HZ) : -20.0f; }
 static float osc_read_lf(const int8_t *mip, float ph, float lf) {
     if (lf <= 0) return mip_read(mip, ph, 0);
     if (lf >= 7) return mip_read(mip, ph, 7);
@@ -401,7 +411,7 @@ static float decay_tau(int v) {        /* time constant of decay and release (id
     static const float t[17] = { 0.010f, 0.020f, 0.043f, 0.09f, 0.20f, 0.40f, 0.82f, 1.64f, 3.29f, 6.6f, 7.9f, 9.8f, 12.0f, 16.4f, 24.1f, 90.0f, 500.0f };
     return interp_log(t, v);
 }
-static float att_tab[128], dec_tab[128], tau_tab[128], xseg_coef[128], xseg_tau_tab[128], glide_tab[128];
+static float att_tab[128], dec_tab[128], tau_tab[128], xseg_coef[128], xseg_coef_n[128], xseg_tau_tab[128], glide_tab[128];
 static int tabs_ready;
 static float xseg_tau(int t);
 static void build_env_tabs(void) {
@@ -412,6 +422,7 @@ static void build_env_tabs(void) {
         glide_tab[v] = 1.0f - expf(-1.0f / (CORE_HZ * 2.0f * tau_tab[v]));
         xseg_tau_tab[v] = xseg_tau(v);
         xseg_coef[v] = 1.0f - expf(-1.0f / (CORE_HZ * xseg_tau_tab[v]));
+        xseg_coef_n[v] = 1.0f - expf(-8.0f / (CORE_HZ * xseg_tau_tab[v]));   /* one control interval (CTL_N = 8) */
     }
     tabs_ready = 1;
 }
@@ -484,8 +495,8 @@ static void xenv_step(xenv_t *e, const uint8_t *times, const uint8_t *levels, in
     float target = bipolar ? (levels[e->seg * stride] - 64) / 64.0f : levels[e->seg * stride] / 127.0f;
     if (!tabs_ready) build_env_tabs();
     int tv = times[e->seg * stride] & 127; float tau = xseg_tau_tab[tv];
-    e->level += (target - e->level) * xseg_coef[tv];
-    e->timer += 1.0f / CORE_HZ;
+    e->level += (target - e->level) * xseg_coef_n[tv];   /* stepped once per control interval (8 samples) */
+    e->timer += 8.0f / CORE_HZ;
     if (e->timer < 3.0f * tau) return;
     e->timer = 0;
     if (e->phase == 0) {
@@ -558,6 +569,11 @@ static inline int iround(float x) { return (int)(x >= 0 ? x + 0.5f : x - 0.5f); 
  * controls, gain and pan. Runs every CTL_N samples (5 kHz); the per-sample path only reads the results. */
 static void voice_control(inst_t *s, voice_t *v) {
     const patch_t *p = &s->cur;
+    /* the wave and free envelopes step once per control interval */
+    if (v->wenv.phase == 4) xenv_release(&v->wenv, p->d[144], 7);
+    xenv_step(&v->wenv, p->d + 125, p->d + 126, 2, p->d[144], p->d[142], p->d[143], p->d[147], p->d[145], p->d[146], 0);
+    if (v->fren.phase == 4) xenv_release(&v->fren, 2, 3);
+    xenv_step(&v->fren, p->d + 149, p->d + 150, 2, 2, 0, 0, 3, 0, 0, 1);
     /* modulation sources for this voice (docs/CALIBRATION.md: keytrack/keyfollow are (note-64)/128, amounts use mod_amount_gain) */
     float note = ((p->d[P_GLIDE_ON] && (p->d[P_GLIDE_TYPE] & 1)) ? roundf(v->pitch) : v->pitch) + v->det;   /* gliss types step by semitone */
     float mw = s->cc[1] / 127.0f, src[32] = { 0 }, dest[36] = { 0 };
@@ -648,10 +664,6 @@ static void core(inst_t *s, float *lr) {
         v->ctl--;
         env_step(&v->aenv, v->aa, v->ad, v->as, v->ar);
         env_step(&v->fenv, v->fa, v->fd, v->fs, v->fr);
-        if (v->wenv.phase == 4) xenv_release(&v->wenv, p->d[144], 7);
-        xenv_step(&v->wenv, p->d + 125, p->d + 126, 2, p->d[144], p->d[142], p->d[143], p->d[147], p->d[145], p->d[146], 0);
-        if (v->fren.phase == 4) xenv_release(&v->fren, 2, 3);
-        xenv_step(&v->fren, p->d + 149, p->d + 150, 2, 2, 0, 0, 3, 0, 0, 1);
         glide_step(v, p);
         float w2 = osc_read_lf(s->tab->mip[v->slot2], v->ph2, v->lf2);
         /* Oscillator FM (measured): oscillator 2 scales oscillator 1's frequency by (1 + k*w2) with k = 0.085*(amount/16)^2.8 (sidebands within 3%; the carrier level depends on start phases and is not matched);

@@ -16,7 +16,7 @@ user's own ROM dump (two 128 KB halves or one 256 KB image, placed in the plugin
 
 Not done (guesses only, unmeasured: arpeggiator and trigger modes): the modifier delay and the timed modifiers (S&H, ramp, lag, filter, differentiator are unmeasured guesses), exact shapes of Filter 1's band-pass/high-pass/other types, effect calibration (and the
 firmware's effect numbering), the algorithmic wave tables 28-51, a larger open wave set for use without a
-ROM, and any test on a device (CPU load is unmeasured).
+ROM, and further device tests (the CPU bench on a Force is WARN: 14.7 % p99 at 16 voices, 22 % in the Q-Link sweep; see docs/PERFORMANCE.md).
 
 ## Plan in one paragraph
 A new C engine (not a ROM emulator; those need a 64-bit CPU) whose patch format is the XT's 256-byte sound dump,

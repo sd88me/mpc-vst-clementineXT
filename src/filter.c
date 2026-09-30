@@ -128,7 +128,8 @@ void filt_res_coefs(float cutoff, float reso, float *g, float *k, float *g24) {
 }
 
 static inline void svf_tick(svf_t *s, float x, float g, float k, float *lp, float *bp, float *hp) {
-    float a1 = 1.0f / (1.0f + g * (g + k)), a2 = g * a1, a3 = g * a2;
+    if (g != s->g || k != s->k) { s->g = g; s->k = k; s->a1 = 1.0f / (1.0f + g * (g + k)); s->a2 = g * s->a1; s->a3 = g * s->a2; }   /* the division only when the coefficients move */
+    float a1 = s->a1, a2 = s->a2, a3 = s->a3;
     float v3 = x - s->ic2, v1 = a1 * s->ic1 + a2 * v3, v2 = s->ic2 + a2 * s->ic1 + a3 * v3;
     s->ic1 = 2 * v1 - s->ic1; s->ic2 = 2 * v2 - s->ic2;
     *lp = v2; *bp = v1; *hp = x - k * v1 - v2;
@@ -138,17 +139,23 @@ static inline void svf_tick(svf_t *s, float x, float g, float k, float *lp, floa
  * them moves (the lookups and tan/pow calls are far too expensive to do at 40 kHz on the 32-bit ARM devices). */
 static void filt_prep(filt_t *f, int type, float cutoff, float reso, int special) {
     f->kt = type; f->kc = cutoff; f->kr = reso; f->ks = special; f->kvalid = 1;
-    f->cg = filt_pole_g(cutoff); f->ck = filt_damping(reso);
-    filt_res_coefs(cutoff, reso, &f->cgr, &f->ckr, &f->cg24);
-    switch (type) {
+    if (!res_ready) build_res();
+    switch (type) {   /* only the coefficients this type uses: each one is a table lookup or a tan/pow call */
+    case 0: f->cg = filt_pole_g(cutoff); f->ckr = tab2(k_res, cutoff, reso); f->cg24 = tab2(g_res24, cutoff, reso); break;
+    case 1: case 3: case 4: case 11: f->cgr = tab2(g_res, cutoff, reso); f->ckr = tab2(k_res, cutoff, reso); break;
     case 2:
+        f->cg = filt_pole_g(cutoff); f->cgr = tab2(g_res, cutoff, reso); f->ckr = tab2(k_res, cutoff, reso);
         f->cgh = tanf(0.745f * atanf(f->cg)); f->cgq = tanf(0.745f * atanf(f->cgr)); f->cgl = fminf(f->cg * 4.7f, 5.0f);
         { float cdb = cutoff <= 72 ? 4.5f : cutoff <= 96 ? 4.5f + (cutoff - 72) * 0.096f : 6.8f + (cutoff - 96) * 0.23f;   /* level vs the LP passband, measured */
           f->cgain = powf(10.0f, cdb / 20.0f); }
         break;
-    case 7: { float g24; filt_res_coefs(cutoff + (special - 64), reso, &f->cgr2, &f->ckr2, &g24); break; }
+    case 7:
+        f->cgr = tab2(g_res, cutoff, reso); f->ckr = tab2(k_res, cutoff, reso);
+        f->cgr2 = tab2(g_res, cutoff + (special - 64), reso); f->ckr2 = tab2(k_res, cutoff + (special - 64), reso);
+        break;
+    case 10: f->cg = filt_pole_g(cutoff); f->cgr = tab2(g_res, cutoff, reso); f->ckr = tab2(k_res, cutoff, reso); break;
     case 12: f->cgx = filt_pole_g(cutoff + special * 0.25f); break;
-    default: break;
+    default: f->cg = filt_pole_g(cutoff); f->ck = filt_damping(reso); break;   /* 5, 6, 8, 9 */
     }
 }
 
@@ -184,7 +191,9 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
         return lp;
     case 6:   /* 12 dB LP then waveshaper; the shaping wave is not modelled yet (soft clip stands in) */
         svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
-        return tanhf(6.0f * lp) * 0.17f;
+        { float y = 6.0f * lp, y2 = y * y;   /* rational tanh (error < 0.3%), tanhf costs 110 ns on the ARM devices */
+          float t = y > 4.97f ? 1.0f : y < -4.97f ? -1.0f : y * (135135.0f + y2 * (17325.0f + y2 * (378.0f + y2))) / (135135.0f + y2 * (62370.0f + y2 * (3150.0f + y2 * 28.0f)));
+          return t * 0.17f; }
     case 7: /* dual: half the 12 dB LP plus the raw band-pass of a second section moved by (special - 64) steps */
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
         svf_tick(&f->b, x, f->cgr2, f->ckr2, &lp2, &bp2, &hp2);
