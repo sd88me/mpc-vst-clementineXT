@@ -57,3 +57,14 @@ Measured with `tools/oracle ext` (white noise through the external input, one fi
 - **Mod matrix, first look:** the mod wheel (CC 1) had no effect through the oracle's MIDI input as tried; velocity as a source
   acted like a constant; volume modulation by a constant source is strongly nonlinear in the amount (nothing below about +32, then
   x1.97 at +63 from a base volume of 64). LFO 1 rate 64 runs at 1.05 Hz. These need a proper sweep before the matrix is built.
+
+## 2026-10-01: filter tables
+- **Resonant section (12 dB LP, and the resonant half of the 24 dB LP):** free (pole frequency, Q) fits of the firmware at 8 cutoffs x 5
+  resonances are 0.15-0.3 dB rms, and both depend on both controls: Q at a given resonance is higher at high cutoffs (resonance 104:
+  Q 3.0 at cutoff 40, 6.0 at 72, 11.3 at 112) and the pole is on the nominal law at high resonance but up to 1.5x above it at resonance 0
+  and cutoff 112. `src/filter.c` interpolates those grids (`FPR`, `QTAB`). Result against the sweep: 12 dB LP 0.15-0.7 dB rms at every
+  cutoff/resonance tested (mean 0.37 dB), 24 dB LP mean 1.5 dB (worst: cutoff 96+ with resonance, 2-4 dB).
+- **24 dB LP** at resonance 0 is two critically damped sections; the second sits up to 1.9x above the first at cutoff 88-112 (`R24_V`).
+  Below -70 dB the firmware is 2-4 dB less steep than two identical sections, which we ignore.
+- **Filter 2** (one pole): pole frequency 108 Hz at cutoff 0, 510 at 32, 2 kHz at 64, 6.9 kHz at 96, open at 127 (`POLE2`).
+- Deep stopband values from the measurement rig floor out near -110 dB; fits are restricted to points above -70 dB.

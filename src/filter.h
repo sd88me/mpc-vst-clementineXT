@@ -20,6 +20,11 @@ typedef struct {
 float filt_pole_g(float cutoff);          /* TPT coefficient g = tan(pi*fp/fs) at 40 kHz */
 float filt_damping(float reso);           /* k = 1/Q for the resonance value 0..127 (fractional allowed) */
 
+/* Resonant-section coefficients from cutoff and resonance together (the firmware's pole frequency and Q both depend on both):
+ * g, k for a 12 dB LP or the resonant section of the 24 dB LP (g24 is that section's g with the 24 dB filter's small frequency
+ * offset at high cutoffs). */
+void filt_res_coefs(float cutoff, float reso, float *g, float *k, float *g24);
+
 /* One Filter 1 sample. type 0..12, cutoff/reso as above, special = the extra parameter (0..127). */
 float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int special);
 
