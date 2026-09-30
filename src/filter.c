@@ -180,11 +180,13 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
     case 6:   /* 12 dB LP then waveshaper; the shaping wave is not modelled yet (soft clip stands in) */
         svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
         return tanhf(6.0f * lp) * 0.17f;
-    case 7: { /* dual: LP and BP in parallel, BP offset in semitones by the extra parameter */
-        svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
-        float gb = filt_pole_g(cutoff + (special - 64));
-        svf_tick(&f->b, x, gb, k, &lp2, &bp2, &hp2);
-        return 0.53f * (lp + k * bp2);
+    case 7: { /* dual: half the 12 dB LP plus the raw band-pass of a second section moved by (special - 64) steps */
+        float gr, kr, g24, gr2, kr2;
+        filt_res_coefs(cutoff, reso, &gr, &kr, &g24);
+        filt_res_coefs(cutoff + (special - 64), reso, &gr2, &kr2, &g24);
+        svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
+        svf_tick(&f->b, x, gr2, kr2, &lp2, &bp2, &hp2);
+        return 0.5f * lp + 1.0f * bp2;
     }
     case 8:   /* FM filter: the oscillator 2 FM of the cutoff is not modelled yet */
         svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
@@ -209,10 +211,12 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
         return 0.5f * (x - kr * bp);
     }
-    default:  /* 12: band stop, bandwidth from the extra parameter: LP and HP in parallel, HP moved up */
-        svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
-        svf_tick(&f->b, x, filt_pole_g(cutoff + special * 0.25f), k, &lp2, &bp2, &hp2);
-        return lp + hp2;
+    default: { /* 12: band stop (rough fit at special 64): both sections sit special/4 steps above the cutoff, a notch that passes -6 dB below and +5 dB above */
+        float gx = filt_pole_g(cutoff + special * 0.25f);
+        svf_tick(&f->a, x, gx, 2.0f, &lp, &bp, &hp);
+        svf_tick(&f->b, x, gx * 1.0f, 2.0f, &lp2, &bp2, &hp2);
+        return 0.5f * lp + 1.8f * hp2 - 1.0f * 0.0f * bp;
+    }
     }
 }
 

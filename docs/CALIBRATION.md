@@ -156,3 +156,18 @@ always-available chorus (amp page), which is untouched.
 Amp-page chorus (1 and 2 are identical): one tap, delay 128*(1+sin) samples at 0.5 Hz, sides half a cycle apart, added at full level to the dry signal.
 
 AutoWah (4 = LP, 5 = BP), steady noise: cutoff = 62.5 Hz * p2 (p2 0 is silent), 12 dB/oct slopes. The sense term and resonance law are not calibrated.
+
+## Filter 1 types 2-12 (2026-10-01)
+Fitted against `filt.tsv` (white noise through the external input, 4 cutoffs x 3 resonances per type; `tools/filter_compare.py`,
+`ABS=1` compares levels against the 12 dB LP's -19.1 dB passband). Mean rms error, old -> new: 24 dB BP 26.7 -> 3.9 dB, 12 dB BP 4.3 -> 4.5*,
+12 dB HP 12.6 -> 5.4 (2 dB up to cutoff 96), 24 dB notch 5.6 -> 4.3, 12 dB notch 3.5 -> 2.1, dual 6.3 -> 4.0.
+(*the BP mean is dominated by the firmware's steep output filter above 9 kHz, which we do not model; below that it is within 1 dB.)
+- Type 3 (12 dB BP) is twice the raw band-pass output of the 12 dB LP's (pole, Q) section (peak gain 2Q).
+- Type 4 (12 dB HP) is that section as a high-pass followed by a fixed critically damped 2-pole LP near 12.5 kHz.
+- Type 2 (24 dB BP): one-pole HP and the resonant 2-pole LP at 0.745x the LP's pole, then a critically damped LP at 4.7x the pole;
+  level +4.5 dB at cutoff <= 72 rising to +12 dB at 120 (vs the LP).
+- Type 11 (12 dB notch) is the section's own notch at half level (-6 dB passband); type 10 multiplies a wide critically damped notch at
+  0.95x pole by the section's notch, unity passband.
+- Type 7: half the LP plus the raw BP of a section moved (special - 64) steps. Still too high above the BP peak (firmware falls faster).
+- Not fitted: type 12 (band stop; only special 64 was measured, the notch centre sits about 3x the pole at cutoff 72 and 5x at 48, with
+  -6 dB below and +5 dB above), type 9 (S&H), and the non-linear types 5, 6, 8, whose levels depend on the input.
