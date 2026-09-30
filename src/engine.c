@@ -26,7 +26,7 @@ typedef struct { int stage; float level; } env_t;
 typedef struct { int seg, phase; float level, timer; } xenv_t;   /* phase: 0 running (sustain part), 1 held at the sustain end, 2 release part, 3 finished */
 /* key = the played note that owns the voice; pitch = its current pitch in notes (moves during glide), target = where it glides to,
  * det = unison/dual detune in notes, panoff = its pan offset from the spread (0..1, sign = side). */
-typedef struct { int key, on, vel; float ph1, ph2, pitch, target, det, panoff; env_t aenv, fenv; filt_t flt; lfo_t lfo[2]; float lfov[2]; uint32_t nrng; float nx1, ny1; xenv_t wenv, fren; } voice_t;
+typedef struct { int key, on, vel; float ug, ph1, ph2, pitch, target, det, panoff; env_t aenv, fenv; filt_t flt; lfo_t lfo[2]; float lfov[2]; uint32_t nrng; float nx1, ny1; xenv_t wenv, fren; } voice_t;
 typedef struct {
     patch_t cur;                 /* the engine state is the XT's SDATA block */
     struct { int note, vel; } held[16];   /* keys currently down, oldest first */
@@ -125,13 +125,14 @@ static int steal_voice(inst_t *s) {
     return best;
 }
 
-static void start_voice(inst_t *s, int idx, int note, int vel, float det, float panoff, int legato) {
+static void start_voice(inst_t *s, int idx, int note, int vel, float det, float panoff, int legato, int nvoices) {
     voice_t *v = &s->v[idx];
     const patch_t *p = &s->cur;
     int gl = p->d[P_GLIDE_ON] && (p->d[P_GLIDE_TYPE] < 2 || legato);   /* types 2 and 3 (fingered) glide only on legato notes */
     float from = legato || (gl && s->last_pitch > 0) ? (legato ? v->pitch : s->last_pitch) : (float)note;
     memset(v, 0, sizeof *v);
     v->key = note; v->on = 1; v->vel = vel; v->det = det; v->panoff = panoff;
+    v->ug = nvoices <= 1 ? 1.0f : 0.73f / sqrtf((float)nvoices);   /* voices sharing a note split the level: ~0.73/sqrt(n) (dual 0.52, ten 0.23; measured) */
     v->target = (float)note;
     v->pitch = gl ? from : (float)note;
     v->aenv.stage = ST_ATT; v->fenv.stage = ST_ATT;
@@ -143,11 +144,15 @@ static void start_voice(inst_t *s, int idx, int note, int vel, float det, float 
     }
 }
 
-/* Spread of unison/dual voices: n voices evenly across the detune range; returns detune (notes) and pan side (-1..1). */
+/* Spread of unison/dual voices: n voices evenly across the detune range; returns detune (notes) and pan side (-1..1).
+ * Measured total spread: dual 0.755 cents per detune step (+-48 cents at 127), unison 2.36 cents per step (+-150 cents at 127, ten
+ * voices about 33 cents apart). The pan layout is a fit (unison leans left of centre) and is only roughly right. */
 static void spread(const patch_t *p, int i, int n, float *det, float *pan) {
     float pos = n > 1 ? (2.0f * i / (n - 1) - 1.0f) : 0.0f;
-    *det = pos * (p->d[P_DETUNE] / 127.0f) * 0.5f;   /* placeholder: +-0.25 notes at detune 127 */
-    *pan = pos * (p->d[P_DEPAN] / 127.0f);
+    float per_unit = p->d[P_ASSIGN] == 2 ? 0.0118f : 0.00377f;   /* half-range in notes per detune step */
+    *det = pos * p->d[P_DETUNE] * per_unit;
+    float f = p->d[P_DEPAN] / 127.0f;
+    *pan = p->d[P_ASSIGN] == 2 ? (-14.0f * f + 1.3f * 63.5f * f * pos) / 63.5f : pos * f;
 }
 
 /* Give every held key its share of the voices (unison) or two voices each (dual), or one (normal). */
@@ -164,7 +169,7 @@ static void assign_voices(inst_t *s, int retrigger_new) {
                 s->v[i].key = key; s->v[i].target = (float)key; s->v[i].det = det; s->v[i].panoff = pan; s->v[i].vel = vel;
                 if (!p->d[P_GLIDE_ON]) s->v[i].pitch = (float)key;
                 if (retrigger_new) { s->v[i].aenv.stage = ST_ATT; s->v[i].fenv.stage = ST_ATT; }
-            } else start_voice(s, i, key, vel, det, pan, 0);
+            } else start_voice(s, i, key, vel, det, pan, 0, n);
         }
         for (int i = n; i < NV; i++) if (s->v[i].on) release_voice(&s->v[i]);
         s->last_pitch = (float)key;
@@ -176,7 +181,7 @@ static void assign_voices(inst_t *s, int retrigger_new) {
         for (int k = 0; k < s->nheld && vi < NV; k++)
             for (int j = 0; j < per && vi < NV; j++, vi++) {
                 float det, pan; spread(p, j, per, &det, &pan);
-                start_voice(s, vi, s->held[k].note, s->held[k].vel, det, pan, 0);
+                start_voice(s, vi, s->held[k].note, s->held[k].vel, det, pan, 0, per);
             }
         for (; vi < NV; vi++) if (s->v[vi].on) release_voice(&s->v[vi]);
         s->last_pitch = (float)s->held[s->nheld - 1].note;
@@ -185,7 +190,7 @@ static void assign_voices(inst_t *s, int retrigger_new) {
     int n = mode == 1 ? 2 : 1;   /* normal or dual poly: the newest key only (older ones keep their voices) */
     for (int i = 0; i < n; i++) {
         float det, pan; spread(p, i, n, &det, &pan);
-        start_voice(s, steal_voice(s), s->held[s->nheld - 1].note, s->held[s->nheld - 1].vel, det, pan, 0);
+        start_voice(s, steal_voice(s), s->held[s->nheld - 1].note, s->held[s->nheld - 1].vel, det, pan, 0, n);
     }
     s->last_pitch = (float)s->held[s->nheld - 1].note;
 }
@@ -330,18 +335,17 @@ static void env_step(env_t *e, int a, int d, int su, int r) {
     }
 }
 
-/* Glide: exponential (a fixed fraction of the remaining distance per sample) or linear (constant speed); the time law is a
- * placeholder, not yet measured. */
-static float glide_seconds(int v) { return 0.002f * expf(v * 0.062f); }
+/* Glide (measured with a mono two-note run): exponential glide has time constant 2x the envelope decay constant for the same value (0.13 s at
+ * 20, 0.8 s at 40), approaching the target exponentially in pitch; linear glide covers an octave in about 1.6x the decay constant. */
 static void glide_step(voice_t *v, const patch_t *p) {
     if (v->pitch == v->target) return;
     if (!p->d[P_GLIDE_ON]) { v->pitch = v->target; return; }
-    float d = v->target - v->pitch, t = glide_seconds(p->d[P_GLIDE_TIME]);
+    float d = v->target - v->pitch, t = decay_tau(p->d[P_GLIDE_TIME]);
     if (p->d[P_GLIDE_MODE] == 0) {
-        v->pitch += d * (1.0f - expf(-3.0f / (CORE_HZ * t)));
+        v->pitch += d * (1.0f - expf(-1.0f / (CORE_HZ * 2.0f * t)));
         if (fabsf(d) < 1e-3f) v->pitch = v->target;
     } else {
-        float step = 12.0f / (CORE_HZ * t);
+        float step = 12.0f / (CORE_HZ * 1.6f * t);
         if (fabsf(d) <= step) v->pitch = v->target; else v->pitch += d > 0 ? step : -step;
     }
 }
@@ -504,7 +508,7 @@ static void core(inst_t *s, float *lr) {
         float c2 = p->d[P_F2_CUTOFF] + (p->d[P_F2_KT] - 64) * 0.03125f * (note - 64) + dest[11];
         fl = filter2_run(&v->flt, p->d[P_F2_TYPE], fl, c2);
         float vol = clampf(p->d[P_VOLUME] + dest[12], 127.0f);
-        float g = fl * v->aenv.level * vg * (vol / 127.0f);
+        float g = fl * v->aenv.level * vg * (vol / 127.0f) * v->ug;
         float pan = p->d[P_PAN] + v->panoff * 63.5f + dest[13];   /* unison/dual spread moves the voice off the sound's pan position */
         pan = pan < 0 ? 0 : pan > 127 ? 127 : pan;
         suml += g * pan_gain_left((int)(pan + 0.5f));

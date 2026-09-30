@@ -104,3 +104,13 @@ Slot identification (`/home/sam/oracle/fit/slotfind.py`, spectrum match against 
   8 steps): tau = 0.0365 s * 2^((t-24)/8). The rules for handing over to the next segment, for loops and for the free envelope are
   **approximations** (three time constants per segment); the firmware's sustain-end and loop behaviour was not resolved.
 - **Resonance destination** = 2 units per m, like cutoff (checked at +36..+48).
+
+## 2026-10-01: voices and glide
+- **Dual (assign 1):** two voices, total detune spread 0.755 cents per detune step (+-48 cents at 127; measured peaks -45.7/+50.1 at 127).
+- **Unison (assign 2):** ten voices about 33 cents apart at detune 127 (total spread 2.36 cents per step, +-150 cents); higher voices are quieter in the
+  left channel because of the pan spread. De-Pan positions are a rough fit (unison leans left of centre); dual spreads symmetrically.
+- **Voice level with several voices per note:** each voice about 0.73/sqrt(n): a coherent dual pair sums to 1.03x one voice, ten unison voices to 2.43x.
+- **Glide:** exponential in pitch with a time constant of 2x the envelope decay constant for the same value (0.13 s at 20, 0.8 s at 40); linear
+  glide covers an octave in roughly 1.6x that constant (3.2 semitones/s at value 60). The first note after start glides from an unknown
+  default pitch; ours starts on pitch.
+- **Oracle:** `--stereo` (interleaved L,R) and `--n2 NOTE BLOCKS` (a second key while the first is held) added to `render`.

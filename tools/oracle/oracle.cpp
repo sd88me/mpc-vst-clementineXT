@@ -267,6 +267,8 @@ int main(int argc, char** argv)
 		applyOpts(8, argc, argv);
 		const int note = atoi(argv[4]), vel = atoi(argv[5]), hold = atoi(argv[6]), tail = atoi(argv[7]);
 		std::ofstream f(argv[3], std::ios::binary);
+		bool stereo = false;
+		for (int i = 8; i < argc; ++i) if (!strcmp(argv[i], "--stereo")) stereo = true;
 		auto capture = [&](int blocks) {
 			for (int b = 0; b < blocks; ++b)
 			{
@@ -277,12 +279,21 @@ int main(int argc, char** argv)
 					const int32_t w = (int32_t)((uint32_t)outs[0][i] << 8) >> 8;   // 24-bit signed in a 32-bit word
 					const float v = (float)w / 8388608.0f;
 					f.write((const char*)&v, 4);
+					if (stereo)   // --stereo: interleave the right channel after each left sample
+					{
+						const int32_t wr = (int32_t)((uint32_t)outs[1][i] << 8) >> 8;
+						const float vr = (float)wr / 8388608.0f;
+						f.write((const char*)&vr, 4);
+					}
 				}
 			}
 		};
+		int note2 = -1, at2 = 0;   // --n2 NOTE BLOCKS: a second key goes down BLOCKS after the first (both held)
+		for (int i = 8; i + 2 < argc; ++i) if (!strcmp(argv[i], "--n2")) { note2 = atoi(argv[i + 1]); at2 = atoi(argv[i + 2]); }
 		sendMidi(0x90, (uint8_t)note, (uint8_t)vel);
 		applyLateOpts(8, argc, argv);
-		capture(hold);
+		if (note2 >= 0 && at2 < hold) { capture(at2); sendMidi(0x90, (uint8_t)note2, (uint8_t)vel); capture(hold - at2); }
+		else capture(hold);
 		sendMidi(0x80, (uint8_t)note, 0);
 		capture(tail);
 		f.flush();
