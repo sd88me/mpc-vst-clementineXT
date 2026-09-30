@@ -168,7 +168,14 @@ static void assign_voices(inst_t *s, int retrigger_new) {
             if (legato && s->v[i].on) {   /* the voice keeps sounding: glide (or jump) to the new key and retrigger its envelopes */
                 s->v[i].key = key; s->v[i].target = (float)key; s->v[i].det = det; s->v[i].panoff = pan; s->v[i].vel = vel;
                 if (!p->d[P_GLIDE_ON]) s->v[i].pitch = (float)key;
-                if (retrigger_new) { s->v[i].aenv.stage = ST_ATT; s->v[i].fenv.stage = ST_ATT; }
+                if (retrigger_new) {   /* per envelope: normal restarts from zero, single leaves it running, retrigger restarts from the current level */
+                    voice_t *w = &s->v[i];
+                    int ta = p->d[123], tf = p->d[117], tw = p->d[141], tr = p->d[157];
+                    if (ta != 1) { if (ta == 0) w->aenv.level = 0; w->aenv.stage = ST_ATT; }
+                    if (tf != 1) { if (tf == 0) w->fenv.level = 0; w->fenv.stage = ST_ATT; }
+                    if (tw == 0) memset(&w->wenv, 0, sizeof w->wenv); else if (tw == 2) { w->wenv.phase = 0; w->wenv.seg = 0; w->wenv.timer = 0; }
+                    if (tr == 0) memset(&w->fren, 0, sizeof w->fren); else if (tr == 2) { w->fren.phase = 0; w->fren.seg = 0; w->fren.timer = 0; }
+                }
             } else start_voice(s, i, key, vel, det, pan, 0, n);
         }
         for (int i = n; i < NV; i++) if (s->v[i].on) release_voice(&s->v[i]);
