@@ -154,3 +154,5 @@ side is half a cycle away; chorus/flanger 1 wet = (x + delayed)/2 (rms ratio 0.7
 Flanger 2 feedback gain is a fit (0.83*p2/127) to the rms growth. Still open: the LFO phase at note start, the wahs, and the
 always-available chorus (amp page), which is untouched.
 Amp-page chorus (1 and 2 are identical): one tap, delay 128*(1+sin) samples at 0.5 Hz, sides half a cycle apart, added at full level to the dry signal.
+
+AutoWah (4 = LP, 5 = BP), steady noise: cutoff = 62.5 Hz * p2 (p2 0 is silent), 12 dB/oct slopes. The sense term and resonance law are not calibrated.
