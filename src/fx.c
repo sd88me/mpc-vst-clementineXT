@@ -17,8 +17,6 @@ static float dread(const float *line, int wr, float delay, int mask) {
 /* Mix parameter: shown as dry:wet = (127-m):m in the manual. */
 static void dry_wet(int m, float *dry, float *wet) { *wet = m / 127.0f; *dry = 1.0f - *wet; }
 
-static float tri(float ph) { return ph < 0.5f ? 4 * ph - 1 : 3 - 4 * ph; }
-
 void chorus_run(fx_t *f, int mode, float *l, float *r) {
     if (!mode) return;
     float in[2] = { *l, *r }, out[2];
@@ -43,18 +41,21 @@ void fx_run(fx_t *f, int type, int p1, int p2, int p3, float tempo_bpm, float *l
     for (int c = 0; c < 2; c++) f->dl[c][f->wr] = in[c];
     switch (type) {
     case FX_CHORUS: case FX_FLANGER1: case FX_FLANGER2: {
-        /* p1 speed, p2 depth (flanger 1, chorus) or feedback (flanger 2), p3 mix. Short modulated delays. */
-        float rate = 0.05f + p1 / 127.0f * (type == FX_CHORUS ? 4.0f : 3.0f);
-        f->lfo += rate / FS; if (f->lfo >= 1) f->lfo -= 1;
-        float depth = type == FX_FLANGER2 ? 0.5f : p2 / 127.0f, fb = type == FX_FLANGER2 ? p2 / 127.0f * 0.9f : 0.0f;
-        float base = type == FX_CHORUS ? 0.012f : 0.0025f, swing = type == FX_CHORUS ? 0.008f : 0.0022f;
+        /* p1 speed, p2 depth (chorus, flanger 1) or feedback (flanger 2), p3 mix. Measured with the oracle (docs/CALIBRATION.md): the LFO
+         * is a sine at 0.0167*2^(p1/12) Hz, the delay is 128 samples * (1 + depth*sin) for the chorus, depth*128*(1 + sin) for flanger 1 and
+         * 128*(1 + sin) for flanger 2, the right side runs half a cycle later; the wet signal is (x + delayed)/2 for chorus and flanger 1 and
+         * half the delayed signal (with feedback) for flanger 2. */
+        f->lfo += 0.0167f * exp2f(p1 / 12.0f) / FS; if (f->lfo >= 1) f->lfo -= 1;
+        float depth = p2 / 127.0f, fb = type == FX_FLANGER2 ? 0.83f * p2 / 127.0f : 0.0f;
         dry_wet(p3, &dry, &wet);
         for (int c = 0; c < 2; c++) {
-            float m = type == FX_CHORUS ? sinf(TWO_PI * (f->lfo + 0.25f * c)) : tri(fmodf(f->lfo + 0.25f * c, 1.0f));
-            float d = (base + swing * depth * m) * FS;
+            float sn = sinf(TWO_PI * (f->lfo + 0.5f * c));
+            float d = type == FX_CHORUS ? 128.0f * (1.0f + depth * sn) : type == FX_FLANGER1 ? 128.0f * depth * (1.0f + sn) : 128.0f * (1.0f + sn);
+            if (d < 1.0f) d = 1.0f;
             float w = dread(f->dl[c], f->wr, d, N_MASK);
             if (fb != 0.0f) f->dl[c][f->wr] = in[c] + fb * w;   /* feedback into the line */
-            out[c] = dry * in[c] + wet * w;
+            float wetsig = type == FX_FLANGER2 ? 0.5f * w : 0.5f * (in[c] + w);
+            out[c] = dry * in[c] + wet * wetsig;
         }
         break;
     }
@@ -82,7 +83,8 @@ void fx_run(fx_t *f, int type, int p1, int p2, int p3, float tempo_bpm, float *l
     }
     case FX_AMPMOD: {
         /* p1 speed, p2 spread between left and right, p3 mix; a tremolo while the dry level is above half, a ring modulator below */
-        f->lfo += (0.1f + p1 / 127.0f * 20.0f) / FS; if (f->lfo >= 1) f->lfo -= 1;
+        f->lfo += 0.0167f * exp2f(p1 / 12.0f) / FS;   /* measured: 0.0167*2^(p/12) Hz, the left/right offset is spread/127 of half a cycle */
+        if (f->lfo >= 1) f->lfo -= 1;
         dry_wet(p3, &dry, &wet);
         for (int c = 0; c < 2; c++) {
             float m = sinf(TWO_PI * (f->lfo + (c ? p2 / 127.0f * 0.5f : 0.0f)));

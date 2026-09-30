@@ -145,3 +145,11 @@ uncalibrated apart from knowing that mix 0 is dry and that overdrive gain 0 is s
 Overdrive (6): output = 6.5*g/(50+1.57*p1) * clip((1+p1)*x, +-0.19), x in firmware output units, g = p2/64 up to 64 and
 1+0.874*(p2-64)/63 above it. The third parameter ("amp type") changed neither level nor harmonic content in any test, so it is
 ignored. Checked against the firmware for four drive/volume settings: rms within 3% (hard knee; the real one is a little softer).
+
+Amp Mod (7): LFO sine at 0.0167*2^(p1/12) Hz (measured 0.68 Hz at 64, 4.25 Hz at 96); the right side runs p2/127 of half a cycle
+later; out = dry*x + wet*x*sin with linear mix (mix 127 is pure ring modulation, mix 64 a tremolo to zero).
+Chorus (1), Flanger 1 (2), Flanger 2 (3), measured by following the echo lag of white noise (oracle): same sine LFO law as Amp Mod;
+delay 128 samples*(1+depth*sin) (chorus), depth*128*(1+sin) (flanger 1), 128*(1+sin) (flanger 2, where p2 is feedback); the right
+side is half a cycle away; chorus/flanger 1 wet = (x + delayed)/2 (rms ratio 0.70 for uncorrelated noise), flanger 2 wet = delayed/2.
+Flanger 2 feedback gain is a fit (0.83*p2/127) to the rms growth. Still open: the LFO phase at note start, the wahs, and the
+always-available chorus (amp page), which is untouched.
