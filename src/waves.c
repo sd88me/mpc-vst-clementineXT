@@ -66,14 +66,24 @@ void table_build(const table_ctl_t *ctl, const wave_t *waves, int nwaves, table_
 
 /* ---- algorithmic tables 28-51 ----
  * The firmware generates these with code, not from stored waves. The ones below were rebuilt from the shapes the firmware produces
- * (observed with the dev-only oracle; no firmware data is used or shipped here): the three pulse/step tables 29, 41 and 42 reproduce the
- * firmware exactly, the sine sweeps 38-40, the saw sweeps 32-34 and the decaying ramp 31 are close approximations (waveform correlation
+ * (observed with the dev-only oracle; no firmware data is used or shipped here): tables 28, 29, 32-34, 41 and 42 reproduce the
+ * firmware exactly, the sine sweeps 38-40 and the decaying ramp 31 are close approximations (waveform correlation
  * 0.8-0.97). Tables 28, 30, 35-37 and 43-51 are not rebuilt yet and fall back to the open set. */
 static int8_t c8(double v) { return (int8_t)(v > 127 ? 127 : v < -128 ? -128 : v); }
 static void mirror_half(int8_t w[WAVE_LEN]) { for (int i = 0; i < WAVE_HALF; i++) { int v = -w[WAVE_HALF - 1 - i]; w[WAVE_HALF + i] = (int8_t)(v > 127 ? 127 : v); } }
 
 static void gen_sine(int8_t w[WAVE_LEN], double m) { for (int i = 0; i < WAVE_LEN; i++) w[i] = c8(floor(128.0 * sin(2 * M_PI * m * (i + 0.5) / WAVE_LEN) + 0.5)); }
-static void gen_saw(int8_t w[WAVE_LEN], double m) { for (int i = 0; i < WAVE_LEN; i++) { double p = fmod(m * (i + 0.5) / WAVE_LEN, 1.0); w[i] = c8(floor(-128.0 + 256.0 * p)); } }
+/* First half of the firmware's saw-sweep waves (tables 32-34), exact: ((2*m*i + c) mod 256) - 128 with c = max(2, m - 1/64), the last 16
+ * samples tapered by (63 - i)/16 (rounded), the second half mirrored. m is the (fractional) number of cycles. */
+static void gen_saw_half(int8_t w[WAVE_LEN], double m) {
+    double c = m - 1.0 / 64.0; if (c < 2.0) c = 2.0;
+    for (int i = 0; i < WAVE_HALF; i++) {
+        int v = (((int)floor(2.0 * m * i + c)) & 255) - 128;
+        if (i >= 48) v = (v * (63 - i) * 2 + 16) >> 5;
+        w[i] = (int8_t)v;
+    }
+    for (int i = 0; i < WAVE_HALF; i++) { int v = -w[WAVE_HALF - 1 - i]; w[WAVE_HALF + i] = (int8_t)(v > 127 ? 127 : v); }
+}
 
 /* Keyframe waves every `per` slots, the slots between blended with the truncating integer rule the ROM tables use. */
 static void keyframes(int8_t out[TABLE_SLOTS][WAVE_LEN], void (*gen)(int8_t *, double), double m0, double step, int per) {
@@ -89,15 +99,16 @@ static void keyframes(int8_t out[TABLE_SLOTS][WAVE_LEN], void (*gen)(int8_t *, d
 int algo_table(int n, wave_t *waves, table_ctl_t *ctl) {
     static int8_t all[TABLE_SLOTS][WAVE_LEN];
     switch (n) {
+    case 28: for (int s = 0; s < 61; s++) { for (int i = 0; i < WAVE_HALF; i++) all[s][i] = (int8_t)((((70 + 8 * s) * i) / 64) % 64); mirror_half(all[s]); } break;   /* a ramp of 0..63 that wraps, 70/64 + s/8 cycles per half */
     case 29: for (int s = 0; s < 61; s++) { int k = 64 - s; for (int i = 0; i < WAVE_HALF; i++) all[s][i] = i < k ? 32 : 0; mirror_half(all[s]); } break;
     case 41: for (int s = 0; s < 61; s++) { int n1 = 60 - s; for (int i = 0; i < WAVE_HALF; i++) all[s][i] = i < n1 ? 127 : -128; mirror_half(all[s]); } break;
     case 42: for (int s = 0; s < 61; s++) { int k = 60 - s; for (int i = 0; i < WAVE_HALF; i++) all[s][i] = (int8_t)(i < k ? 2 * i : -128 + 2 * (i - k)); mirror_half(all[s]); } break;
     case 38: keyframes(all, gen_sine, 1, 1, 8); break;
     case 39: keyframes(all, gen_sine, 2, 1, 4); break;
     case 40: keyframes(all, gen_sine, 4, 1, 2); break;
-    case 32: keyframes(all, gen_saw, 2, 1, 30); break;
-    case 33: keyframes(all, gen_saw, 2, 1, 10); break;
-    case 34: for (int s = 0; s < 61; s++) gen_saw(all[s], floor(2.0 + 14.0 * s / 60.0 + 0.5)); break;
+    case 32: for (int s = 0; s < 61; s++) gen_saw_half(all[s], 2.0 + s / 30.0); break;
+    case 33: for (int s = 0; s < 61; s++) gen_saw_half(all[s], 2.0 + s / 10.0); break;
+    case 34: for (int s = 0; s < 61; s++) gen_saw_half(all[s], 2.0 + 7.0 * s / 30.0); break;
     case 31:   /* a decaying ramp whose start level and slope sweep with the slot, with an exponential-looking fall in the last 14 samples */
         for (int s = 0; s < 61; s++) {
             double init = 127.0 * (60 - s) / 60.0, slope = 1.0 - fabs(s - 30) / 30.0;
