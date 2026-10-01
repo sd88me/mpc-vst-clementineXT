@@ -34,6 +34,19 @@ void chorus_run(fx_t *f, int mode, float *l, float *r) {
 }
 
 
+/* Echo time of the three delay effects in samples at 40 kHz per value of parameter 1, measured from the firmware (the echo of a short note,
+ * correlation peak, sweep of all 128 values; the law is exponential with a ripple, 1337 samples (33 ms) at 0, 4683 (117 ms) at 64, 16135 (403 ms)
+ * at 127). Pan Delay's hop and Mod Delay's repeat follow the same table. */
+static const uint16_t DELAY_N[128] = {
+    1337, 1363, 1391, 1421, 1451, 1483, 1516, 1551, 1587, 1625, 1665, 1707, 1750, 1797, 1845, 1894,
+    1949, 1975, 2004, 2033, 2062, 2094, 2126, 2159, 2194, 2228, 2264, 2302, 2340, 2380, 2421, 2463,
+    2508, 2553, 2600, 2649, 2699, 2751, 2805, 2862, 2921, 2982, 3046, 3113, 3181, 3255, 3330, 3409,
+    3493, 3579, 3672, 3768, 3868, 3975, 4031, 4087, 4146, 4205, 4269, 4333, 4399, 4467, 4536, 4609,
+    4683, 4758, 4839, 4922, 5005, 5094, 5184, 5278, 5375, 5477, 5581, 5690, 5803, 5922, 6043, 6172,
+    6303, 6442, 6586, 6739, 6896, 7063, 7237, 7420, 7612, 7815, 8029, 8139, 8253, 8370, 8492, 8616,
+    8743, 8875, 9010, 9150, 9296, 9443, 9597, 9757, 9920, 10089, 10265, 10446, 10635, 10829, 11032, 11241,
+    11458, 11685, 11921, 12164, 12421, 12685, 12962, 13253, 13555, 13872, 14204, 14554, 14920, 15303, 15708, 16135 };
+
 void fx_run(fx_t *f, int type, int p1, int p2, int p3, float tempo_bpm, float *l, float *r) {
     float in[2] = { *l, *r }, out[2] = { *l, *r };
     float dry, wet;
@@ -98,9 +111,9 @@ void fx_run(fx_t *f, int type, int p1, int p2, int p3, float tempo_bpm, float *l
         break;
     }
     case FX_DELAY: case FX_PANDELAY: case FX_MODDELAY: {
-        float time = 0.12f * exp2f((p1 - 64) / 36.0f);   /* measured: 35 ms at 0, 120 ms at 64, 0.40 s at 127 (independent of the tempo setting) */
+        /* echo time: DELAY_N (independent of the tempo setting) */
         float fb = type == FX_MODDELAY ? 0.35f : p2 * 0.744f / 127.0f;   /* measured: repeat ratio 0.744 * p / 127 */
-        float d = time * FS;
+        float d = (float)DELAY_N[p1 < 0 ? 0 : p1 > 127 ? 127 : p1];
         if (type == FX_MODDELAY) {
             f->lfo += 0.0167f * exp2f(p2 / 12.0f) / FS; if (f->lfo >= 1) f->lfo -= 1;   /* the effects' common LFO law (speed 64: 0.67 Hz); depth about +-4 ms (frequency-shift readings of a tone) */
             d += sinf(TWO_PI * f->lfo) * p3 / 127.0f * 0.004f * FS;
