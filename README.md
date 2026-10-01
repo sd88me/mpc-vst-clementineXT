@@ -107,6 +107,10 @@ is independent and not affiliated with or endorsed by Waldorf.
 
 Built on the [mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins) framework for native MPC OS plugins.
 
+## Other platforms
+
+A Schwung (Ableton Move) version is started in [schwung/](schwung/README.md): it builds and passes a host simulation, but has not run on a Move yet.
+
 ## Building from source
 
 See [docs/STATUS.md](docs/STATUS.md) (development notes and build commands), [docs/DESIGN.md](docs/DESIGN.md) and
