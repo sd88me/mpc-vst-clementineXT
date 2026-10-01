@@ -34,14 +34,12 @@ def knobs(row, cell, items):   # [(label, key)] one per cell; keys starting with
 
 # ---- GLOBAL ---------------------------------------------------------------------------------------------------------------------------
 tab("GLOBAL")
-frame(0, 0, 8, "SOUND")
-stepper(0, 0, 2, "BANK", "bank"); readout(0, 2, 2, "", "bank_name")
-stepper(0, 4, 2, "SOUND", "program"); readout(0, 6, 2, "", "patch_name")
-frame(1, 0, 8, "PLAY")
-for k in range(4):   # a knob and, beside it, the assigned parameter: a stepper over the 83-entry list with its name under it (a popup list would run off the screen)
-    n = k + 1; knob(1, 2 * k, "PLAY %d" % n, "play_v%d" % n)
-    emit('stepper cx=%d cy=%d w=134 h=40 label="" key=play_sel%d' % (cx(2 * k + 1), ry(1) + 68, n))
-    emit('readout cx=%d cy=%d w=134 h=40 label="" key=play_name%d' % (cx(2 * k + 1), ry(1) + 114, n))
+frame(0, 0, 8, "PLAY")   # on the top row: the 83-entry ASSIGN list needs the most room below the field to fit the screen
+for k in range(4):
+    n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n); popup(0, 2 * k + 1, "ASSIGN", "play%d" % n)
+frame(1, 0, 8, "SOUND")
+stepper(1, 0, 2, "BANK", "bank"); readout(1, 2, 2, "", "bank_name")
+stepper(1, 4, 2, "SOUND", "program"); readout(1, 6, 2, "", "patch_name")
 frame(2, 0, 4, "EFFECT"); popup(2, 0, "TYPE", "fx_type"); knobs(2, 1, [("PARAM 1", "fx_p1"), ("PARAM 2", "fx_p2"), ("PARAM 3", "fx_p3")])
 frame(2, 4, 4, "VOICES"); knobs(2, 4, [("MODE", "^alloc"), ("ASSIGN", "^assign"), ("DETUNE", "detune"), ("DE-PAN", "depan")])
 frame(3, 0, 4, "GLIDE"); knobs(3, 0, [("ACTIVE", "~glide_on"), ("TYPE", "^glide_type"), ("MODE", "^glide_mode"), ("TIME", "glide_time")])
@@ -131,8 +129,8 @@ for page in range(2):
         for half in range(2):
             n = 8 * page + 2 * r + half + 1; c0 = 4 * half
             frame(r, c0, 4, "SLOT %d" % n)
-            emit('popup cx=%d cy=%d w=110 h=48 label="SOURCE" key=m%d_src' % (cx(c0), ry(r) + 104, n))
-            emit('popup cx=%d cy=%d w=110 h=48 label="DEST" key=m%d_dst' % (cx(c0 + 1), ry(r) + 104, n))
+            emit('popup cx=%d cy=%d w=150 h=48 label="SOURCE" key=m%d_src' % (cx(c0), ry(r) + 104, n))
+            emit('popup cx=%d cy=%d w=150 h=48 label="DEST" key=m%d_dst' % (cx(c0 + 1), ry(r) + 104, n))
             knob(r, c0 + 2, "AMOUNT", "m%d_amt" % n)
     lo, hi = 8 * page + 1, 8 * page + 8
     qlinks("Mod %d-%d" % (lo, hi), ["m%d_amt" % n for n in range(lo, hi + 1)] + ["m%d_src" % n for n in range(lo, hi + 1)])

@@ -86,28 +86,6 @@ static void refresh(inst_t *s) {
  * range. The table gives each list entry's SDATA index; -1 marks Controls W-Z, which are live controller values (CC 4, 8, 11, 12). */
 static const int16_t PLAY_SD[83] = { 1, 2, 3, 5, 6, 12, 13, 14, 17, 18, 25, 26, 27, 28, 29, 30, 36, 37, 38, 39, 40, 47, 48, 49, 50, 53, 54, 55, 62, 63, 64, 65, 66, 67, 73, 74, 75, 77, 79, 80, 82, 84, 85, 87, 88, 92, 93, 94, 95, 96, 97, 98, 99, 108, 109, 113, 114, 115, 116, 119, 120, 121, 122, 159, 160, 161, 162, 163, 164, 166, 167, 168, 169, 170, 171, 172, 7, 70, 90, -1, -1, -1, -1 };
 static const uint8_t PLAY_CC[4] = { 4, 8, 11, 12 };
-static const char *const PLAY_NAME[83] = {
-    "Osc 1 Octave", "Osc 1 Semitone", "Osc 1 Detune", "Osc 1 Pitchbend",
-    "Osc 1 Keytrack", "Osc 2 Octave", "Osc 2 Semitone", "Osc 2 Detune",
-    "Osc 2 Pitchbend", "Osc 2 Keytrack", "Wavetable", "Wave 1 Startwave",
-    "Wave 1 Phase", "Wave 1 Env Amount", "Wave 1 Velo Amount", "Wave 1 Keytrack",
-    "Wave 2 Startwave", "Wave 2 Phase", "Wave 2 Env Amount", "Wave 2 Velo Amount",
-    "Wave 2 Keytrack", "Mix Wave 1", "Mix Wave 2", "Mix Ringmod",
-    "Mix Noise", "Aliasing", "Quantize", "Clipping",
-    "Filter 1 Cutoff", "Filter 1 Resonance", "Filter 1 Type", "Filter 1 Keytrack",
-    "Filter 1 Env Amount", "Filter 1 Velo Amount", "Filter 2 Cutoff", "Filter 2 Type",
-    "Filter 2 Keytrack", "Sound Volume", "Amp Envelope Velo Amount", "Amplifier Keytrack",
-    "Chorus", "Panning", "Pan Keytrack", "Glide on/off",
-    "Glide Type", "Arpeggiator on/off/hold", "Arp Tempo", "Arp Clock",
-    "Arp Range", "Arp Pattern", "Arp Direction", "Arp Note Order",
-    "Arp Velocity", "Allocation", "Assignment", "Filter Env Attack",
-    "Filter Env Decay", "Filter Env Sustain", "Filter Env Release", "Amplifier Env Attack",
-    "Amplifier Env Decay", "Amplifier Env Sustain", "Amplifier Env Release", "LFO1 Rate",
-    "LFO1 Shape", "LFO1 Delay", "LFO1 Sync", "LFO1 Symmetry",
-    "LFO1 Humanize", "LFO2 Rate", "LFO2 Shape", "LFO2 Delay",
-    "LFO2 Sync", "LFO2 Symmetry", "LFO2 Humanize", "LFO2 Phase",
-    "Osc 1 FM Amount", "Filter 1 Special", "Glide Time", "Control W",
-    "Control X", "Control Y", "Control Z" };
 
 
 static int play_entry(const inst_t *s, int knob) { int e = s->cur.d[57 + knob]; return e > 82 ? 82 : e; }   /* knob 1..4 */
@@ -437,7 +415,6 @@ static void set_param(void *p, const char *k, const char *val) {
         if (!strcmp(k, "patch_page_prev")) { if (x > 0 && s->browse_page > 0) s->browse_page--; return; }
     }
     if (!strncmp(k, "play_v", 6) && k[6] >= '1' && k[6] <= '4' && !k[7]) { play_set(s, k[6] - '0', x); return; }
-    if (!strncmp(k, "play_sel", 8) && k[8] >= '1' && k[8] <= '4' && !k[9]) { s->cur.d[57 + (k[8] - '0')] = (uint8_t)(x < 0 ? 0 : x > 82 ? 82 : x); return; }
     if (!strcmp(k, "bank")) {   /* the bank stepper: load that bank and keep the current program number */
         if (x >= 0 && x < s->nbanks && x != s->cur_bank) {
             select_bank(s, x); browse_to(s, x);
@@ -467,8 +444,6 @@ static int get_param(void *p, const char *k, char *buf, int n) {
     }
     if (!strcmp(k, "program")) return snprintf(buf, n, "%d", s->program);
     if (!strncmp(k, "play_v", 6) && k[6] >= '1' && k[6] <= '4' && !k[7]) return snprintf(buf, n, "%d", play_get(s, k[6] - '0'));
-    if (!strncmp(k, "play_sel", 8) && k[8] >= '1' && k[8] <= '4' && !k[9]) return snprintf(buf, n, "%d", play_entry(s, k[8] - '0'));
-    if (!strncmp(k, "play_name", 9) && k[9] >= '1' && k[9] <= '4' && !k[10]) return snprintf(buf, n, "%s", PLAY_NAME[play_entry(s, k[9] - '0')]);
     if (!strcmp(k, "bank")) return snprintf(buf, n, "%d", s->cur_bank);
     {   /* "<key>_on": the selection state of a list tile (the wrapper uses it as the tile's value; the tile's text is not a value) */
         size_t kl = strlen(k);

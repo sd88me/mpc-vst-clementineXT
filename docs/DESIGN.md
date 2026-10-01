@@ -275,7 +275,7 @@ Four rows of eight cells per tab (frames 148 px high). The XT's 17 menu pages ar
 
 | Tab | Contents | Q-Link sets |
 |---|---|---|
-| GLOBAL | Bank and sound steppers with their names, the four Play knobs (each drives the parameter its stepper selects, over that parameter's whole range; the name shows under the stepper), effect type and three parameters, voice mode/assign/detune/de-pan, glide, volume/pan/chorus | Play, Voice |
+| GLOBAL | The four Play knobs, bank and sound steppers with their names, (each drives the parameter its ASSIGN popup names, over that parameter's whole range; the Play row is the top row because the 83-entry list needs the screen below the field), effect type and three parameters, voice mode/assign/detune/de-pan, glide, volume/pan/chorus | Play, Voice |
 | SOUNDS | Bank list and a paged 2 x 14 sound list (sounds run down the columns); selection state through `<key>_on` | Banks |
 | OSC | Osc 1, Osc 2, wavetable, quality (aliasing, quantize, clipping, accuracy) | Osc |
 | WAVE | Wave 1, Wave 2, mixer | Waves, Mixer |
