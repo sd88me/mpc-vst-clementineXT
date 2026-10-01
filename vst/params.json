@@ -3513,6 +3513,451 @@
    "type": "trigger",
    "step_of": "program",
    "step_delta": 1
+  },
+  {
+   "key": "bank_name",
+   "name": "Bank",
+   "min": 0,
+   "max": 0,
+   "default": 0,
+   "display": "string",
+   "type": "readout"
+  },
+  {
+   "key": "browse_bank_name",
+   "name": "Browsing",
+   "min": 0,
+   "max": 0,
+   "default": 0,
+   "display": "string",
+   "type": "readout"
+  },
+  {
+   "key": "patch_page_text",
+   "name": "Page",
+   "min": 0,
+   "max": 0,
+   "default": 0,
+   "display": "string",
+   "type": "readout"
+  },
+  {
+   "key": "patch_page_prev",
+   "name": "Page <",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "type": "trigger"
+  },
+  {
+   "key": "patch_page_next",
+   "name": "Page >",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "type": "trigger"
+  },
+  {
+   "key": "bank_slot_1",
+   "name": "BANK 1",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_2",
+   "name": "BANK 2",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_3",
+   "name": "BANK 3",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_4",
+   "name": "BANK 4",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_5",
+   "name": "BANK 5",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_6",
+   "name": "BANK 6",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_7",
+   "name": "BANK 7",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_8",
+   "name": "BANK 8",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_9",
+   "name": "BANK 9",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_10",
+   "name": "BANK 10",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_11",
+   "name": "BANK 11",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "bank_slot_12",
+   "name": "BANK 12",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_1",
+   "name": "SOUND 1",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_2",
+   "name": "SOUND 2",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_3",
+   "name": "SOUND 3",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_4",
+   "name": "SOUND 4",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_5",
+   "name": "SOUND 5",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_6",
+   "name": "SOUND 6",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_7",
+   "name": "SOUND 7",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_8",
+   "name": "SOUND 8",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_9",
+   "name": "SOUND 9",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_10",
+   "name": "SOUND 10",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_11",
+   "name": "SOUND 11",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_12",
+   "name": "SOUND 12",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_13",
+   "name": "SOUND 13",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_14",
+   "name": "SOUND 14",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_15",
+   "name": "SOUND 15",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_16",
+   "name": "SOUND 16",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_17",
+   "name": "SOUND 17",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_18",
+   "name": "SOUND 18",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_19",
+   "name": "SOUND 19",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_20",
+   "name": "SOUND 20",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_21",
+   "name": "SOUND 21",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_22",
+   "name": "SOUND 22",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_23",
+   "name": "SOUND 23",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_24",
+   "name": "SOUND 24",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_25",
+   "name": "SOUND 25",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_26",
+   "name": "SOUND 26",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_27",
+   "name": "SOUND 27",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
+  },
+  {
+   "key": "patch_slot_28",
+   "name": "SOUND 28",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "display": "string",
+   "type": "slot"
   }
  ],
  "sections": [

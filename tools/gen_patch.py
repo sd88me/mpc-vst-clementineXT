@@ -229,6 +229,16 @@ def params_json():
     ps.append({"key": "patch_name", "name": "Sound", "min": 0, "max": 0, "default": 0, "display": "string", "type": "readout"})
     ps.append({"key": "program_prev", "name": "Program <", "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger", "step_of": "program", "step_delta": -1})
     ps.append({"key": "program_next", "name": "Program >", "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger", "step_of": "program", "step_delta": 1})
+    # the Banks page (tiles are momentary string params: get = the tile text, set = a tap; see the jv880 port)
+    ps.append({"key": "bank_name", "name": "Bank", "min": 0, "max": 0, "default": 0, "display": "string", "type": "readout"})
+    ps.append({"key": "browse_bank_name", "name": "Browsing", "min": 0, "max": 0, "default": 0, "display": "string", "type": "readout"})
+    ps.append({"key": "patch_page_text", "name": "Page", "min": 0, "max": 0, "default": 0, "display": "string", "type": "readout"})
+    ps.append({"key": "patch_page_prev", "name": "Page <", "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger"})
+    ps.append({"key": "patch_page_next", "name": "Page >", "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger"})
+    for i in range(1, 13):
+        ps.append({"key": "bank_slot_%d" % i, "name": "BANK %d" % i, "min": 0, "max": 1, "default": 0, "momentary": True, "display": "string", "type": "slot"})
+    for i in range(1, 29):
+        ps.append({"key": "patch_slot_%d" % i, "name": "SOUND %d" % i, "min": 0, "max": 1, "default": 0, "momentary": True, "display": "string", "type": "slot"})
     have = {p["key"] for p in ps}
     secs = []
     for label, keys in SECTIONS:

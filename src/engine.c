@@ -34,6 +34,9 @@ typedef struct { int key, on, vel; float ug, ph1, ph2, pitch, target, det, panof
     float hz1, hz2, lf1, lf2, fmk, m1, m2, m3, m4, cut, reso, c2, gfac, panl, panr;
     int fm_on;
 } voice_t;
+#define MAX_BANKS 24
+#define PATHLEN 1400
+#define PAGE_SLOTS 28
 typedef struct {
     patch_t cur;                 /* the engine state is the XT's SDATA block */
     struct { int note, vel; } held[16];   /* keys currently down, oldest first */
@@ -42,6 +45,9 @@ typedef struct {
     float last_pitch;            /* pitch of the previous note, for glide */
     patch_t bank[256];           /* A001..B128 from a user .syx file, when one is found */
     int have_bank, program;
+    struct { char name[24]; char path[PATHLEN]; } banks[MAX_BANKS];   /* bank 0 is the built-in sounds, the rest are .syx files found in the plugin folder and ROMS */
+    int nbanks, cur_bank, browse_bank, browse_page;
+    patch_t browse[256];                                          /* the sounds of the bank the Banks page is browsing */
     wavedata_t *wd;
     const table_t *tab;
     voice_t v[NV];
@@ -72,35 +78,64 @@ static void refresh(inst_t *s) {
     for (int n = 0; n < 16; n++) s->modgain[n] = mod_amount_gain(s->cur.d[193 + 3 * n]);
 }
 
+typedef struct { patch_t *out; } bankctx_t;
 static void bank_cb(const patch_t *p, int bank, int num, void *ctx) {
-    inst_t *s = ctx;
-    int slot = (bank & 1) << 7 | (num & 127);
-    s->bank[slot] = *p;
-    s->have_bank = 1;
+    bankctx_t *c = ctx;
+    c->out[(bank & 1) << 7 | (num & 127)] = *p;   /* sounds land at their own location (single dumps at 0/1 bank + number) */
 }
 
-/* First .syx (by name) in dir; sounds land at their own location (single dumps at 0/1 bank + number). Never on the audio thread. */
-static void load_bank(inst_t *s, const char *dir) {
-    if (!dir) return;
-    DIR *d = opendir(dir);
-    if (!d) return;
-    char best[512] = "";
-    for (struct dirent *e; (e = readdir(d));) {
-        size_t n = strlen(e->d_name);
-        if (n > 4 && !strcasecmp(e->d_name + n - 4, ".syx") && n < 256 && (!best[0] || strcmp(e->d_name, best) < 0)) strcpy(best, e->d_name);
-    }
-    closedir(d);
-    if (!best[0]) return;
-    char path[1024]; snprintf(path, sizeof path, "%s/%s", dir, best);
-    FILE *f = fopen(path, "rb");
+/* Fill out[256] from bank b: the built-in sounds (b == 0) or a .syx file. Never on the audio thread. */
+static void bank_fill(const inst_t *s, int b, patch_t *out) {
+    if (b <= 0 || b >= s->nbanks) { presets_fill(out); return; }
+    for (int i = 0; i < 256; i++) patch_init(&out[i]);
+    FILE *f = fopen(s->banks[b].path, "rb");
     if (!f) return;
     fseek(f, 0, SEEK_END); long n = ftell(f); fseek(f, 0, SEEK_SET);
     if (n > 0 && n < (8 << 20)) {
         uint8_t *buf = malloc((size_t)n);
-        if (buf && fread(buf, 1, (size_t)n, f) == (size_t)n) syx_scan(buf, n, bank_cb, s);
+        bankctx_t c = { out };
+        if (buf && fread(buf, 1, (size_t)n, f) == (size_t)n) syx_scan(buf, n, bank_cb, &c);
         free(buf);
     }
     fclose(f);
+}
+
+static int cmp_str(const void *a, const void *b) { return strcmp((const char *)a, (const char *)b); }
+
+/* Banks: the built-in sounds, then every .syx in the plugin folder and its ROMS folder (by file name). */
+static void scan_banks(inst_t *s, const char *dir) {
+    snprintf(s->banks[0].name, sizeof s->banks[0].name, "Clementine"); s->banks[0].path[0] = 0; s->nbanks = 1;
+    if (!dir) return;
+    char sub[2][1100]; snprintf(sub[0], sizeof sub[0], "%s/ROMS", dir); snprintf(sub[1], sizeof sub[1], "%s", dir);
+    static char names[MAX_BANKS][PATHLEN]; int nn = 0;
+    for (int k = 0; k < 2; k++) {
+        DIR *d = opendir(sub[k]);
+        if (!d) continue;
+        for (struct dirent *e; (e = readdir(d)) && nn < MAX_BANKS - 1;) {
+            size_t n = strlen(e->d_name);
+            if (n > 4 && n < 200 && !strcasecmp(e->d_name + n - 4, ".syx")) snprintf(names[nn++], sizeof names[0], "%s/%.200s", sub[k], e->d_name);
+        }
+        closedir(d);
+    }
+    qsort(names, (size_t)nn, sizeof names[0], cmp_str);
+    for (int i = 0; i < nn && s->nbanks < MAX_BANKS; i++) {
+        const char *base = strrchr(names[i], '/'); base = base ? base + 1 : names[i];
+        int dup = 0; char nm[24]; snprintf(nm, sizeof nm, "%.*s", (int)(strlen(base) - 4 > 20 ? 20 : strlen(base) - 4), base);
+        for (int j = 1; j < s->nbanks; j++) if (!strcmp(s->banks[j].name, nm)) dup = 1;
+        if (dup) continue;
+        strcpy(s->banks[s->nbanks].name, nm); snprintf(s->banks[s->nbanks].path, sizeof s->banks[0].path, "%.1399s", names[i]); s->nbanks++;
+    }
+}
+
+/* Make bank b the current bank (its sounds become the program list). */
+static void select_bank(inst_t *s, int b) {
+    if (b < 0 || b >= s->nbanks) return;
+    bank_fill(s, b, s->bank); s->cur_bank = b; s->have_bank = 1;
+}
+static void browse_to(inst_t *s, int b) {
+    if (b < 0 || b >= s->nbanks) return;
+    s->browse_bank = b; s->browse_page = 0;
+    if (b == s->cur_bank) memcpy(s->browse, s->bank, sizeof s->browse); else bank_fill(s, b, s->browse);
 }
 
 static int tabs_ready;
@@ -110,10 +145,10 @@ static void *create(const char *dir) {
     if (s) s->arp_sound = -1;
     patch_init(&s->cur);
     if (dir) { char rd[1100]; snprintf(rd, sizeof rd, "%s/ROMS", dir); mkdir(rd, 0755); }   /* the folder for the user's own ROM dump and banks, created empty on first load */
-    load_bank(s, dir);
-    if (!s->have_bank && dir) { char rd[1100]; snprintf(rd, sizeof rd, "%s/ROMS", dir); load_bank(s, rd); }   /* a .syx bank may sit in ROMS too */
-    if (!s->have_bank) { presets_fill(s->bank); s->have_bank = 1; s->cur = s->bank[0]; }   /* built-in sounds when no bank is found */
-    if (s->have_bank) s->cur = s->bank[0];
+    scan_banks(s, dir);
+    select_bank(s, s->nbanks > 1 ? 1 : 0);   /* the first .syx bank when there is one, else the built-in sounds */
+    browse_to(s, s->cur_bank);
+    s->cur = s->bank[0];
     rs_init(&s->rs, RS_CLEAN);
     s->wd = wavedata_load(dir);
     if (!s->wd) { s->wd = calloc(1, sizeof *s->wd); }   /* no imported data: every table is an open-set stand-in */
@@ -335,6 +370,20 @@ static void set_param(void *p, const char *k, const char *val) {
         return;
     }
     if (!strcmp(k, "lfo_bpm")) { s->host_bpm = (float)atof(val); return; }
+    {   /* the Banks page: tiles bound to bank_slot_N / patch_slot_N, page buttons; a tap arrives as a nonzero value */
+        int n = 0;
+        if (!strncmp(k, "bank_slot_", 10)) { n = atoi(k + 10); if (n >= 1 && n <= MAX_BANKS && x > 0) browse_to(s, n - 1); return; }
+        if (!strncmp(k, "patch_slot_", 11)) {
+            n = atoi(k + 11); int idx = s->browse_page * PAGE_SLOTS + n - 1;
+            if (n >= 1 && n <= PAGE_SLOTS && idx < 256 && x > 0) {
+                if (s->browse_bank != s->cur_bank) { s->cur_bank = s->browse_bank; memcpy(s->bank, s->browse, sizeof s->bank); s->have_bank = 1; }
+                s->program = idx; s->cur = s->bank[idx]; refresh(s);
+            }
+            return;
+        }
+        if (!strcmp(k, "patch_page_next")) { if (x > 0 && (s->browse_page + 1) * PAGE_SLOTS < 256) s->browse_page++; return; }
+        if (!strcmp(k, "patch_page_prev")) { if (x > 0 && s->browse_page > 0) s->browse_page--; return; }
+    }
     if (!strcmp(k, "program")) {
         s->program = x < 0 ? 0 : x > 255 ? 255 : x;
         if (s->have_bank) s->cur = s->bank[s->program];   /* voices keep playing and pick the new values up next sample */
@@ -356,6 +405,20 @@ static int get_param(void *p, const char *k, char *buf, int n) {
         return o;
     }
     if (!strcmp(k, "program")) return snprintf(buf, n, "%d", s->program);
+    if (!strcmp(k, "bank_name")) return snprintf(buf, n, "%s", s->banks[s->cur_bank].name);
+    if (!strcmp(k, "browse_bank_name")) return snprintf(buf, n, "%s%s", s->browse_bank == s->cur_bank ? "* " : "", s->banks[s->browse_bank].name);
+    if (!strcmp(k, "patch_page_text")) return snprintf(buf, n, "PAGE %d/%d", s->browse_page + 1, (256 + PAGE_SLOTS - 1) / PAGE_SLOTS);
+    if (!strncmp(k, "bank_slot_", 10)) {
+        int b = atoi(k + 10) - 1;
+        if (b < 0 || b >= s->nbanks) return snprintf(buf, n, "%s", "");
+        return snprintf(buf, n, "%s%s", b == s->browse_bank ? "> " : "", s->banks[b].name);
+    }
+    if (!strncmp(k, "patch_slot_", 11)) {
+        int idx = s->browse_page * PAGE_SLOTS + atoi(k + 11) - 1;
+        if (idx < 0 || idx >= 256) return snprintf(buf, n, "%s", "");
+        char nm[PATCH_NAME_LEN + 1]; patch_get_name(&s->browse[idx], nm);
+        return snprintf(buf, n, "%03d %s", idx + 1, nm);
+    }
     if (!strcmp(k, "patch_name")) { char nm[PATCH_NAME_LEN + 1]; patch_get_name(&s->cur, nm); return snprintf(buf, n, "%s", nm); }
     int i = patch_find(k);
     return i < 0 ? 0 : snprintf(buf, n, "%d", s->cur.d[i]);
