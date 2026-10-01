@@ -36,7 +36,7 @@ def knobs(row, cell, items):   # [(label, key)] one per cell; keys starting with
 tab("GLOBAL")
 frame(0, 0, 8, "PLAY")   # on the top row: the 83-entry ASSIGN list needs the most room below the field to fit the screen
 for k in range(4):
-    n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n); popup(0, 2 * k + 1, "ASSIGN", "play%d" % n)
+    n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n); popup(0, 2 * k + 1, "PARAMETER", "play%d" % n)
 frame(1, 0, 8, "SOUND")
 stepper(1, 0, 2, "BANK", "bank"); readout(1, 2, 2, "", "bank_name")
 stepper(1, 4, 2, "SOUND", "program"); readout(1, 6, 2, "", "patch_name")
