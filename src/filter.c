@@ -158,7 +158,11 @@ static void filt_prep(filt_t *f, int type, float cutoff, float reso, int special
         f->cgr2 = tab2(g_res, cutoff + (special - 64), reso); f->ckr2 = tab2(k_res, cutoff + (special - 64), reso);
         break;
     case 10: f->cg = filt_pole_g(cutoff); f->cgr = tab2(g_res, cutoff, reso); f->ckr = tab2(k_res, cutoff, reso); break;
-    case 12: f->cgx = filt_pole_g(cutoff + special * 0.25f); break;
+    case 12: {   /* band stop (fitted): 0.55 of a critically damped LP at the pole plus a HP whose corner sits `special` cutoff steps higher (capped near 10 kHz) with a gain that grows with the distance */
+        f->cg = filt_pole_g(cutoff); f->cgx = filt_pole_g(cutoff + special < 107.0f ? cutoff + special : 107.0f);
+        float r = atanf(f->cgx) / atanf(f->cg);
+        f->cgain = 0.65f * powf(r, 0.45f);
+        break; }
     default: f->cg = filt_pole_g(cutoff); f->ck = filt_damping(reso); break;   /* 5, 6, 8, 9 */
     }
 }
@@ -219,11 +223,13 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
     case 8:   /* FM filter: the oscillator 2 FM of the cutoff is not modelled yet */
         svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
         return lp;
-    case 9: { /* sample and hold in front of a 12 dB LP; rate 127 passes the signal untouched */
-        int period = special >= 127 ? 1 : 1 + (127 - special) / 4;
-        if (++f->sphase >= period) { f->sphase = 0; f->shold = x; }
-        svf_tick(&f->a, period == 1 ? x : f->shold, g, k, &lp, &bp, &hp);
-        return lp;
+    case 9: { /* sample and hold in front of a 12 dB LP: the hold period is 2^((127 - special)/12.5) samples (rough fit of the rig's rolloff: the noise
+               * measurement of a sampler is not a clean transfer function); the whole path is 6 dB below the other types */
+        float period = exp2f((127 - special) / 12.5f);
+        if (period <= 1.0f) { f->shold = x; f->sphase = 0; }
+        else if ((f->sphase += 1.0f) >= period) { f->sphase -= period; f->shold = x; }
+        svf_tick(&f->a, f->shold, g, k, &lp, &bp, &hp);
+        return 0.5f * lp;
     }
     case 10: { /* 24 dB notch (fitted): a wide notch (critically damped, at the nominal pole) and the 12 dB section's own (pole, Q) notch, unity passband */
         svf_tick(&f->a, x, g * 0.95f, 2.0f, &lp, &bp, &hp);
@@ -234,10 +240,10 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
     case 11: /* 12 dB notch (fitted, 0.1-0.6 dB rms at cutoff 48-96): the 12 dB section's (pole, Q) notch at half level */
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
         return 0.5f * (x - kr * bp);
-    default: /* 12: band stop (rough fit at special 64): both sections sit special/4 steps above the cutoff, passing -6 dB below and +5 dB above */
-        svf_tick(&f->a, x, f->cgx, 2.0f, &lp, &bp, &hp);
+    default: /* 12: band stop */
+        svf_tick(&f->a, x, f->cg, 2.0f, &lp, &bp, &hp);
         svf_tick(&f->b, x, f->cgx, 2.0f, &lp2, &bp2, &hp2);
-        return 0.5f * lp + 1.8f * hp2;
+        return 0.55f * lp + f->cgain * hp2;
     }
 }
 
