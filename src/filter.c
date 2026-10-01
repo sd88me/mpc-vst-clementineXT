@@ -165,6 +165,12 @@ static void filt_prep(filt_t *f, int type, float cutoff, float reso, int special
 
 /* Calibrated: types 0-4, 7, 10, 11 fitted to the firmware (docs/CALIBRATION.md); 5, 6, 8, 9, 12 are rough. */
 float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int special) {
+    if (type == 8) {   /* FM filter: a 12 dB LP whose cutoff the caller moves at audio rate (oscillator 2 times Special); the table lookup is cheap, the cache is skipped */
+        if (!f->kvalid || f->kt != 8 || reso != f->kr) { f->kt = 8; f->kr = reso; f->kvalid = 1; f->ck = filt_damping(reso); f->kc = -1; }
+        float lp, bp, hp;
+        svf_tick(&f->a, x, filt_pole_g(cutoff), f->ck, &lp, &bp, &hp);
+        return lp;
+    }
     if (!f->kvalid || type != f->kt || cutoff != f->kc || reso != f->kr || special != f->ks) filt_prep(f, type, cutoff, reso, special);
     float g = f->cg, k = f->ck, gr = f->cgr, kr = f->ckr, lp, bp, hp, lp2, bp2, hp2;
     if (kr < 0.02f && (type == 0 || type == 1)) {   /* resonance above about 111: the firmware filter rings on its own (kick sounds); a little noise starts it */

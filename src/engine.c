@@ -747,7 +747,7 @@ static void core(inst_t *s, float *lr) {
         v->ph2 += 128.0f * v->hz2 / CORE_HZ; if (v->ph2 >= 128) v->ph2 -= 128;
         float mix = (w1 * v->m1 + w2 * v->m2 + w1 * w2 * v->m3 + (v->m4 > 0 ? noise_tick(v) * v->m4 : 0.0f)) / 128.0f;
         mix = clip(mix, p->d[P_CLIP]);
-        float fl = filter1_run(&v->flt, p->d[P_F1_TYPE], mix, v->cut, v->reso, v->spec);
+        float fl = filter1_run(&v->flt, p->d[P_F1_TYPE], mix, p->d[P_F1_TYPE] == 8 ? v->cut + w2 * v->spec * 1.4f : v->cut, v->reso, v->spec);   /* type 8: oscillator 2 moves the cutoff by +-1.4 units per Special step (fitted) */
         fl = filter2_run(&v->flt, p->d[P_F2_TYPE], fl, v->c2);
         float g = fl * v->aenv.level * v->gfac;
         suml += g * v->panl;
