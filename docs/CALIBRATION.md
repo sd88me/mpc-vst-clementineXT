@@ -207,7 +207,7 @@ negated reverse, -128 saturating to +127); tables 32-40 also taper samples 48..6
   samples exact. Found with Berlekamp-Massey on the oracle dump (linear complexity 16 against about 32 for random bits). 44 is not a table at all: slot s is
   4+s samples of a ramp (chip B at 0x1322B, negated) then 60-s raw bytes of the combined ROM image from 0xF3CC, so `wavedata.c` reads it from the user's ROM (exact in
   all 61 slots); without a ROM it falls back to the open stand-in.
-- **Not rebuilt (open-table stand-ins): 30, 43, 46, 50, 51.** 43 is a filtered noise that no ROM region, LFSR bit-plane or 45's bits explains. 46 starts as a ROM window (combined
+- **Not rebuilt (open-table stand-ins): 43, 46, 50, 51** (30 is the approximate half-sine/pulse blend). 43 is a filtered noise that no ROM region, LFSR bit-plane or 45's bits explains. 46 starts as a ROM window (combined
   image at 0xEB8A, first 64-s samples) and ends in a looping tail whose rule is unknown. 50 and 51 contain short waves (about 23 samples, zeros after) and all-zero slots.
 76 of the 256 factory sounds use tables 28-51; 66 of them use rebuilt ones.
 
