@@ -68,12 +68,12 @@ static uint8_t *slurp(const char *path, size_t *n) {
     return b;
 }
 
-/* Look for a ROM in dir (and dir/wavedata, dir/import): a 256 KB image, or the two 128 KB halves (either may be missing: the importer then
+/* Look for a ROM in dir/ROMS (then dir, dir/wavedata, dir/import): a 256 KB image, or the two 128 KB halves (either may be missing: the importer then
  * takes what that chip holds). Fills chip A (even bytes) and chip B (odd bytes); returns 1 if at least chip A was found. */
 static int find_rom(const char *dir, uint8_t **A, uint8_t **B) {
-    char sub[1024]; static const char *const subs[] = { "", "/wavedata", "/import" };
+    char sub[1024]; static const char *const subs[] = { "/ROMS", "", "/wavedata", "/import" };   /* ROMS is the folder the plugin creates for the user's own files */
     *A = *B = NULL;
-    for (int k = 0; k < 3; k++) {
+    for (int k = 0; k < 4; k++) {
         snprintf(sub, sizeof sub, "%s%s", dir, subs[k]);
         DIR *d = opendir(sub);
         if (!d) continue;

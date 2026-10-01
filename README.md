@@ -12,7 +12,7 @@ Working so far: 12 built-in presets on twelve open wave tables (used when no ban
 wavetable oscillators (real table data, measured mip levels and pitch, FM, ring mod, noise), amp, filter, wave and free envelopes,
 Filter 1 low-pass types (12/24 dB, calibrated) and Filter 2, the modulation matrix and both LFOs, pan, volume, poly/mono/dual/unison
 voices, glide, an effects module, and an orange XT-styled skin. The original waves and control tables are read straight from the
-user's own ROM dump (two 128 KB halves or one 256 KB image, placed in the plugin folder).
+user's own ROM dump (two 128 KB halves or one 256 KB image, placed in the plugin's `ROMS` folder, which it creates on first load).
 
 Not done (guesses only, unmeasured: arpeggiator and trigger modes): the modifier delay and the timed modifiers (S&H, ramp, lag, filter, differentiator are unmeasured guesses), exact shapes of Filter 1's band-pass/high-pass/other types, effect calibration (and the
 firmware's effect numbering), the algorithmic wave tables 28-51, a larger open wave set for use without a

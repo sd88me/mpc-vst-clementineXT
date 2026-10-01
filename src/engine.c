@@ -7,6 +7,7 @@
 #include <strings.h>
 #include "engine.h"
 #include <dirent.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include "out.h"
 #include "patch.h"
@@ -107,7 +108,9 @@ static void *create(const char *dir) {
     inst_t *s = calloc(1, sizeof *s);
     if (s) s->arp_sound = -1;
     patch_init(&s->cur);
+    if (dir) { char rd[1100]; snprintf(rd, sizeof rd, "%s/ROMS", dir); mkdir(rd, 0755); }   /* the folder for the user's own ROM dump and banks, created empty on first load */
     load_bank(s, dir);
+    if (!s->have_bank && dir) { char rd[1100]; snprintf(rd, sizeof rd, "%s/ROMS", dir); load_bank(s, rd); }   /* a .syx bank may sit in ROMS too */
     if (!s->have_bank) { presets_fill(s->bank); s->have_bank = 1; s->cur = s->bank[0]; }   /* built-in sounds when no bank is found */
     if (s->have_bank) s->cur = s->bank[0];
     rs_init(&s->rs, RS_CLEAN);
