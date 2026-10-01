@@ -74,6 +74,9 @@ enum { P_OSC1_OCT = 1, P_OSC1_SEMI = 2, P_OSC1_DET = 3, P_OSC1_KT = 6, P_OSC2_OC
        P_F1_CUTOFF = 62, P_F1_RESO = 63, P_F1_TYPE = 64, P_F1_KT = 65, P_F1_ENV = 66, P_F1_VELO = 67, P_F1_SPECIAL = 70,
        P_F2_CUTOFF = 73, P_F2_TYPE = 74, P_F2_KT = 75, P_FENV_A = 113, P_FENV_D = 114, P_FENV_S = 115, P_FENV_R = 116 };
 
+/* The sound list is 2 columns of 14 tiles that the host numbers across the rows; the sounds run down the left column, then the right one. */
+static int patch_slot_index(const inst_t *s, int n) { int p = n - 1; return s->browse_page * PAGE_SLOTS + (p % 2) * (PAGE_SLOTS / 2) + p / 2; }
+
 static void refresh(inst_t *s) {
     if (s->wd) s->tab = wavedata_table(s->wd, s->cur.d[P_TABLE]);
     for (int n = 0; n < 16; n++) s->modgain[n] = mod_amount_gain(s->cur.d[193 + 3 * n]);
@@ -377,7 +380,7 @@ static void set_param(void *p, const char *k, const char *val) {
         int n = 0;
         if (!strncmp(k, "bank_slot_", 10)) { n = atoi(k + 10); if (n >= 1 && n <= MAX_BANKS && x > 0) browse_to(s, n - 1); return; }
         if (!strncmp(k, "patch_slot_", 11)) {
-            n = atoi(k + 11); int idx = s->browse_page * PAGE_SLOTS + n - 1;
+            n = atoi(k + 11); int idx = patch_slot_index(s, n);
             if (n >= 1 && n <= PAGE_SLOTS && idx < 256 && x > 0) {
                 if (s->browse_bank != s->cur_bank) { s->cur_bank = s->browse_bank; memcpy(s->bank, s->browse, sizeof s->bank); s->have_bank = 1; }
                 s->program = idx; s->cur = s->bank[idx]; refresh(s);
@@ -413,7 +416,7 @@ static int get_param(void *p, const char *k, char *buf, int n) {
         if (kl > 3 && !strcmp(k + kl - 3, "_on")) {
             if (!strncmp(k, "bank_slot_", 10)) return snprintf(buf, n, "%d", atoi(k + 10) - 1 == s->browse_bank ? 1 : 0);
             if (!strncmp(k, "patch_slot_", 11)) {
-                int idx = s->browse_page * PAGE_SLOTS + atoi(k + 11) - 1;
+                int idx = patch_slot_index(s, atoi(k + 11));
                 return snprintf(buf, n, "%d", (s->browse_bank == s->cur_bank && idx == s->program) ? 1 : 0);
             }
         }
@@ -427,7 +430,7 @@ static int get_param(void *p, const char *k, char *buf, int n) {
         return snprintf(buf, n, "%s%s", b == s->browse_bank ? "> " : "", s->banks[b].name);
     }
     if (!strncmp(k, "patch_slot_", 11)) {
-        int idx = s->browse_page * PAGE_SLOTS + atoi(k + 11) - 1;
+        int idx = patch_slot_index(s, atoi(k + 11));
         if (idx < 0 || idx >= 256) return snprintf(buf, n, "%s", "");
         char nm[PATCH_NAME_LEN + 1]; patch_get_name(&s->browse[idx], nm);
         return snprintf(buf, n, "%03d %s", idx + 1, nm);
