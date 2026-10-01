@@ -740,7 +740,7 @@ static void voice_control(inst_t *s, voice_t *v) {
     v->c2 = p->d[P_F2_CUTOFF] + (p->d[P_F2_KT] - 64) * 0.03125f * (note - 64) + m2;
     float vol = clampf(p->d[P_VOLUME] + dest[12], 127.0f);
     v->gfac = vg * (vol / 127.0f) * v->ug;
-    float pan = p->d[P_PAN] + v->panoff * 63.5f + dest[13];   /* unison/dual spread moves the voice off the sound's pan position */
+    float pan = p->d[P_PAN] + v->panoff * 63.5f;   /* the matrix does nothing to Panning in the firmware (measured: constant, velocity and keytrack sources at +-63); unison/dual spread moves the voice off the sound's pan position */
     pan = pan < 0 ? 0 : pan > 127 ? 127 : pan;
     int pi = (int)(pan + 0.5f);
     v->panl = pan_gain_left(pi); v->panr = pan_gain_left(127 - pi);
