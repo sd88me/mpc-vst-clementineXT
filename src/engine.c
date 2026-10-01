@@ -32,7 +32,8 @@ typedef struct { int key, on, vel; float ug, ph1, ph2, pitch, target, det, panof
     /* control-rate state, refreshed every CTL_N samples (modulation moves slowly; the libm-heavy work happens here) */
     int ctl, fa, fd, fs, fr, aa, ad, as, ar, slot1, slot2, spec;
     float hz1, hz2, lf1, lf2, fmk, m1, m2, m3, m4, cut, reso, c2, gfac, panl, panr;
-    int fm_on;
+    int fm_on, dly_w;
+    float dly[8192];   /* the Control Delay source: the chosen source, delayed by 12.6 ms per Time step (up to 1.6 s) at the control rate */
 } voice_t;
 #define MAX_BANKS 24
 #define PATHLEN 1400
@@ -610,9 +611,9 @@ static float mod_op(int op, float a, float b, float par, float st[2], float dt) 
     case 4: return (ia ^ ib) / 128.0f;
     case 5: return (ia | ib) / 128.0f;
     case 6: return (ia & ib) / 128.0f;
-    case 7: if (st[1] <= 0) { st[0] = a; st[1] = 0.001f + par * par * 2.0f; } st[1] -= dt; return st[0];
-    case 8: if (a > 0.5f && st[1] < 0.5f) st[0] = 0;
-            st[1] = a; st[0] += dt / (0.01f + par * par * 10.0f); if (st[0] > 1) st[0] = 1; return st[0];
+    case 7: if (st[1] <= 0) { st[0] = a; st[1] = 1.2f * exp2f((60.0f - par * 127.0f) / 12.0f); } st[1] -= dt; return st[0];   /* S&H: the source is sampled every 1.2 s * 2^((60 - P)/12) (measured) */
+    case 8: if (a > 0.5f) { st[0] += dt / (0.34f * exp2f((70.0f - par * 127.0f) / 12.2f)); if (st[0] > 1) st[0] = 1; } else st[0] = 0;   /* ramp: rises linearly to 1 while the source is high, full scale in 0.34 s * 2^((70 - P)/12.2) (measured); back to 0 when it falls */
+            return st[0];
     case 9: return a >= par ? 1.0f : 0.0f;
     case 10: return fabsf(a);
     case 11: w = 2.0f * par; return w >= 1.0f ? w - 2.0f : w;  /* depends on the parameter only (measured) */
@@ -659,6 +660,12 @@ static void voice_control(inst_t *s, voice_t *v) {
     src[17] = s->pedal ? 1.0f : 0.0f; src[18] = s->cc[4] / 127.0f; src[19] = s->cc[2] / 127.0f;
     src[20] = s->cc[4] / 127.0f; src[21] = s->cc[8] / 127.0f; src[22] = s->cc[11] / 127.0f; src[23] = s->cc[12] / 127.0f;   /* Controls W-Z (default CC numbers) */
     src[31] = 1.0f;
+    {   /* Control Delay (source 24) */
+        int sel = p->d[174] & 31, steps = p->d[175] * 63;
+        v->dly[v->dly_w & 8191] = sel < 24 ? src[sel] : 0.0f;
+        src[24] = v->dly[(v->dly_w - steps) & 8191];
+        v->dly_w++;
+    }
     for (int m = 0; m < 4; m++) {   /* modifiers 1-4 are sources 25-28 (sources 0 and 31 read 0 and 1) */
         int o = 176 + 4 * m;
         if (!p->d[o] && !p->d[o + 1] && !p->d[o + 2]) continue;   /* unused */

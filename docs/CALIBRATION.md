@@ -181,8 +181,12 @@ Fitted against `filt.tsv` (white noise through the external input, 4 cutoffs x 3
 - Lag (13): linear ramp to source 1 at 2.09 units/s for parameter 64, doubling every 11 steps (parameter 20: 0.13/s, 100: > 10/s).
 - Filter (14): one-pole low-pass, time constant about 40 ms at parameter 100, 15 ms at 64, a few ms at 20 (0.040*2^((P-100)/25) s).
 - Differentiator (15): a short pulse at the step, then 0; the scale (0.0125/dt) is a guess.
-- S&H (7) and ramp (8) behave unlike the manual's description in these tests (S&H output depended on the parameter in a non-monotonic
-  way and exceeded full scale at parameter 20; the ramp showed a ripple at parameter 100), so they are still the manual-based guesses.
+- S&H (7): the source is sampled every 1.2 s * 2^((60 - P)/12) (2.1 s at 50, 0.12 s at 100; a sample is taken at note start).
+- Ramp (8): rises linearly while the source is above half, full scale in 0.34 s * 2^((70 - P)/12.2), and drops to 0 when the source falls.
+- Types 11 and 12 (the manual's "min" and "max") behave as: 11 = a constant from the parameter (P/64, wrapping at 1 to -1), 12 = source 1.
+  (Earlier notes had the two swapped.)
+- Control Delay (source 24, SDATA 174/175): the chosen source delayed by 12.6 ms per Time step (1.6 s at 127), measured with a
+  controller step.
 
 Arp tempo: 0 ("extern") follows the host tempo, which the wrapper passes in as `lfo_bpm` (built with -DHAS_LFO_BPM=1); 1..127 map to 50-300 BPM. The note values for the Arp Clock are guesses (see above); the engine does not yet follow the host transport (start/stop/position).
 

@@ -16,7 +16,7 @@ wave tables 28-51, a Banks page (bank list and paged sound list; banks are the b
 presets on twelve open wave tables for use without a ROM, and an orange XT-styled skin. The original waves and tables are read from the
 user's own ROM dump (two 128 KB halves or one 256 KB image in the plugin's `ROMS` folder, created on first load).
 
-Not done: the noise-like algorithmic tables 43-51 (open stand-ins), the S&H and ramp modifiers and the modifier delay, Filter 1 types
+Not done: the noise-like algorithmic tables 43-51 (open stand-ins), Filter 1 types
 5, 6, 8, 9, 12 (rough), a few effect details (Mod Delay speed/depth, wah sense), the arp hold mode, and the catalog
 release checks.
 
