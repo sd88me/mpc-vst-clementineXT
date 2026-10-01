@@ -102,8 +102,8 @@ void fx_run(fx_t *f, int type, int p1, int p2, int p3, float tempo_bpm, float *l
         float fb = type == FX_MODDELAY ? 0.35f : p2 * 0.744f / 127.0f;   /* measured: repeat ratio 0.744 * p / 127 */
         float d = time * FS;
         if (type == FX_MODDELAY) {
-            f->lfo += (0.05f + p2 / 127.0f * 5.0f) / FS; if (f->lfo >= 1) f->lfo -= 1;
-            d += sinf(TWO_PI * f->lfo) * p3 / 127.0f * 0.005f * FS;
+            f->lfo += 0.0167f * exp2f(p2 / 12.0f) / FS; if (f->lfo >= 1) f->lfo -= 1;   /* the effects' common LFO law (speed 64: 0.67 Hz); depth about +-4 ms (frequency-shift readings of a tone) */
+            d += sinf(TWO_PI * f->lfo) * p3 / 127.0f * 0.004f * FS;
         }
         if (d > FX_MAX_DELAY - 2) d = FX_MAX_DELAY - 2;
         if (type == FX_MODDELAY) { dry = 0.5f; wet = 0.5f; } else { wet = p3 / 127.0f; dry = 1.0f - wet; }   /* measured: linear dry:wet */

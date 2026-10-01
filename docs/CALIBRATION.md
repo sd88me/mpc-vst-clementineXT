@@ -143,7 +143,7 @@ Index numbering (oracle, all 36 indices, steady note): 0 off, 1 Chorus, 2 Flange
 4 and 5 are inferred (a steady 261 Hz tone shows little change for 4).
 Delay (32): echo time 0.12 s * 2^((p1-64)/36) (35 ms to 0.40 s, independent of the tempo setting); repeat ratio 0.744*p2/127;
 mix p3 linear dry/wet (0 = dry). Pan Delay (33): same time and mix; the first repeat is on the right, the second left, and
-the feedback closes after two hops. Mod Delay (34): one repeat at about the same time law, dry and wet both ~0.5; speed and
+the feedback closes after two hops. Mod Delay (34): one repeat at about the same time law, dry and wet both ~0.5; speed follows the common effect LFO law (0.0167*2^(p/12) Hz) and the depth is about +-4 ms (from the pitch shift of a tone); speed and
 depth modulate it (not calibrated; our sine LFO ranges are guesses). Chorus, flangers, wahs, overdrive and amp mod remain
 uncalibrated apart from knowing that mix 0 is dry and that overdrive gain 0 is silent.
 
