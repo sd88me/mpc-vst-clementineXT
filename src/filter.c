@@ -3,6 +3,12 @@
 #include "filter.h"
 
 #define FS 40000.0f
+#ifndef HP_H
+#define HP_H 10000.0f
+#endif
+#ifndef HP_N
+#define HP_N 3.0f
+#endif
 
 /* Effective pole frequency of a critically damped section per cutoff value, fitted to the firmware's 12 dB low-pass responses
  * (0.15 dB rms at every cutoff 32..127, docs/CALIBRATION.md). Below 32 the values are extrapolated. */
@@ -146,7 +152,7 @@ static void filt_prep(filt_t *f, int type, float cutoff, float reso, int special
     case 1: case 3: case 11: f->cgr = tab2(g_res, cutoff, reso); f->ckr = tab2(k_res, cutoff, reso); break;
     case 4: {   /* the high-pass pole stops short of the LP's: about 8 kHz at cutoff 120 where the LP's is 16 kHz (fitted: hz / sqrt(1 + (hz/9 kHz)^2)) */
         float g = tab2(g_res, cutoff, reso), hz = atanf(g) * FS / 3.14159265f;
-        f->cgr = tanf(3.14159265f * hz / sqrtf(1.0f + (hz / 9000.0f) * (hz / 9000.0f)) / FS); f->ckr = tab2(k_res, cutoff, reso);
+        f->cgr = tanf(3.14159265f * hz / powf(1.0f + powf(hz / HP_H, HP_N), 1.0f / HP_N) / FS); f->ckr = tab2(k_res, cutoff, reso);
         break; }
     case 2:
         f->cg = filt_pole_g(cutoff); f->cgr = tab2(g_res, cutoff, reso); f->ckr = tab2(k_res, cutoff, reso);
