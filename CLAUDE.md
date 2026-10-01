@@ -8,5 +8,5 @@ Ground rules:
   sounds, or Waldorf logos/panel artwork. Test fixtures derived from them stay on the developer's machine.
 - Don't use "Waldorf" or "Microwave" in the product name, skin art or plugin id.
 - Vendored code goes in `src/vendor/` with an entry in `src/VENDORED.md`.
-- Every release must be catalog-conformant (`release.py --repo sd88me/mpc-vst-clementine --license GPL-3.0-only`,
+- Every release must be catalog-conformant (`release.py --repo sd88me/mpc-vst-clementineXT --license GPL-3.0-only`,
   `catalog_check.py --catalog` OK).
