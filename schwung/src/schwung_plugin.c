@@ -33,6 +33,7 @@ typedef struct {
     atomic_int closing;               /* set by destroy_instance; the worker then frees everything */
     atomic_int busy;                  /* a slow command (bank load) is running */
     slow_cmd_t q[QSIZE];
+    float last_bpm;                   /* audio thread only */
     atomic_uint qhead, qtail;         /* single producer (the audio thread), single consumer (the worker) */
     pthread_t worker;
 } wrap_t;
@@ -168,6 +169,13 @@ static int sw_error(void *p, char *buf, int n) {
 static void sw_render(void *p, int16_t *out, int frames) {
     wrap_t *w = p;
     if (!w || !ready(w)) { memset(out, 0, (size_t)frames * 4); return; }
+    if (g_host && g_host->get_bpm) {   /* the arpeggiator's Tempo 0 (extern) follows the host tempo */
+        float bpm = g_host->get_bpm();
+        if (bpm > 20.0f && bpm < 400.0f && (bpm > w->last_bpm + 0.05f || bpm < w->last_bpm - 0.05f)) {
+            char v[16]; snprintf(v, sizeof v, "%.2f", bpm);
+            w->eng->set_param(w->inst, "lfo_bpm", v); w->last_bpm = bpm;
+        }
+    }
     w->eng->render(w->inst, out, frames);
 }
 
@@ -177,4 +185,4 @@ static plugin_api_v2_t api = {
     .set_param = sw_set, .get_param = sw_get, .get_error = sw_error, .render_block = sw_render,
 };
 
-plugin_api_v2_t *move_plugin_init_v2(const host_api_v1_t *host) { g_host = host; (void)g_host; return &api; }
+plugin_api_v2_t *move_plugin_init_v2(const host_api_v1_t *host) { g_host = host; return &api; }

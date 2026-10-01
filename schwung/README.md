@@ -29,6 +29,7 @@ both frontends use; both are listed in `../src/VENDORED.md`.
   variable), outside the module folder so module updates keep them. Copy your own Microwave II ROM dump (two 128 KB chips or one 256 KB
   image) and any `.syx` banks there. Without a ROM the 12 built-in sounds play on an open set of wave tables. The module ships none of
   them.
+- **Tempo.** Each block asks Schwung's `get_bpm` and hands a changed tempo to the engine, so the arpeggiator's Tempo 0 (extern) follows the host.
 - **Output.** The engine's 44.1 kHz stereo `int16` in 128-frame blocks is exactly what Schwung expects.
 
 ## Build and test
@@ -43,5 +44,5 @@ schwung/scripts/build.sh    # aarch64 module tarball in build/schwung/
 - Moving to its own repo: copy `schwung/`, `src/` (engine plus `src/vendor`), `tools/gen_schwung.py`, `tools/gen_patch.py`, `tools/sdata_lists.json`, `vst/params.json`,
   the GPL `LICENSE` and the legal notes in the main README (no ROM, no Waldorf names in the module id or name), then adjust the paths in the two scripts.
   Add the catalog files (`release.json`, a catalog entry) the way other Schwung modules do.
-- Known gaps: no host tempo for the arpeggiator yet (Schwung's `get_bpm` is not wired in), sound names only for the current sound (the preset
+- Known gaps: sound names only for the current sound (the preset
   page shows the number and name of the one you select), the engine's sound save/state key is not used (Schwung keeps the control values).
