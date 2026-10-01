@@ -109,7 +109,7 @@ Built on the [mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins) framew
 
 ## Other platforms
 
-A Schwung (Ableton Move) version is started in [schwung/](schwung/README.md): it builds and passes a host simulation, but has not run on a Move yet.
+A Schwung (Ableton Move) version lives in its own repo, [sd88me/schwung-clementineXT](https://github.com/sd88me/schwung-clementineXT). It reuses this engine (a copy, refreshed from here) and has not run on a Move yet.
 
 ## Building from source
 
