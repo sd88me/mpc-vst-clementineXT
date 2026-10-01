@@ -23,5 +23,4 @@ chorus and flanger effects (+5-9 %). `-mcpu=cortex-a12 -mfpu=neon-vfpv4 -ffast-m
 build to that CPU; it is not used.
 
 Bench of 0.3.3-dev (2026-10-02, Force, `tools/bench.sh`): 8 voices p99 14.7 % (max 16.8), 16 voices p99 14.5 % (max 19.3), Q-Link sweep p99 25.1 % (max 28.0), release tail 6.3 %;
-verdict WARN (worst p99 25.1 %, no background threads). The sweep rose from 22 % with the larger parameter list of the new skin and the delay table / chorus changes cost nothing
-measurable in the sustained cases.
+verdict WARN (worst p99 25.1 %, no background threads). The sweep rose from 22 %; the sustained cases did not change. The cause of the rise was not isolated.
