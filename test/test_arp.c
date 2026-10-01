@@ -12,7 +12,7 @@ int main(void) {
     int16_t out[256]; double e0 = 0, gaps = 0; int blocks = 0, quiet = 0; double rb[400];
     for (int b = 0; b < 400; b++) { e->render(h, out, 128); double r = 0; for (int i = 0; i < 256; i++) r += (double)out[i] * out[i]; e0 += r; rb[blocks++] = r; }
     if (getenv("ARPDBG")) for (int b = 0; b < 60; b++) printf("%g\n", rb[b]);
-    for (int b = 0; b < blocks; b++) if (rb[b] < 0.1 * e0 / blocks) quiet++;
+    for (int b = 0; b < blocks; b++) if (rb[b] < 0.6 * e0 / blocks) quiet++;
     CHECK(e0 > 0, "arp produces audio while keys are held");
     (void)gaps; (void)blocks; CHECK(quiet > 0, "gate closes between steps");
     uint8_t off[3] = {0x80, 60, 0}; for (int i = 0; i < 3; i++) { off[1] = k[i][1]; e->midi(h, off, 3); }

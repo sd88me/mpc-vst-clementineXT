@@ -125,11 +125,16 @@ in units of the full-scale volume effect. Findings (A, B, parameter P all 0..1):
 - Not measured, implemented from the manual as guesses: S&H, ramp, lag, filter, differentiator, modifier delay (source 24).
 The type numbering or the manual's names may be off for 11 and 12; the behaviour is reproduced as measured.
 
-## Arpeggiator and trigger modes (not measured)
-Both are implemented from the manual only. Arp tempo (50-300 BPM over 1..127, 0 = 120), the 16 clock note values, the 15
-preset rhythms (placeholders) and the 80% gate are guesses; the user pattern uses the four packed nibbles (bit = step on).
-Envelope triggers apply on legato mono notes: normal restarts from zero, single leaves the envelope running, retrigger
-restarts from the current level. All of this needs a firmware comparison.
+## Arpeggiator (measured) and trigger modes (not measured)
+Arp step length = the Clock value in beats at the Arp Tempo: clock 0-12 = 1/1, 1/2., 1/2T, 1/2, 1/4., 1/4T, 1/4, 1/8., 1/8T, 1/8, 1/16.,
+1/16T, 1/16 (13-15 are faster than the rig resolves and are taken as 1/32T, 1/32, 1/64T). Tempo 1..127 = 50..300 BPM (127 gave exactly
+300: a quarter-note clock step 0.200 s), within about 1 % over the range; 0 is "extern" (host tempo). The gate closes 7.6 ms before
+the next step (constant over tempo and clock). Preset rhythms 1-15 are the 16-step masks in `ARP_PRESET` (pattern 0 plays every step);
+a rest does not consume a note of the sequence. Order: the notes ascending (note) or as played; "n.rev"/"p.rev" reverse the whole
+expanded octave sequence (60 79 72 67 for the notes 60/67 over two octaves). Directions up, down, alternate (ends not repeated) and
+random behaved as implemented. Not matched: the first step with a reversed order (the firmware starts on the lowest held note),
+hold mode, the user pattern (pattern 16 ignored the four user bytes in the rig and played a fixed 12-step pattern),
+and the arp velocity source. Envelope triggers apply on legato mono notes (unmeasured).
 
 ## Effects (partial)
 Index numbering (oracle, all 36 indices, steady note): 0 off, 1 Chorus, 2 Flanger 1, 3 Flanger 2, 4 AutoWahLP, 5 AutoWahBP,

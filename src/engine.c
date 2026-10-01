@@ -142,7 +142,7 @@ static int tabs_ready;
 static void build_env_tabs(void);
 static void *create(const char *dir) {
     inst_t *s = calloc(1, sizeof *s);
-    if (s) s->arp_sound = -1;
+    if (s) { s->arp_sound = -1; s->arp_idx = -1; }
     patch_init(&s->cur);
     if (dir) { char rd[1100]; snprintf(rd, sizeof rd, "%s/ROMS", dir); mkdir(rd, 0755); }   /* the folder for the user's own ROM dump and banks, created empty on first load */
     scan_banks(s, dir);
@@ -274,9 +274,10 @@ static void note_off_now(inst_t *s, int n) {
 }
 
 
-/* Arpeggiator. Tempo, clock values and the 15 preset rhythms are not yet measured: the mappings below are guesses (docs/CALIBRATION.md). */
-static const float ARP_BEATS[16] = { 0.0417f, 0.0625f, 0.0833f, 0.125f, 0.1667f, 0.25f, 0.3333f, 0.375f, 0.5f, 0.6667f, 0.75f, 1.0f, 1.333f, 1.5f, 2.0f, 4.0f };
-static const uint16_t ARP_PRESET[16] = { 0xFFFF, 0xFFFF, 0x5555, 0x9249, 0xB6DB, 0x8888, 0xAAAA, 0xEEEE, 0xF0F0, 0x1111, 0xDDDD, 0xABAB, 0x7777, 0x9999, 0xF5F5, 0x6666 };
+/* Arpeggiator, measured on the firmware (docs/CALIBRATION.md): one step lasts clock-value beats at the arp tempo (50 + (value - 1) * 250/126 BPM, 0 = host
+ * tempo); the gate closes 7.6 ms before the next step; presets 1-15 are the 16-step masks below (0 plays every step; 16 is the user pattern). */
+static const float ARP_BEATS[16] = { 4.0f, 3.0f, 8.0f / 3, 2.0f, 1.5f, 4.0f / 3, 1.0f, 0.75f, 2.0f / 3, 0.5f, 0.375f, 1.0f / 3, 0.25f, 1.0f / 6, 0.125f, 1.0f / 12 };
+static const uint16_t ARP_PRESET[16] = { 0xFFFF, 0x1111, 0xDDDD, 0x9595, 0xD5D5, 0x5D5D, 0xB5B5, 0x6B6B, 0xAB55, 0x5AD5, 0x7777, 0x76DB, 0x56DB, 0x5B5B, 0xEB55, 0x9249 };
 
 static int arp_step_on(const patch_t *p, int step) {
     if (p->d[96] == 16) { int len = p->d[101] + 1; int k = step % len; return (p->d[102 + k / 4] >> (k % 4)) & 1; }
@@ -289,18 +290,21 @@ static void arp_tick(inst_t *s) {
     const patch_t *p = &s->cur;
     if (!p->d[92]) { if (s->arp_sound >= 0) arp_stop_sound(s); if (s->arp_n) s->arp_n = 0; return; }
     float bpm = p->d[93] == 0 ? (s->host_bpm > 20.0f ? s->host_bpm : 120.0f) : 50.0f + (p->d[93] - 1) * 250.0f / 126.0f;   /* 0 = extern: the host tempo */
-    double step_s = ARP_BEATS[p->d[94] & 15] * 60.0 / bpm * 40000.0;
+    double step_s = ARP_BEATS[p->d[94] & 15] * 60.0 / bpm * 40000.0, gate_s = step_s - 0.0076 * 40000.0;
+    if (gate_s < step_s * 0.2) gate_s = step_s * 0.2;
     if (s->arp_n == 0) { arp_stop_sound(s); s->arp_timer = 0; s->arp_step = 0; s->arp_idx = -1; return; }
-    if (s->arp_sound >= 0 && s->arp_timer >= step_s * 0.8) arp_stop_sound(s);
+    if (s->arp_sound >= 0 && s->arp_timer >= gate_s) arp_stop_sound(s);
     if (s->arp_timer < step_s && s->arp_timer > 0) { s->arp_timer += 1; return; }
     s->arp_timer = 1;
     arp_stop_sound(s);
-    int n = s->arp_n, ord[20];
-    for (int i = 0; i < n; i++) { ord[i] = s->arp_keys[i].note; }
+    if (!arp_step_on(p, s->arp_step++)) return;   /* a rest keeps its place in the note sequence (measured) */
+    int n = s->arp_n, ord[20], seq[20 * 10];
+    for (int i = 0; i < n; i++) ord[i] = s->arp_keys[i].note;
     int mode = p->d[98];
     if (mode == 0 || mode == 1) for (int i = 1; i < n; i++) for (int j = i; j > 0 && ord[j] < ord[j - 1]; j--) { int t = ord[j]; ord[j] = ord[j - 1]; ord[j - 1] = t; }
-    if (mode == 1 || mode == 3) for (int i = 0; i < n / 2; i++) { int t = ord[i]; ord[i] = ord[n - 1 - i]; ord[n - 1 - i] = t; }
-    int range = p->d[95] < 1 ? 1 : p->d[95], total = n * range;
+    int range = p->d[95] < 1 ? 1 : p->d[95] > 10 ? 10 : p->d[95], total = n * range;
+    for (int o = 0; o < range; o++) for (int i = 0; i < n; i++) seq[o * n + i] = ord[i] + 12 * o;
+    if (mode == 1 || mode == 3) for (int i = 0; i < total / 2; i++) { int t = seq[i]; seq[i] = seq[total - 1 - i]; seq[total - 1 - i] = t; }   /* the reversed orders reverse the whole sequence over the octaves */
     int idx = s->arp_idx;
     switch (p->d[97]) {
     case 0: idx = idx < 0 ? 0 : (idx + 1) % total; break;
@@ -310,11 +314,12 @@ static void arp_tick(inst_t *s) {
     }
     if (idx >= total) idx = total - 1;
     s->arp_idx = idx;
-    int on = arp_step_on(p, s->arp_step++);
-    if (!on) return;
-    int note = ord[idx % n] + 12 * (idx / n);
-    if (note > 127) note %= 12 + 108;
+    int note = seq[idx];
+    if (note > 127) note = 127;
     int vel = p->d[99] ? s->arp_keys[n - 1].vel : s->arp_keys[0].vel;   /* root note or last note */
+#ifdef ARPDBG
+    fprintf(stderr, "arp t=%.3f note %d idx %d n %d\n", 0.0, note, idx, n);
+#endif
     note_on(s, note, vel); s->arp_sound = note;
 }
 
