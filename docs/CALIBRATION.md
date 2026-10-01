@@ -130,7 +130,7 @@ Arp step length = the Clock value in beats at the Arp Tempo: clock 0-12 = 1/1, 1
 1/16T, 1/16 (13-15 are faster than the rig resolves and are taken as 1/32T, 1/32, 1/64T). Tempo 1..127 = 50..300 BPM (127 gave exactly
 300: a quarter-note clock step 0.200 s), within about 1 % over the range; 0 is "extern" (host tempo). The gate closes 7.6 ms before
 the next step (constant over tempo and clock). Preset rhythms 1-15 are the 16-step masks in `ARP_PRESET` (pattern 0 plays every step);
-a rest does not consume a note of the sequence. Order: the notes ascending (note) or as played; "n.rev"/"p.rev" reverse the whole
+a rest does not consume a note of the sequence and does not cut the sounding note: the note is tied through the rests and the gate closes 7.6 ms before the next played step (with preset 1, one note every four steps decayed smoothly in the firmware; we used to cut it after the first step). Order: the notes ascending (note) or as played; "n.rev"/"p.rev" reverse the whole
 expanded octave sequence (60 79 72 67 for the notes 60/67 over two octaves). Directions up, down, alternate (ends not repeated) and
 random behaved as implemented. Not matched: the first step with a reversed order (the firmware starts on the lowest held note),
 hold mode, the user pattern (pattern 16 ignored the four user bytes in the rig and played a fixed 12-step pattern),

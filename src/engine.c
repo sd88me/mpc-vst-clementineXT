@@ -291,11 +291,11 @@ static void arp_tick(inst_t *s) {
     double step_s = ARP_BEATS[p->d[94] & 15] * 60.0 / bpm * 40000.0, gate_s = step_s - 0.0076 * 40000.0;
     if (gate_s < step_s * 0.2) gate_s = step_s * 0.2;
     if (s->arp_n == 0) { arp_stop_sound(s); s->arp_timer = 0; s->arp_step = 0; s->arp_idx = -1; return; }
-    if (s->arp_sound >= 0 && s->arp_timer >= gate_s) arp_stop_sound(s);
+    if (s->arp_sound >= 0 && s->arp_timer >= gate_s && arp_step_on(p, s->arp_step)) arp_stop_sound(s);   /* a rest ties the note: it sounds on until just before the next played step (measured) */
     if (s->arp_timer < step_s && s->arp_timer > 0) { s->arp_timer += 1; return; }
     s->arp_timer = 1;
+    if (!arp_step_on(p, s->arp_step++)) return;   /* a rest keeps its place in the note sequence and holds the previous note (measured) */
     arp_stop_sound(s);
-    if (!arp_step_on(p, s->arp_step++)) return;   /* a rest keeps its place in the note sequence (measured) */
     int n = s->arp_n, ord[20], seq[20 * 10];
     for (int i = 0; i < n; i++) ord[i] = s->arp_keys[i].note;
     int mode = p->d[98];
