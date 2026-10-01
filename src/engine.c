@@ -408,6 +408,16 @@ static int get_param(void *p, const char *k, char *buf, int n) {
         return o;
     }
     if (!strcmp(k, "program")) return snprintf(buf, n, "%d", s->program);
+    {   /* "<key>_on": the selection state of a list tile (the wrapper uses it as the tile's value; the tile's text is not a value) */
+        size_t kl = strlen(k);
+        if (kl > 3 && !strcmp(k + kl - 3, "_on")) {
+            if (!strncmp(k, "bank_slot_", 10)) return snprintf(buf, n, "%d", atoi(k + 10) - 1 == s->browse_bank ? 1 : 0);
+            if (!strncmp(k, "patch_slot_", 11)) {
+                int idx = s->browse_page * PAGE_SLOTS + atoi(k + 11) - 1;
+                return snprintf(buf, n, "%d", (s->browse_bank == s->cur_bank && idx == s->program) ? 1 : 0);
+            }
+        }
+    }
     if (!strcmp(k, "bank_name")) return snprintf(buf, n, "%s", s->banks[s->cur_bank].name);
     if (!strcmp(k, "browse_bank_name")) return snprintf(buf, n, "%s%s", s->browse_bank == s->cur_bank ? "* " : "", s->banks[s->browse_bank].name);
     if (!strcmp(k, "patch_page_text")) return snprintf(buf, n, "PAGE %d/%d", s->browse_page + 1, (256 + PAGE_SLOTS - 1) / PAGE_SLOTS);
