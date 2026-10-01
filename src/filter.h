@@ -4,6 +4,7 @@
  *   24 dB LP  = a critically damped section (Q 0.5) followed by the resonant section
  * The other Filter 1 types are approximations built from the same sections (see filter.c for what is and isn't calibrated). */
 #pragma once
+#include <stdint.h>
 
 #define F1_TYPES 13
 
@@ -18,6 +19,9 @@ typedef struct {
     float kc, kr;
     float cg, ck, cgr, ckr, cg24, cgh, cgq, cgl, cgain, cgr2, ckr2, cgx;
     float f2c, f2a;           /* filter 2: cached cutoff and its one-pole coefficient */
+    uint32_t dither;          /* noise source that starts a self-oscillating filter ringing */
+    float f2lg;               /* filter 2 low-pass: cached passband gain */
+    float f2hc, f2a0, f2b, f2ga;   /* filter 2 high-pass type: cached cutoff, its mix gains and pole coefficient */
 } filt_t;
 
 /* Pole frequency table lookups: `cutoff` is the 0..127 cutoff value plus modulation in the same units (may be fractional). */

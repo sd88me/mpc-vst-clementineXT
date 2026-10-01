@@ -150,7 +150,7 @@ static void start_voice(inst_t *s, int idx, int note, int vel, float det, float 
     float from = legato || (gl && s->last_pitch > 0) ? (legato ? v->pitch : s->last_pitch) : (float)note;
     memset(v, 0, sizeof *v);
     v->key = note; v->on = 1; v->vel = vel; v->det = det; v->panoff = panoff;
-    v->ug = nvoices <= 1 ? 1.0f : 0.73f / sqrtf((float)nvoices);   /* voices sharing a note split the level: ~0.73/sqrt(n) (dual 0.52, ten 0.23; measured) */
+    v->ug = nvoices <= 1 ? 1.0f : 1.0f - 0.015f * (nvoices - 2);   /* stacked voices keep nearly full level each (firmware, factory-sound comparison: dual 1.4-1.7x, unison about 2.8x one voice, summing incoherently) */
     v->target = (float)note;
     v->pitch = gl ? from : (float)note;
     v->aenv.stage = ST_ATT; v->fenv.stage = ST_ATT;

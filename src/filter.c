@@ -142,7 +142,11 @@ static void filt_prep(filt_t *f, int type, float cutoff, float reso, int special
     if (!res_ready) build_res();
     switch (type) {   /* only the coefficients this type uses: each one is a table lookup or a tan/pow call */
     case 0: f->cg = filt_pole_g(cutoff); f->ckr = tab2(k_res, cutoff, reso); f->cg24 = tab2(g_res24, cutoff, reso); break;
-    case 1: case 3: case 4: case 11: f->cgr = tab2(g_res, cutoff, reso); f->ckr = tab2(k_res, cutoff, reso); break;
+    case 1: case 3: case 11: f->cgr = tab2(g_res, cutoff, reso); f->ckr = tab2(k_res, cutoff, reso); break;
+    case 4: {   /* the high-pass pole stops short of the LP's: about 8 kHz at cutoff 120 where the LP's is 16 kHz (fitted: hz / sqrt(1 + (hz/9 kHz)^2)) */
+        float g = tab2(g_res, cutoff, reso), hz = atanf(g) * FS / 3.14159265f;
+        f->cgr = tanf(3.14159265f * hz / sqrtf(1.0f + (hz / 9000.0f) * (hz / 9000.0f)) / FS); f->ckr = tab2(k_res, cutoff, reso);
+        break; }
     case 2:
         f->cg = filt_pole_g(cutoff); f->cgr = tab2(g_res, cutoff, reso); f->ckr = tab2(k_res, cutoff, reso);
         f->cgh = tanf(0.745f * atanf(f->cg)); f->cgq = tanf(0.745f * atanf(f->cgr)); f->cgl = fminf(f->cg * 4.7f, 5.0f);
@@ -163,6 +167,10 @@ static void filt_prep(filt_t *f, int type, float cutoff, float reso, int special
 float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int special) {
     if (!f->kvalid || type != f->kt || cutoff != f->kc || reso != f->kr || special != f->ks) filt_prep(f, type, cutoff, reso, special);
     float g = f->cg, k = f->ck, gr = f->cgr, kr = f->ckr, lp, bp, hp, lp2, bp2, hp2;
+    if (kr < 0.02f && (type == 0 || type == 1)) {   /* resonance above about 111: the firmware filter rings on its own (kick sounds); a little noise starts it */
+        f->dither = f->dither * 1664525u + 1013904223u;
+        x += ((int32_t)f->dither) * (3.5e-3f / 2147483648.0f);
+    }
     switch (type) {
     case 0: /* 24 dB LP: a critically damped section, then the resonant one */
         svf_tick(&f->a, x, g, 2.0f, &lp, &bp, &hp);
@@ -191,9 +199,9 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
         return lp;
     case 6:   /* 12 dB LP then waveshaper; the shaping wave is not modelled yet (soft clip stands in) */
         svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
-        { float y = 6.0f * lp, y2 = y * y;   /* rational tanh (error < 0.3%), tanhf costs 110 ns on the ARM devices */
+        { float y = 4.2000f * lp, y2 = y * y;   /* rational tanh (error < 0.3%), tanhf costs 110 ns on the ARM devices */
           float t = y > 4.97f ? 1.0f : y < -4.97f ? -1.0f : y * (135135.0f + y2 * (17325.0f + y2 * (378.0f + y2))) / (135135.0f + y2 * (62370.0f + y2 * (3150.0f + y2 * 28.0f)));
-          return t * 0.17f; }
+          return t * 1.500f; }
     case 7: /* dual: half the 12 dB LP plus the raw band-pass of a second section moved by (special - 64) steps */
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
         svf_tick(&f->b, x, f->cgr2, f->ckr2, &lp2, &bp2, &hp2);
@@ -238,10 +246,40 @@ static float filt2_g(float cutoff) {
     return tanf(3.14159265f * POLE2[i].hz * powf(POLE2[i + 1].hz / POLE2[i].hz, t) / FS);
 }
 
+/* Filter 2 "high-pass", measured with noise through the external input: not a high-pass but a tilt, H = a + b * HP(pole) with the pole
+ * near 10-19 kHz, so that below the pole it is a + j f / F: the low end falls and the high end rises as the cutoff goes up (30 Hz -23 dB,
+ * 16 kHz +18 dB at cutoff 127, flat at 0). Fitted at nine cutoffs to 0.1-0.2 dB rms; linear interpolation in between. */
+static const float F2H_C[9] = { 0, 16, 32, 48, 64, 80, 96, 112, 127 };
+static const float F2H_A[9] = { 1.0f, 0.7923f, 0.6331f, 0.5002f, 0.3874f, 0.2906f, 0.2065f, 0.1328f, 0.0715f };
+static const float F2H_B[9] = { 0.0f, 0.364f, 0.802f, 1.300f, 1.907f, 2.714f, 3.915f, 6.020f, 10.267f };
+static const float F2H_P[9] = { 9980.0f, 9980.0f, 11888.0f, 13378.0f, 14693.0f, 15883.0f, 16967.0f, 17957.0f, 18781.0f };
+
+static void f2h_prep(filt_t *f, float cutoff) {
+    if (cutoff < 0) cutoff = 0;
+    if (cutoff > 127) cutoff = 127;
+    int i = 0; while (i < 7 && cutoff > F2H_C[i + 1]) i++;
+    float t = (cutoff - F2H_C[i]) / (F2H_C[i + 1] - F2H_C[i]);
+    f->f2a0 = F2H_A[i] + t * (F2H_A[i + 1] - F2H_A[i]); f->f2b = F2H_B[i] + t * (F2H_B[i + 1] - F2H_B[i]);
+    float g = tanf(3.14159265f * (F2H_P[i] + t * (F2H_P[i + 1] - F2H_P[i])) / FS);
+    f->f2ga = g / (1.0f + g); f->f2hc = cutoff;
+}
+
 float filter2_run(filt_t *f, int hp, float x, float cutoff) {
-    if (cutoff != f->f2c || f->f2a == 0) { float g = filt2_g(cutoff); f->f2c = cutoff; f->f2a = g / (1.0f + g); }
+    if (hp) {
+        if (cutoff != f->f2hc || f->f2ga == 0) f2h_prep(f, cutoff);
+        float v = (x - f->f2) * f->f2ga, lp = v + f->f2;
+        f->f2 = lp + v;
+        return f->f2a0 * x + f->f2b * (x - lp);
+    }
+    if (cutoff != f->f2c || f->f2a == 0) {
+        float g = filt2_g(cutoff); f->f2c = cutoff; f->f2a = g / (1.0f + g);
+        /* measured passband gain of the low-pass in dB: +5.6 at the bottom, falling to 0 when wide open (127) */
+        static const float C[8] = { 0, 48, 64, 80, 96, 112, 120, 127 }, DB[8] = { 5.6f, 5.2f, 4.6f, 3.8f, 2.6f, 1.1f, 0.4f, 0.0f };
+        float cc = cutoff < 0 ? 0 : cutoff > 127 ? 127 : cutoff; int i = 0; while (i < 6 && cc > C[i + 1]) i++;
+        f->f2lg = powf(10.0f, (DB[i] + (cc - C[i]) / (C[i + 1] - C[i]) * (DB[i + 1] - DB[i])) / 20.0f);
+    }
     float a = f->f2a;
     float v = (x - f->f2) * a, lp = v + f->f2;
     f->f2 = lp + v;
-    return hp ? x - lp : lp;
+    return lp * f->f2lg;
 }
