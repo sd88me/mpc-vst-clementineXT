@@ -57,6 +57,7 @@ typedef struct {
     struct { int note, vel; } arp_keys[20];   /* arpeggiator: keys in the order played */
     int arp_n, arp_down, arp_step, arp_idx, arp_dirn, arp_sound, arp_hold_clear;
     double arp_timer;
+    float host_bpm;              /* the host tempo (the wrapper sends it as "lfo_bpm"); Arp Tempo 0 ("extern") follows it */
 } inst_t;
 enum { P_FX_TYPE = 76, P_FX_P1 = 81, P_CHORUS = 82, P_FX_P2 = 83, P_FX_P3 = 86 };
 enum { P_OSC1_OCT = 1, P_OSC1_SEMI = 2, P_OSC1_DET = 3, P_OSC1_KT = 6, P_OSC2_OCT = 12, P_OSC2_SEMI = 13, P_OSC2_DET = 14,
@@ -252,7 +253,7 @@ static void arp_stop_sound(inst_t *s) { if (s->arp_sound >= 0) { note_off_now(s,
 static void arp_tick(inst_t *s) {
     const patch_t *p = &s->cur;
     if (!p->d[92]) { if (s->arp_sound >= 0) arp_stop_sound(s); if (s->arp_n) s->arp_n = 0; return; }
-    float bpm = p->d[93] == 0 ? 120.0f : 50.0f + (p->d[93] - 1) * 250.0f / 126.0f;
+    float bpm = p->d[93] == 0 ? (s->host_bpm > 20.0f ? s->host_bpm : 120.0f) : 50.0f + (p->d[93] - 1) * 250.0f / 126.0f;   /* 0 = extern: the host tempo */
     double step_s = ARP_BEATS[p->d[94] & 15] * 60.0 / bpm * 40000.0;
     if (s->arp_n == 0) { arp_stop_sound(s); s->arp_timer = 0; s->arp_step = 0; s->arp_idx = -1; return; }
     if (s->arp_sound >= 0 && s->arp_timer >= step_s * 0.8) arp_stop_sound(s);
@@ -333,6 +334,7 @@ static void set_param(void *p, const char *k, const char *val) {
         refresh(s);
         return;
     }
+    if (!strcmp(k, "lfo_bpm")) { s->host_bpm = (float)atof(val); return; }
     if (!strcmp(k, "program")) {
         s->program = x < 0 ? 0 : x > 255 ? 255 : x;
         if (s->have_bank) s->cur = s->bank[s->program];   /* voices keep playing and pick the new values up next sample */

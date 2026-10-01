@@ -178,3 +178,5 @@ Fitted against `filt.tsv` (white noise through the external input, 4 cutoffs x 3
 - Differentiator (15): a short pulse at the step, then 0; the scale (0.0125/dt) is a guess.
 - S&H (7) and ramp (8) behave unlike the manual's description in these tests (S&H output depended on the parameter in a non-monotonic
   way and exceeded full scale at parameter 20; the ramp showed a ripple at parameter 100), so they are still the manual-based guesses.
+
+Arp tempo: 0 ("extern") follows the host tempo, which the wrapper passes in as `lfo_bpm` (built with -DHAS_LFO_BPM=1); 1..127 map to 50-300 BPM. The note values for the Arp Clock are guesses (see above); the engine does not yet follow the host transport (start/stop/position).
