@@ -200,8 +200,15 @@ negated reverse, -128 saturating to +127); tables 32-40 also taper samples 48..6
   35-37: square waves of m = 1 + 3s/60, 1 + 7s/60, 1 + 15s/60 cycles.
 - **Close (rms error about 1 of 128): 38-40** (128 sin(2 pi (m + 0.04)(i + 0.5)/128), m = 1 + s/8, 2 + s/4, 4 + s/2) and **31** (keyframes at
   slots 0, 30, 60 blended; the firmware's blend in between is slightly different).
-- **Not rebuilt (open-table stand-ins): 30 and 43-51**, noise-like and plucked-string families (43/44 are a sliding window over a fixed
-  noise sequence).
+- **Found later (2026-10-01):** the noise tables are generators, not stored data. 45: slot s is bits s..s+63 of one 16-bit LFSR run (taps 1 10 11 12 13 14 16,
+  seed 0x008F), +-127; exact. 47-49: two keyframes of 64 consecutive bits of a second LFSR (taps 1 7 8 10 11 13 14 15 16; the seeds are 0xFEAF, 0x53BE and 0xFED9) as
+  127 / -128, then slot s up to 23 is the first keyframe run s times through the integer kernel (a + 6b + c + 4) >> 3 on the circular 128-sample wave, slot s from 37
+  is the second keyframe run 60-s times, and 24-36 cross-fade the two (23 runs each) with weights 2..8 and 10..15 sixteenths; within 1-3 LSB of the firmware, 92-97 % of
+  samples exact. Found with Berlekamp-Massey on the oracle dump (linear complexity 16 against about 32 for random bits). 44 is not a table at all: slot s is
+  4+s samples of a ramp (chip B at 0x1322B, negated) then 60-s raw bytes of the combined ROM image from 0xF3CC, so `wavedata.c` reads it from the user's ROM (exact in
+  all 61 slots); without a ROM it falls back to the open stand-in.
+- **Not rebuilt (open-table stand-ins): 30, 43, 46, 50, 51.** 43 is a filtered noise that no ROM region, LFSR bit-plane or 45's bits explains. 46 starts as a ROM window (combined
+  image at 0xEB8A, first 64-s samples) and ends in a looping tail whose rule is unknown. 50 and 51 contain short waves (about 23 samples, zeros after) and all-zero slots.
 76 of the 256 factory sounds use tables 28-51; 66 of them use rebuilt ones.
 
 Self-oscillation (filter resonance above about 111): the firmware's filter rings on its own at note start (the kick sounds 235-238 produce all their output this way, at a constant or slowly decaying level). We strike the first section with a state of 2.8 and add a little noise; 236 now matches in level, 235 (a ring at constant amplitude) does not.

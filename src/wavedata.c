@@ -32,6 +32,29 @@ static const uint8_t *rom_wave(const uint8_t *A, const uint8_t *B, int n) {
     return B ? B + 0xC180 + 64 * n : NULL;
 }
 
+/* Table 44 is not stored as a table: the firmware builds it from raw ROM bytes (found by matching its output against the ROM, no mismatches in
+ * all 61 slots). Slot s is 4+s samples of a smooth ramp (chip B at 0x1322B, negated) followed by the combined image (chip A even, chip B odd bytes) from
+ * 0xF3CC, 64 samples in all. Read from the user's ROM only; nothing of it is stored here. */
+static int8_t rom_s8(uint8_t b) { return (int8_t)(b ^ 0x80); }
+static void rom_table44(wavedata_t *w, const uint8_t *A, const uint8_t *B) {
+    if (!A || !B || w->built[44]) return;
+    static wave_t tw[TABLE_SLOTS];
+    table_ctl_t c;
+    for (int s = 0; s < 61; s++) {
+        for (int k = 0; k < 64; k++) {
+            int v;
+            if (k < 4 + s) { v = -rom_s8(B[0x1322B + k]); if (v > 127) v = 127; }
+            else { unsigned o = 0xF3CCu + (unsigned)(k - (4 + s)); v = rom_s8((o & 1) ? B[o >> 1] : A[o >> 1]); }
+            tw[s].half[k] = (int8_t)v;
+        }
+        c.slot[s] = (int16_t)s;
+    }
+    for (int s = 61; s < TABLE_SLOTS; s++) c.slot[s] = TABLE_EMPTY;
+    w->built[44] = malloc(sizeof(table_t));
+    table_build(&c, tw, TABLE_SLOTS, w->built[44]);
+    w->from_rom[44] = 1; w->ntables++;
+}
+
 static int rom_extract(wavedata_t *w, const uint8_t *A, const uint8_t *B) {
     if (!A) return 0;
     for (int n = 0; n < ROM_WAVES; n++) {
@@ -53,6 +76,7 @@ static int rom_extract(wavedata_t *w, const uint8_t *A, const uint8_t *B) {
         table_build(&c, w->waves, WD_WAVES, w->built[t]);
         w->from_rom[t] = 1; w->ntables++;
     }
+    rom_table44(w, A, B);
     return w->nwaves > 0;
 }
 
@@ -154,7 +178,7 @@ const table_t *wavedata_table(wavedata_t *w, int n) {
     if (n < 0 || n >= WD_TABLES) n = 0;
     if (w->built[n]) return w->built[n];
     /* algorithmic tables (28-51) have no control table, and unloaded data leaves gaps: stand in with an open table so a sound
-     * still plays. The real algorithmic tables come from the firmware's memory (docs/DESIGN.md). */
+     * still plays. Rebuilt tables are in algo_table; 44 comes from the ROM. */
     {   /* a rebuilt algorithmic table (28-51), else the open stand-in */
         static wave_t aw[TABLE_SLOTS]; table_ctl_t ac;
         if (n >= 28 && n <= 51 && !algo_table(n, aw, &ac)) {

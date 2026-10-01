@@ -23,6 +23,24 @@ int main(void) {
         CHECK(t.mip[61][0] == -8 && t.mip[61][3] == 2 && t.mip[61][34] == 95 && t.mip[61][35] == 95, "  slot 61 is the triangle, peak 95");
     }
 
+    {   /* rebuilt algorithmic tables: the LFSR table 45 slides by one sample per slot, the noise tables 47-49 are binary at both ends and smooth in between */
+        static wave_t aw[TABLE_SLOTS]; static table_ctl_t ac;
+        CHECK(!algo_table(45, aw, &ac), "table 45 builds");
+        int slide = 1, bin = 1;
+        for (int sl = 0; sl < 60; sl++) for (int i = 0; i < 63; i++) slide &= aw[sl + 1].half[i] == aw[sl].half[i + 1];
+        for (int sl = 0; sl < 61; sl++) for (int i = 0; i < 64; i++) bin &= aw[sl].half[i] == 127 || aw[sl].half[i] == -127;
+        CHECK(slide, "table 45: slot s+1 is slot s shifted by one sample");
+        CHECK(bin, "table 45: every sample is +-127");
+        for (int n = 47; n <= 49; n++) {
+            CHECK(!algo_table(n, aw, &ac), "noise table builds");
+            int ends = 1, rough = 0, smooth = 0;
+            for (int i = 0; i < 64; i++) ends &= (aw[0].half[i] == 127 || aw[0].half[i] == -128) && (aw[60].half[i] == 127 || aw[60].half[i] == -128);
+            for (int i = 1; i < 64; i++) { rough += abs(aw[0].half[i] - aw[0].half[i - 1]); smooth += abs(aw[30].half[i] - aw[30].half[i - 1]); }
+            CHECK(ends, "  slots 0 and 60 are binary (127 / -128)");
+            CHECK(smooth * 4 < rough, "  slot 30 is much smoother than slot 0");
+        }
+    }
+
     /* Local-only: build a real table from oracle dumps and compare with the firmware's own DSP memory (never committed).
      * CLEMENTINE_ORACLE_DIR holds waves.bin, waves2.bin, tables.bin and diff_0_1.bin.b (see tools/oracle). */
     const char *dir = getenv("CLEMENTINE_ORACLE_DIR");

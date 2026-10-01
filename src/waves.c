@@ -95,6 +95,45 @@ static void gen_saw_half(int8_t w[WAVE_LEN], double m) {
     for (int i = 0; i < WAVE_HALF; i++) { int v = -w[WAVE_HALF - 1 - i]; w[WAVE_HALF + i] = (int8_t)(v > 127 ? 127 : v); }
 }
 
+/* Tables 45 and 47-49 are built from 16-bit linear-feedback shift register streams (found by running Berlekamp-Massey on the firmware's
+ * tables: each keyframe is 64 consecutive bits, 1 -> positive full scale). Bit n is the XOR of bits n-j for the tap distances j. */
+static void lfsr_bits(unsigned seed, const int *taps, int ntaps, int n, uint8_t *out) {
+    for (int i = 0; i < 16; i++) out[i] = (uint8_t)((seed >> (15 - i)) & 1);
+    for (int i = 16; i < n; i++) { int v = 0; for (int k = 0; k < ntaps; k++) v ^= out[i - taps[k]]; out[i] = (uint8_t)v; }
+}
+
+/* The noise tables 47-49: two keyframes (consecutive 64-bit runs of one LFSR stream, 127 or -128, plus the mirrored half) and an integer smoothing step
+ * [1 6 1]/8 over the circular 128-sample wave ((a + 6b + c + 4) >> 3, matches the firmware's slots in all but about 1 sample in 20, by one step).
+ * Slots 0..23 are the first keyframe smoothed s times, slots 37..60 the second smoothed 60-s times, and slots 24..36 a cross-fade of the two
+ * smoothed 23 times (weights in sixteenths: 2..8 at 24..30, 10..15 at 31..36). */
+static void smooth_step(const int in[WAVE_LEN], int out[WAVE_LEN]) {
+    for (int k = 0; k < WAVE_LEN; k++) out[k] = (in[(k + WAVE_LEN - 1) % WAVE_LEN] + 6 * in[k] + in[(k + 1) % WAVE_LEN] + 4) >> 3;
+}
+
+static void noise_morph(int8_t all[TABLE_SLOTS][WAVE_LEN], unsigned seed) {
+    static const int taps[9] = { 1, 7, 8, 10, 11, 13, 14, 15, 16 };
+    uint8_t bits[128];
+    lfsr_bits(seed, taps, 9, 128, bits);
+    int8_t key[2][WAVE_LEN];
+    for (int k = 0; k < 2; k++) { for (int i = 0; i < WAVE_HALF; i++) key[k][i] = bits[64 * k + i] ? 127 : -128; mirror_half(key[k]); }
+    int w[2][WAVE_LEN], tmp[WAVE_LEN], p23[WAVE_LEN] = { 0 }, q23[WAVE_LEN] = { 0 };
+    for (int i = 0; i < WAVE_LEN; i++) { w[0][i] = key[0][i]; w[1][i] = key[1][i]; }
+    for (int s = 0; s <= 23; s++) {   /* the first keyframe, smoothed s times */
+        for (int i = 0; i < WAVE_LEN; i++) all[s][i] = (int8_t)w[0][i];
+        if (s == 23) memcpy(p23, w[0], sizeof p23);
+        smooth_step(w[0], tmp); memcpy(w[0], tmp, sizeof tmp);
+    }
+    for (int s = 60; s >= 37; s--) {   /* the second keyframe, smoothed 60-s times */
+        for (int i = 0; i < WAVE_LEN; i++) all[s][i] = (int8_t)w[1][i];
+        if (s == 37) memcpy(q23, w[1], sizeof q23);
+        smooth_step(w[1], tmp); memcpy(w[1], tmp, sizeof tmp);
+    }
+    for (int s = 24; s <= 36; s++) {
+        int c16 = s <= 30 ? s - 22 : s - 21;
+        for (int i = 0; i < WAVE_LEN; i++) all[s][i] = (int8_t)((p23[i] * (16 - c16) + q23[i] * c16) >> 4);
+    }
+}
+
 int algo_table(int n, wave_t *waves, table_ctl_t *ctl) {
     static int8_t all[TABLE_SLOTS][WAVE_LEN];
     switch (n) {
@@ -131,6 +170,15 @@ int algo_table(int n, wave_t *waves, table_ctl_t *ctl) {
             for (int i = 0; i < WAVE_LEN; i++) all[s][i] = s == sa ? key[a][i] : (int8_t)((key[a][i] * (sb - s) + key[a + 1][i] * (s - sa)) / 30);
         }
         break; }
+    case 45: {   /* a +-127 bit stream: slot s is bits s..s+63 of one LFSR run (a 16-bit seed, taps 1 10 11 12 13 14 16) */
+        static const int taps[7] = { 1, 10, 11, 12, 13, 14, 16 };
+        uint8_t bits[124];
+        lfsr_bits(0x008F, taps, 7, 124, bits);
+        for (int s = 0; s < 61; s++) { for (int i = 0; i < WAVE_HALF; i++) all[s][i] = bits[s + i] ? 127 : -127; mirror_half(all[s]); }
+        break; }
+    case 47: noise_morph(all, 0xFEAF); break;
+    case 48: noise_morph(all, 0x53BE); break;
+    case 49: noise_morph(all, 0xFED9); break;
     default: return -1;
     }
     for (int s = 0; s < TABLE_SLOTS; s++) ctl->slot[s] = s < 61 ? s : TABLE_EMPTY;

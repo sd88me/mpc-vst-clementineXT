@@ -16,12 +16,12 @@ Q-Link sweep, docs/PERFORMANCE.md) and most of the sound engine is calibrated ag
 Working: the XT's 256-byte sound format (all fields, `.syx` single/bank import, save), the MIDI controller map, the wavetable oscillators
 (real table data from the user's own ROM dump, measured mip levels and pitch, FM, ring mod, noise), amp, Filter 1 (all 13 types, 0-4, 7,
 10, 11 fitted, the rest rough) and Filter 2, the wave/free/amp/filter envelopes, the modulation matrix with the modifiers, both LFOs, pan,
-poly/mono/dual/unison voices, glide, all ten effects (calibrated), the arpeggiator (measured, host-tempo sync), 17 of the 24 algorithmic
-wave tables 28-51, a Banks page (bank list and paged sound list; banks are the built-in sounds plus every `.syx` in `ROMS`), 12 built-in
+poly/mono/dual/unison voices, glide, all ten effects (calibrated), the arpeggiator (measured, host-tempo sync), 19 of the 24 algorithmic
+wave tables 28-51 (44 is read from the ROM), a Banks page (bank list and paged sound list; banks are the built-in sounds plus every `.syx` in `ROMS`), 12 built-in
 presets on twelve open wave tables for use without a ROM, and an orange XT-styled skin. The original waves and tables are read from the
 user's own ROM dump (two 128 KB halves or one 256 KB image in the plugin's `ROMS` folder, created on first load).
 
-Not done: the noise-like algorithmic tables 43-51 (open stand-ins), Filter 1 types
+Not done: algorithmic tables 30, 43, 46, 50 and 51 (open stand-ins), Filter 1 types
 5, 6, 8, 9, 12 (rough), a few effect details (Mod Delay speed/depth, wah sense), the arp hold mode, and the catalog
 release checks.
 
