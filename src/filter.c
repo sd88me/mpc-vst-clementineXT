@@ -139,6 +139,7 @@ static inline void svf_tick(svf_t *s, float x, float g, float k, float *lp, floa
  * them moves (the lookups and tan/pow calls are far too expensive to do at 40 kHz on the 32-bit ARM devices). */
 static void filt_prep(filt_t *f, int type, float cutoff, float reso, int special) {
     f->kt = type; f->kc = cutoff; f->kr = reso; f->ks = special; f->kvalid = 1;
+    if (reso > 111.0f && (type <= 4 || type == 7) && f->a.ic1 == 0.0f && f->a.ic2 == 0.0f) f->a.ic1 = 2.8f;   /* a self-oscillating filter is struck at note start (kick sounds ring from it) */
     if (!res_ready) build_res();
     switch (type) {   /* only the coefficients this type uses: each one is a table lookup or a tan/pow call */
     case 0: f->cg = filt_pole_g(cutoff); f->ckr = tab2(k_res, cutoff, reso); f->cg24 = tab2(g_res24, cutoff, reso); break;
@@ -177,7 +178,7 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
     }
     if (!f->kvalid || type != f->kt || cutoff != f->kc || reso != f->kr || special != f->ks) filt_prep(f, type, cutoff, reso, special);
     float g = f->cg, k = f->ck, gr = f->cgr, kr = f->ckr, lp, bp, hp, lp2, bp2, hp2;
-    if (kr < 0.02f && (type == 0 || type == 1)) {   /* resonance above about 111: the firmware filter rings on its own (kick sounds); a little noise starts it */
+    if (kr < 0.02f && (type <= 4 || type == 7)) {   /* resonance above about 111: the firmware filter rings on its own (kick sounds); a little noise starts it */
         f->dither = f->dither * 1664525u + 1013904223u;
         x += ((int32_t)f->dither) * (3.5e-3f / 2147483648.0f);
     }
