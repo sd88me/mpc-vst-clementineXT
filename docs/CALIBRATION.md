@@ -205,3 +205,5 @@ negated reverse, -128 saturating to +127); tables 32-40 also taper samples 48..6
 76 of the 256 factory sounds use tables 28-51; 66 of them use rebuilt ones.
 
 Self-oscillation (filter resonance above about 111): the firmware's filter rings on its own at note start (the kick sounds 235-238 produce all their output this way, at a constant or slowly decaying level). We strike the first section with a state of 2.8 and add a little noise; 236 now matches in level, 235 (a ring at constant amplitude) does not.
+
+Filter 2 tilt type with cutoff modulation: for a 261 Hz sine the effective cutoff followed the modulation up to +45 (+19 -> 19, +45 -> 40) and then compressed (+107 -> 58, +430 -> 127); the engine applies that map to the Filter 2 cutoff destination when the type is the tilt. Open: sound 78 ('Bold') is 20 dB too quiet in our render with the tilt modulated by the filter envelope, although a sine through the same setup agrees; the firmware's output there rises 3.5 dB.

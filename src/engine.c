@@ -716,7 +716,14 @@ static void voice_control(inst_t *s, voice_t *v) {
     v->cut = p->d[P_F1_CUTOFF] + kt + ea + dest[9];
     v->reso = clampf(p->d[P_F1_RESO] + dest[10], 127.0f);
     v->spec = clampi(p->d[P_F1_SPECIAL] + iround(dest[35]), 127);
-    v->c2 = p->d[P_F2_CUTOFF] + (p->d[P_F2_KT] - 64) * 0.03125f * (note - 64) + dest[11];
+    float m2 = dest[11];
+    if (p->d[P_F2_TYPE]) {   /* the tilt type responds less than the LP to large cutoff modulation (measured with a sine: +19 -> +19, +45 -> +40, +107 -> +58, +430 -> 127) */
+        static const float X[5] = { 0, 19, 45, 107, 430 }, Y[5] = { 0, 19, 40, 58, 127 };
+        float a = fabsf(m2), r = a >= X[4] ? Y[4] : 0; int i = 0;
+        if (a < X[4]) { while (i < 3 && a > X[i + 1]) i++; r = Y[i] + (a - X[i]) / (X[i + 1] - X[i]) * (Y[i + 1] - Y[i]); }
+        m2 = m2 < 0 ? -r : r;
+    }
+    v->c2 = p->d[P_F2_CUTOFF] + (p->d[P_F2_KT] - 64) * 0.03125f * (note - 64) + m2;
     float vol = clampf(p->d[P_VOLUME] + dest[12], 127.0f);
     v->gfac = vg * (vol / 127.0f) * v->ug;
     float pan = p->d[P_PAN] + v->panoff * 63.5f + dest[13];   /* unison/dual spread moves the voice off the sound's pan position */
