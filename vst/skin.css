@@ -1,5 +1,39 @@
-/* Clementine-XT skin stylesheet (loaded after tools/html_art/default.css of mpc-vst-plugins). Colours come from the theme_* lines. */
-:root { --label-size: 14px; --title-size: 19px; --radius: 4px; --sheen: 0.14; }
-.frame-border { stroke: var(--line); stroke-width: 2; }
-.frame-title { font-style: italic; letter-spacing: 0.05em; }
-.knob-track { stroke: var(--knob-ring); }
+/* Clementine-XT skin stylesheet (loaded after tools/html_art/default.css of mpc-vst-plugins). Colours come from the theme_* lines.
+ * Our own look: a lit, slightly grained plate with recessed panels and engraved titles. Geometry is never touched (MPC puts its live
+ * controls on top of these images); only paint, gradients, shadows and shapes inside each widget's box. */
+:root { --label-size: 14px; --title-size: 19px; --radius: 5px; --sheen: 0.16; }
+
+/* The plate: the page's first rectangle (the flat theme_bg fill) goes transparent and the SVG's CSS background shows through: a soft light from the
+ * top, a darker lower edge, fine vertical brushing and a little noise. Pieces drawn on their own (knob and button images) have no plate and get none. */
+#g > rect:first-child[width="1280"] { fill: transparent; }
+#c:has(#g > rect:first-child[width="1280"]) {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(ellipse 110% 50% at 50% 115%, rgba(70, 20, 0, 0.22), rgba(70, 20, 0, 0) 70%),
+    linear-gradient(90deg, rgba(60, 20, 0, 0.10), rgba(60, 20, 0, 0) 6%, rgba(60, 20, 0, 0) 94%, rgba(60, 20, 0, 0.10)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, rgba(0, 0, 0, 0.035) 1px 3px),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.1  0 0 0 0 0  0 0 0 0.55 -0.1'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='0.5'/></svg>");
+}
+
+/* panels: a recessed tray with a dark edge, a lit lower lip and a soft shadow; the title is engraved */
+.frame-border {
+  fill: rgba(70, 25, 0, 0.07); stroke: rgba(60, 20, 0, 0.55); stroke-width: 2; rx: 12px;
+  filter: drop-shadow(0 1px 0 rgba(255, 220, 160, 0.55)) drop-shadow(0 4px 6px rgba(60, 20, 0, 0.30));
+}
+.frame-rule { stroke: rgba(60, 20, 0, 0.5); stroke-width: 1.5; filter: drop-shadow(0 1px 0 rgba(255, 220, 160, 0.6)); }
+.frame-title { font-style: italic; letter-spacing: 0.06em; fill: var(--ink); filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.7)); }
+.text { fill: var(--ink-dim); filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.5)); }
+
+/* knobs */
+.knob-track { stroke: rgba(40, 14, 0, 0.55); }
+.knob-face { filter: drop-shadow(0 3px 4px rgba(30, 10, 0, 0.6)); }
+
+/* LCD fields and list tiles: inset glass */
+.box { stroke: rgba(40, 55, 20, 0.85); stroke-width: 1.5; rx: 4px; filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.55)); }
+.box-label { fill: var(--ink-dim); filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.5)); }
+.tile-border { stroke: rgba(40, 14, 0, 0.5); }
+.arrow-bg { filter: drop-shadow(0 2px 2px rgba(30, 10, 0, 0.45)); }
+
+/* toggles, buttons: raised */
+.pill-track { stroke: rgba(40, 14, 0, 0.7); }

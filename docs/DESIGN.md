@@ -270,19 +270,19 @@ all voices -> stereo sum (24-bit-style fixed point, XT clipping) -> effect -> ch
 - **Mod wheel, aftertouch, poly pressure, breath, foot** come from MPC's MIDI as usual (check that MPC passes poly
   pressure and CC 2/4 to a VST2; record in NOTES).
 
-### Pages (nine tabs, written by `tools/gen_layout.py`; Q-Links follow the page, several `qlinks` sets per tab are sub-pages)
+### Pages (ten tabs, written by `tools/gen_layout.py`; Q-Links follow the page, several `qlinks` sets per tab are sub-pages)
 Four rows of eight cells per tab (frames 148 px high). The XT's 17 menu pages are merged into:
 
 | Tab | Contents | Q-Link sets |
 |---|---|---|
-| GLOBAL | Bank and sound steppers with their names, the four Play knobs (each drives the parameter its ASSIGN popup names, over that parameter's whole range) , effect type and three parameters, voice mode/assign/detune/de-pan, glide, volume/pan/chorus | Play, Voice |
+| GLOBAL | Bank and sound steppers with their names, the four Play knobs (each drives the parameter its stepper selects, over that parameter's whole range; the name shows under the stepper), effect type and three parameters, voice mode/assign/detune/de-pan, glide, volume/pan/chorus | Play, Voice |
 | SOUNDS | Bank list and a paged 2 x 14 sound list (sounds run down the columns); selection state through `<key>_on` | Banks |
 | OSC | Osc 1, Osc 2, wavetable, quality (aliasing, quantize, clipping, accuracy) | Osc |
 | WAVE | Wave 1, Wave 2, mixer | Waves, Mixer |
 | FILTER | Filter 1, Filter 2, filter envelope, amp envelope, amp velocity/keytrack | Filter, Amp |
-| ENV | Wave envelope times and levels, loops, free envelope | Times, Loops, Free |
+| ENV | Wave envelope times and levels, loops, free envelope | Wave Env, Loops, Free |
 | LFO ARP | LFO 1, LFO 2, arpeggiator | LFO, Arp |
-| MATRIX | All 16 slots (source, amount, destination), four per row | Amount, Source, Dest |
+| MOD 1-8, MOD 9-16 | The matrix, eight slots per tab, each slot in its own panel (source, destination, amount) | Mod 1-8 (amounts then sources), Dest 1-8 |
 | MODIFIERS | The four modifiers and the control delay | Mods, Delay |
 
 Limits that shape this (NOTES/ROADMAP): no native envelope or XY component for a VST2, so envelopes are slider rows;

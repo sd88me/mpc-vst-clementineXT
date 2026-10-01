@@ -246,6 +246,12 @@ def params_json():
     ps.append({"key": "bank_next", "name": "Bank >", "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger", "step_of": "bank", "step_delta": 1})
     for i in range(1, 5):
         ps.append({"key": "play_v%d" % i, "name": "Play %d" % i, "min": 0, "max": 127, "default": 0, "display": "int"})
+    # the Play knobs' assignment as a stepper with a name readout (the 83-entry popup list runs off the screen)
+    for i in range(1, 5):
+        ps.append({"key": "play_sel%d" % i, "name": "Assign %d" % i, "min": 0, "max": 82, "default": 0, "display": "int", "type": "stepper"})
+        ps.append({"key": "play_sel%d_prev" % i, "name": "Assign %d <" % i, "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger", "step_of": "play_sel%d" % i, "step_delta": -1})
+        ps.append({"key": "play_sel%d_next" % i, "name": "Assign %d >" % i, "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger", "step_of": "play_sel%d" % i, "step_delta": 1})
+        ps.append({"key": "play_name%d" % i, "name": "Assigned %d" % i, "min": 0, "max": 0, "default": 0, "display": "string", "type": "readout"})
     have = {p["key"] for p in ps}
     secs = []
     for label, keys in SECTIONS:

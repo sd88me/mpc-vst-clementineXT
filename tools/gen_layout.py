@@ -17,8 +17,8 @@ def cx(cell): return X0 + 77 + CELL * cell
 
 def tab(name): emit("\n[tab %s]" % name)
 def frame(row, cell, n, title): emit('frame x=%d y=%d w=%d h=%d title="%s"' % (X0 + CELL * cell, ry(row), CELL * n - GAP, ROW_H, title))
-def knob(row, cell, label, key): emit('knob cx=%d cy=%d r=36 label="%s" key=%s' % (cx(cell), ry(row) + 84, label, key))
-def toggle(row, cell, label, key): emit('toggle cx=%d cy=%d label="%s" key=%s' % (cx(cell), ry(row) + 84, label, key))
+def knob(row, cell, label, key): emit('knob cx=%d cy=%d r=26 label="%s" key=%s' % (cx(cell), ry(row) + 74, label, key))
+def toggle(row, cell, label, key): emit('toggle cx=%d cy=%d label="%s" key=%s' % (cx(cell), ry(row) + 78, label, key))
 def popup(row, cell, label, key, w=134): emit('popup cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (cx(cell), ry(row) + 104, w, label, key))
 def stepper(row, cell, n, label, key): emit('stepper cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (X0 + CELL * cell + (CELL * n - GAP) // 2, ry(row) + 104, CELL * n - 24, label, key))
 def readout(row, cell, n, label, key): emit('readout cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (X0 + CELL * cell + (CELL * n - GAP) // 2, ry(row) + 104, CELL * n - 24, label, key))
@@ -38,8 +38,10 @@ frame(0, 0, 8, "SOUND")
 stepper(0, 0, 2, "BANK", "bank"); readout(0, 2, 2, "", "bank_name")
 stepper(0, 4, 2, "SOUND", "program"); readout(0, 6, 2, "", "patch_name")
 frame(1, 0, 8, "PLAY")
-for k in range(4):
-    knob(1, 2 * k, "PLAY %d" % (k + 1), "play_v%d" % (k + 1)); popup(1, 2 * k + 1, "ASSIGN", "play%d" % (k + 1))
+for k in range(4):   # a knob and, beside it, the assigned parameter: a stepper over the 83-entry list with its name under it (a popup list would run off the screen)
+    n = k + 1; knob(1, 2 * k, "PLAY %d" % n, "play_v%d" % n)
+    emit('stepper cx=%d cy=%d w=134 h=40 label="" key=play_sel%d' % (cx(2 * k + 1), ry(1) + 68, n))
+    emit('readout cx=%d cy=%d w=134 h=40 label="" key=play_name%d' % (cx(2 * k + 1), ry(1) + 114, n))
 frame(2, 0, 4, "EFFECT"); popup(2, 0, "TYPE", "fx_type"); knobs(2, 1, [("PARAM 1", "fx_p1"), ("PARAM 2", "fx_p2"), ("PARAM 3", "fx_p3")])
 frame(2, 4, 4, "VOICES"); knobs(2, 4, [("MODE", "^alloc"), ("ASSIGN", "^assign"), ("DETUNE", "detune"), ("DE-PAN", "depan")])
 frame(3, 0, 4, "GLIDE"); knobs(3, 0, [("ACTIVE", "~glide_on"), ("TYPE", "^glide_type"), ("MODE", "^glide_mode"), ("TIME", "glide_time")])
@@ -102,7 +104,7 @@ frame(2, 0, 7, "WAVE ENV LOOPS"); knobs(2, 0, [("TRIGGER", "^wenv_trig"), ("ON L
 frame(2, 7, 1, "FREE"); popup(2, 7, "TRIGGER", "fre_trig", w=134)
 frame(3, 0, 8, "FREE ENV"); knobs(3, 0, [("TIME 1", "fre_t1"), ("LEVEL 1", "fre_l1"), ("TIME 2", "fre_t2"), ("LEVEL 2", "fre_l2"), ("TIME 3", "fre_t3"),
                                           ("LEVEL 3", "fre_l3"), ("REL TIME", "fre_rt"), ("REL LEVEL", "fre_rl")])
-qlinks("Times", ["wenv_t%d" % i for i in range(1, 9)] + ["wenv_l%d" % i for i in range(1, 9)])
+qlinks("Wave Env", ["wenv_t%d" % i for i in range(1, 9)] + ["wenv_l%d" % i for i in range(1, 9)])
 qlinks("Loops", ["wenv_trig", "wenv_on_loop", "wenv_on_loop_start", "wenv_on_loop_end", "wenv_off_loop", "wenv_off_loop_start", "wenv_off_loop_end", "fre_trig"])
 qlinks("Free", ["fre_t1", "fre_l1", "fre_t2", "fre_l2", "fre_t3", "fre_l3", "fre_rt", "fre_rl"])
 
@@ -120,20 +122,21 @@ qlinks("LFO", ["lfo1_rate", "lfo1_shape", "lfo1_delay", "lfo1_sync", "lfo1_sym",
                "lfo2_delay", "lfo2_sync", "lfo2_sym", "lfo2_human", "lfo2_phase"])
 qlinks("Arp", ["arp_on", "arp_tempo", "arp_clock", "arp_range", "arp_pattern", "arp_dir", "arp_order", "arp_velo", "arp_reset"])
 
-# ---- MATRIX: 16 slots, 4 per row, each slot = source, amount, destination --------------------------------------------------------------
+# ---- MATRIX: 16 slots over two tabs, each slot in its own panel (source, destination, amount) ------------------------------------------
 MAT = []
 OUT = MAT
-tab("MATRIX")
-for r in range(4):
-    emit('frame x=10 y=%d w=1258 h=%d title="SLOTS %d-%d"' % (ry(r), ROW_H, 4 * r + 1, 4 * r + 4))
-    for j in range(4):
-        n = 4 * r + j + 1; xs = 22 + 310 * j
-        emit('popup cx=%d cy=%d w=106 h=48 label="SRC %d" key=m%d_src' % (xs + 56, ry(r) + 104, n, n))
-        emit('knob cx=%d cy=%d r=30 label="AMT %d" key=m%d_amt' % (xs + 152, ry(r) + 84, n, n))
-        emit('popup cx=%d cy=%d w=106 h=48 label="DEST %d" key=m%d_dst' % (xs + 250, ry(r) + 104, n, n))
-qlinks("Amount", ["m%d_amt" % n for n in range(1, 17)])
-qlinks("Source", ["m%d_src" % n for n in range(1, 17)])
-qlinks("Dest", ["m%d_dst" % n for n in range(1, 17)])
+for page in range(2):
+    tab("MOD %d-%d" % (8 * page + 1, 8 * page + 8))
+    for r in range(4):
+        for half in range(2):
+            n = 8 * page + 2 * r + half + 1; c0 = 4 * half
+            frame(r, c0, 4, "SLOT %d" % n)
+            emit('popup cx=%d cy=%d w=110 h=48 label="SOURCE" key=m%d_src' % (cx(c0), ry(r) + 104, n))
+            emit('popup cx=%d cy=%d w=110 h=48 label="DEST" key=m%d_dst' % (cx(c0 + 1), ry(r) + 104, n))
+            knob(r, c0 + 2, "AMOUNT", "m%d_amt" % n)
+    lo, hi = 8 * page + 1, 8 * page + 8
+    qlinks("Mod %d-%d" % (lo, hi), ["m%d_amt" % n for n in range(lo, hi + 1)] + ["m%d_src" % n for n in range(lo, hi + 1)])
+    qlinks("Dest %d-%d" % (lo, hi), ["m%d_dst" % n for n in range(lo, hi + 1)])
 
 # ---- MODIFIERS ------------------------------------------------------------------------------------------------------------------------
 MODS = []
