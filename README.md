@@ -17,7 +17,7 @@ presets on twelve open wave tables for use without a ROM, and an orange XT-style
 user's own ROM dump (two 128 KB halves or one 256 KB image in the plugin's `ROMS` folder, created on first load).
 
 Not done: the noise-like algorithmic tables 43-51 (open stand-ins), the S&H and ramp modifiers and the modifier delay, Filter 1 types
-5, 6, 8, 9, 12 (rough), a few effect details (Mod Delay speed/depth, wah sense), the arp user pattern and hold mode, and the catalog
+5, 6, 8, 9, 12 (rough), a few effect details (Mod Delay speed/depth, wah sense), the arp hold mode, and the catalog
 release checks.
 
 ## Plan in one paragraph

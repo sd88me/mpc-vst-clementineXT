@@ -181,7 +181,7 @@ SECTIONS = [
     ("VOICES", ["alloc", "assign", "detune", "depan"]),
     ("EFFECT", ["fx_type", "fx_p1", "fx_p2", "fx_p3"]),
     ("ARP", ["arp_on", "arp_tempo", "arp_clock", "arp_range", "arp_pattern", "arp_dir", "arp_order", "arp_velo"]),
-    ("ARP PATTERN", ["arp_reset", "arp_len", "arp_user1", "arp_user2", "arp_user3", "arp_user4"]),
+    ("ARP PATTERN", ["arp_reset"]),   # the user pattern (arp_len, arp_user1-4) is not offered: no good way to edit it, and the firmware ignored it in the rig
     ("MOD DELAY", ["mdelay_src", "mdelay_time"]),
 ] + [("MODIFIER %d" % n, ["mod%d_src1" % n, "mod%d_src2" % n, "mod%d_op" % n, "mod%d_par" % n]) for n in range(1, 5)] \
   + [("MOD %d" % n, ["m%d_src" % n, "m%d_amt" % n, "m%d_dst" % n]) for n in range(1, 17)]
@@ -216,6 +216,7 @@ def params_json():
     for i in range(1, 240):
         if i not in F: continue
         k, nm, lo, hi, d = F[i]
+        if k == "arp_pattern": hi = 15   # 16 (user pattern) is not offered; the sound format keeps the field
         p = {"key": k, "name": short_label(k, nm)}
         o = options(k, lo, hi)
         if o:

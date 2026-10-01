@@ -966,7 +966,7 @@
    "key": "arp_pattern",
    "name": "Pattern",
    "min": 0,
-   "max": 16,
+   "max": 15,
    "default": 0,
    "display": "int"
   },
@@ -4214,12 +4214,7 @@
   {
    "label": "ARP PATTERN",
    "keys": [
-    "arp_reset",
-    "arp_len",
-    "arp_user1",
-    "arp_user2",
-    "arp_user3",
-    "arp_user4"
+    "arp_reset"
    ]
   },
   {

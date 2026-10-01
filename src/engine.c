@@ -279,10 +279,7 @@ static void note_off_now(inst_t *s, int n) {
 static const float ARP_BEATS[16] = { 4.0f, 3.0f, 8.0f / 3, 2.0f, 1.5f, 4.0f / 3, 1.0f, 0.75f, 2.0f / 3, 0.5f, 0.375f, 1.0f / 3, 0.25f, 1.0f / 6, 0.125f, 1.0f / 12 };
 static const uint16_t ARP_PRESET[16] = { 0xFFFF, 0x1111, 0xDDDD, 0x9595, 0xD5D5, 0x5D5D, 0xB5B5, 0x6B6B, 0xAB55, 0x5AD5, 0x7777, 0x76DB, 0x56DB, 0x5B5B, 0xEB55, 0x9249 };
 
-static int arp_step_on(const patch_t *p, int step) {
-    if (p->d[96] == 16) { int len = p->d[101] + 1; int k = step % len; return (p->d[102 + k / 4] >> (k % 4)) & 1; }
-    return (ARP_PRESET[p->d[96] & 15] >> (step & 15)) & 1;
-}
+static int arp_step_on(const patch_t *p, int step) { return (ARP_PRESET[p->d[96] & 15] >> (step & 15)) & 1; }   /* 16 (the user pattern) plays every step */
 
 static void arp_stop_sound(inst_t *s) { if (s->arp_sound >= 0) { note_off_now(s, s->arp_sound); s->arp_sound = -1; } }
 
