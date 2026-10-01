@@ -195,13 +195,17 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
         svf_tick(&f->b, hp, 1.5f, 2.0f, &lp2, &bp2, &hp2);
         return lp2;
     case 5:   /* sine waveshaper (about +9.5 dB small-signal) then 12 dB LP */
-        svf_tick(&f->a, sinf(3.0f * x), g, k, &lp, &bp, &hp);
+        svf_tick(&f->a, 0.857f * sinf(4.61f * x), g, k, &lp, &bp, &hp);   /* measured: gain 3.95, compressing like 0.857*sin(x/0.857 * 3.95) */
         return lp;
-    case 6:   /* 12 dB LP then waveshaper; the shaping wave is not modelled yet (soft clip stands in) */
+    case 6: { /* 12 dB LP then waveshaper. Measured with a sine through the external input: the small-signal gain depends on Special (1.5 at 0, 4.5 at 32,
+               * 7 at 64, 7.5 at 96, 0.5 at 127) and the output saturates softly near 1.0 (tanh-like, third harmonic at 3 %); the real shaping wave is not modelled */
+        static const float SP[5] = { 0, 32, 64, 96, 127 }, GS[5] = { 1.5f, 4.5f, 7.0f, 7.5f, 0.5f };
+        int i = 0; while (i < 3 && special > SP[i + 1]) i++;
+        float gain = GS[i] + (special - SP[i]) / (SP[i + 1] - SP[i]) * (GS[i + 1] - GS[i]);
         svf_tick(&f->a, x, g, k, &lp, &bp, &hp);
-        { float y = 4.2000f * lp, y2 = y * y;   /* rational tanh (error < 0.3%), tanhf costs 110 ns on the ARM devices */
-          float t = y > 4.97f ? 1.0f : y < -4.97f ? -1.0f : y * (135135.0f + y2 * (17325.0f + y2 * (378.0f + y2))) / (135135.0f + y2 * (62370.0f + y2 * (3150.0f + y2 * 28.0f)));
-          return t * 1.500f; }
+        float y = gain * lp, y2 = y * y;   /* rational tanh (error < 0.3%), tanhf costs 110 ns on the ARM devices */
+        return 2.3f * (y > 4.97f ? 1.0f : y < -4.97f ? -1.0f : y * (135135.0f + y2 * (17325.0f + y2 * (378.0f + y2))) / (135135.0f + y2 * (62370.0f + y2 * (3150.0f + y2 * 28.0f))));   /* x2.3: levels of the factory sounds with this filter sit that much above the sine-measured curve */
+    }
     case 7: /* dual: half the 12 dB LP plus the raw band-pass of a second section moved by (special - 64) steps */
         svf_tick(&f->a, x, gr, kr, &lp, &bp, &hp);
         svf_tick(&f->b, x, f->cgr2, f->ckr2, &lp2, &bp2, &hp2);
