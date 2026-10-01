@@ -7,7 +7,7 @@
   "params": "params.json",
   "layout": "layout.conf",
   "art": "html",
-  "defines": {"MODULE_SUBDIR": "\"clementine\""},
+  "defines": {"MODULE_SUBDIR": "\".\""},
   "build": {
     "root": "..",
     "sources": ["src/engine.c", "src/out.c", "src/patch.c", "src/syx.c", "src/waves.c", "src/wavedata.c", "src/filter.c", "src/fx.c", "src/mod.c src/presets.c"],
