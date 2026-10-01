@@ -225,3 +225,10 @@ Filter 1 type 5 (sin(x) -> LP, 2026-10-02): the shaper was calibrated at one lev
 fundamental rising to a peak at about 60 % of full scale and falling much more slowly than that law folds back. Now 1.162 sin(3.4 x) (the same small-signal gain, 3.95): the
 fundamental stays within 2 dB of the firmware at every level, and the 20 factory sounds with this type went from a mean level error of 4.4 to 2.1 dB (without sound 132, which uses
 an uninitialised user table) and from a mean band error of 13.0 to 9.3 dB. The harmonic balance is still not exact (the real curve is softer than a sine).
+
+Filter 1 type 6 (waveshaper), still open (2026-10-02): driven by a sine oscillator through the open filter, the firmware's fundamental is far lower than ours at small and medium
+levels (ours 4-40 dB too high at mix 8-64, 5-23 dB too high at 127, for every Special tried; only Special 127 has the right shape, 12 dB high) and its output is strongly expansive near
+zero. The earlier noise measurement (ours 8 dB too quiet) and the sine measurement of the small-signal gain were taken at one input level and do not describe an oscillator-driven
+signal. Time-domain scatter plots of output against input at 8 Hz do not collapse onto one curve for different input amplitudes, so a static table is not enough; the transfer
+curve and its dependence on Special (the gain is not monotonic in Special: 0.0699, 0.0490, 0.0255, 0.0040, 0.0063, 0.0086, 0.0014, 0.0101, 0.0060 at Special 0, 16, ... 127 for a
+fixed sine) is not modelled. The 14 factory sounds with this type are within about 3.5 dB of the firmware on average, so it is left as is.
