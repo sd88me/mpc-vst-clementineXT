@@ -81,7 +81,7 @@ static void gen_sine_half(int8_t w[WAVE_LEN], double m) {
 /* ---- algorithmic tables 28-51 ----
  * The firmware generates these with code, not from stored waves. The ones below were rebuilt from the shapes the firmware produces
  * (observed with the dev-only oracle; no firmware data is used or shipped here): tables 28, 29, 32-37, 41 and 42 reproduce the
- * firmware exactly, the sine sweeps 38-40 and the keyframed ramp 31 are close approximations (rms error about 1 of 128). Tables 30 and 43-51 are not rebuilt yet and fall back to the open set. */
+ * firmware exactly, the sine sweeps 38-40 and the keyframed ramp 31 are close approximations (rms error about 1 of 128). Tables 43-51 are not rebuilt yet and fall back to the open set. */
 static int8_t c8(double v) { return (int8_t)(v > 127 ? 127 : v < -128 ? -128 : v); }
 static void mirror_half(int8_t w[WAVE_LEN]) { for (int i = 0; i < WAVE_HALF; i++) { int v = -w[WAVE_HALF - 1 - i]; w[WAVE_HALF + i] = (int8_t)(v > 127 ? 127 : v); } }
 
@@ -102,6 +102,14 @@ int algo_table(int n, wave_t *waves, table_ctl_t *ctl) {
     case 29: for (int s = 0; s < 61; s++) { int k = 64 - s; for (int i = 0; i < WAVE_HALF; i++) all[s][i] = i < k ? 32 : 0; mirror_half(all[s]); } break;
     case 41: for (int s = 0; s < 61; s++) { int n1 = 60 - s; for (int i = 0; i < WAVE_HALF; i++) all[s][i] = i < n1 ? 127 : -128; mirror_half(all[s]); } break;
     case 42: for (int s = 0; s < 61; s++) { int k = 60 - s; for (int i = 0; i < WAVE_HALF; i++) all[s][i] = (int8_t)(i < k ? 2 * i : -128 + 2 * (i - k)); mirror_half(all[s]); } break;
+    case 30: for (int s = 0; s < 61; s++) {   /* a half sine (128 sin(pi (i + 0.1)/64.2)) blended with a pulse of 64 on samples 11..53, rms error under 1 */
+            for (int i = 0; i < WAVE_HALF; i++) {
+                int b = (int)floor(128.0 * sin(M_PI * (i + 0.1) / 64.2) + 0.5); if (b > 127) b = 127;
+                int p = (i >= 11 && i <= 53) ? 64 : 0;
+                all[s][i] = (int8_t)((b * (60 - s) + p * s) / 60);
+            }
+            mirror_half(all[s]);
+        } break;
     case 35: for (int s = 0; s < 61; s++) gen_square_half(all[s], 1.0 + 3.0 * s / 60.0); break;
     case 36: for (int s = 0; s < 61; s++) gen_square_half(all[s], 1.0 + 7.0 * s / 60.0); break;
     case 37: for (int s = 0; s < 61; s++) gen_square_half(all[s], 1.0 + 15.0 * s / 60.0); break;
