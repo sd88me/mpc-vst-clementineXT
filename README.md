@@ -4,19 +4,21 @@ A wavetable synth for Akai MPC OS standalone devices (MPC Live/One/X/Key, Force)
 instrument with its own screen skin and Q-Links. It is modelled on the Waldorf Microwave II/XT: same voice
 architecture, same sound-dump format, and it loads Microwave II/XT `.syx` sound banks as they are.
 
-**Status: early development, not ready to use.** The plugin builds for armhf and passes its offline tests, but it has not been
-run on a device and much of the sound engine is still missing. See [docs/DESIGN.md](docs/DESIGN.md) for the design and
-[docs/CALIBRATION.md](docs/CALIBRATION.md) for what has been measured against the original firmware.
+**Status: development build, plays on a Force.** It has run on an Akai Force (CPU bench WARN: 14.5 % p99 at 16 voices, 22 % in the
+Q-Link sweep, docs/PERFORMANCE.md) and most of the sound engine is calibrated against the original firmware. See
+[docs/DESIGN.md](docs/DESIGN.md) for the design and [docs/CALIBRATION.md](docs/CALIBRATION.md) for every measurement.
 
-Working so far: a Banks page (bank list and paged sound list, like the JV-880 port; banks are the built-in sounds plus every .syx in ROMS), 12 built-in presets on twelve open wave tables (used when no bank is found), the XT's 256-byte sound format (all 219 fields, `.syx` single/bank import, save), MIDI controller map, the
-wavetable oscillators (real table data, measured mip levels and pitch, FM, ring mod, noise), amp, filter, wave and free envelopes,
-Filter 1 low-pass types (12/24 dB, calibrated) and Filter 2, the modulation matrix and both LFOs, pan, volume, poly/mono/dual/unison
-voices, glide, an effects module, and an orange XT-styled skin. The original waves and control tables are read straight from the
-user's own ROM dump (two 128 KB halves or one 256 KB image, placed in the plugin's `ROMS` folder, which it creates on first load).
+Working: the XT's 256-byte sound format (all fields, `.syx` single/bank import, save), the MIDI controller map, the wavetable oscillators
+(real table data from the user's own ROM dump, measured mip levels and pitch, FM, ring mod, noise), amp, Filter 1 (all 13 types, 0-4, 7,
+10, 11 fitted, the rest rough) and Filter 2, the wave/free/amp/filter envelopes, the modulation matrix with the modifiers, both LFOs, pan,
+poly/mono/dual/unison voices, glide, all ten effects (calibrated), the arpeggiator (measured, host-tempo sync), 17 of the 24 algorithmic
+wave tables 28-51, a Banks page (bank list and paged sound list; banks are the built-in sounds plus every `.syx` in `ROMS`), 12 built-in
+presets on twelve open wave tables for use without a ROM, and an orange XT-styled skin. The original waves and tables are read from the
+user's own ROM dump (two 128 KB halves or one 256 KB image in the plugin's `ROMS` folder, created on first load).
 
-Not done (guesses only, unmeasured: arpeggiator and trigger modes): the modifier delay and the timed modifiers (S&H, ramp, lag, filter, differentiator are unmeasured guesses), exact shapes of Filter 1's band-pass/high-pass/other types, effect calibration (and the
-firmware's effect numbering), the algorithmic wave tables 28-51, a larger open wave set for use without a
-ROM, and further device tests (the CPU bench on a Force is WARN: 14.7 % p99 at 16 voices, 22 % in the Q-Link sweep; see docs/PERFORMANCE.md).
+Not done: the noise-like algorithmic tables 43-51 (open stand-ins), the S&H and ramp modifiers and the modifier delay, Filter 1 types
+5, 6, 8, 9, 12 (rough), a few effect details (Mod Delay speed/depth, wah sense), the arp user pattern and hold mode, and the catalog
+release checks.
 
 ## Plan in one paragraph
 A new C engine (not a ROM emulator; those need a 64-bit CPU) whose patch format is the XT's 256-byte sound dump,

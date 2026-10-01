@@ -205,7 +205,7 @@ static void spread(const patch_t *p, int i, int n, float *det, float *pan) {
     float per_unit = p->d[P_ASSIGN] == 2 ? 0.0118f : 0.00377f;   /* half-range in notes per detune step */
     *det = pos * p->d[P_DETUNE] * per_unit;
     float f = p->d[P_DEPAN] / 127.0f;
-    *pan = p->d[P_ASSIGN] == 2 ? (-14.0f * f + 1.3f * 63.5f * f * pos) / 63.5f : pos * f;
+    *pan = p->d[P_ASSIGN] == 2 ? (14.0f * f + 1.3f * 63.5f * f * pos) / 63.5f : pos * f;
 }
 
 /* Give every held key its share of the voices (unison) or two voices each (dual), or one (normal). */
