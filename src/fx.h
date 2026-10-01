@@ -9,7 +9,7 @@ typedef struct {
     float dl[2][FX_MAX_DELAY];   /* delay lines (chorus/flanger/delay share them) */
     int wr;
     float lfo;                   /* LFO phase 0..1 */
-    float lfo_chorus;            /* the always-available chorus has its own ~0.5 Hz LFO */
+    float lfo_chorus;            /* the always-available chorus has its own ~0.54 Hz LFO */
     float fb[2];                 /* feedback / filter state */
     float env[2];                /* envelope follower (auto-wah) */
     float svf_ic1[2], svf_ic2[2];

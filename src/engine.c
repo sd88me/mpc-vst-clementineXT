@@ -170,7 +170,7 @@ static int tabs_ready;
 static void build_env_tabs(void);
 static void *create(const char *dir) {
     inst_t *s = calloc(1, sizeof *s);
-    if (s) { s->arp_sound = -1; s->arp_idx = -1; }
+    if (s) { s->arp_sound = -1; s->arp_idx = -1; s->fx.lfo_chorus = 0.525f; }   /* the amp-page chorus LFO free-runs; the firmware starts it at 189 degrees (measured at note-on) */
     patch_init(&s->cur);
     if (dir) { char rd[1100]; snprintf(rd, sizeof rd, "%s/ROMS", dir); mkdir(rd, 0755); }   /* the folder for the user's own ROM dump and banks, created empty on first load */
     scan_banks(s, dir);

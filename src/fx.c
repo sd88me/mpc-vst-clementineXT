@@ -20,10 +20,10 @@ static void dry_wet(int m, float *dry, float *wet) { *wet = m / 127.0f; *dry = 1
 void chorus_run(fx_t *f, int mode, float *l, float *r) {
     if (!mode) return;
     float in[2] = { *l, *r }, out[2];
-    f->lfo_chorus += 0.5f / FS; if (f->lfo_chorus >= 1) f->lfo_chorus -= 1;
+    f->lfo_chorus += 0.54f / FS; if (f->lfo_chorus >= 1) f->lfo_chorus -= 1;
     for (int c = 0; c < 2; c++) f->cdl[c][f->cwr] = in[c];
     for (int c = 0; c < 2; c++) {
-        /* measured: one tap, delay 128 samples * (1 + sin) (0..6.4 ms) at 0.5 Hz, the sides half a cycle apart, added to the dry signal at
+        /* measured: one tap, delay 128 samples * (1 + sin) (0..6.4 ms) at 0.54 Hz (a fit to the fundamental's comb-filter notches over 2 s), the sides half a cycle apart, added to the dry signal at
          * full level (rms rises by about 1.4 for uncorrelated noise); chorus 1 and 2 behave alike */
         float d = 128.0f * (1.0f + sinf(TWO_PI * (f->lfo_chorus + 0.5f * c)));
         if (d < 1.0f) d = 1.0f;
