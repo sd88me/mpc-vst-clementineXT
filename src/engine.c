@@ -647,6 +647,15 @@ static int fx_type_from_index(int i) {
 #define CTL_N 8
 static inline int iround(float x) { return (int)(x >= 0 ? x + 0.5f : x - 0.5f); }
 
+/* Large matrix modulation of a cutoff is compressed (measured with a sine through Filter 2's tilt: +19 -> +19, +45 -> +40, +107 -> +58, +430 -> 127;
+ * Filter 1 through a constant source: +64 -> +42, +91 -> +51, +128 -> +59, +181 -> +73, while its envelope amount stays linear). */
+static float cut_compress(float m) {
+    static const float X[5] = { 0, 19, 45, 107, 430 }, Y[5] = { 0, 19, 40, 58, 127 };
+    float a = fabsf(m), r = a >= X[4] ? Y[4] : 0; int i = 0;
+    if (a < X[4]) { while (i < 3 && a > X[i + 1]) i++; r = Y[i] + (a - X[i]) / (X[i + 1] - X[i]) * (Y[i + 1] - Y[i]); }
+    return m < 0 ? -r : r;
+}
+
 /* Everything that moves slowly for one voice: modulation sources and matrix, envelope times, LFOs, pitch, wave positions, mix levels, filter
  * controls, gain and pan. Runs every CTL_N samples (5 kHz); the per-sample path only reads the results. */
 static void voice_control(inst_t *s, voice_t *v) {
@@ -723,16 +732,11 @@ static void voice_control(inst_t *s, voice_t *v) {
      * (the velocity amount is assumed to use the same scale). */
     float kt = (p->d[P_F1_KT] - 64) * 0.03125f * (note - 64);
     float ea = 2.0f * ((p->d[P_F1_ENV] - 64) * v->fenv.level + (p->d[P_F1_VELO] - 64) * (v->vel / 127.0f));
-    v->cut = p->d[P_F1_CUTOFF] + kt + ea + dest[9];
+    v->cut = p->d[P_F1_CUTOFF] + kt + ea + cut_compress(dest[9]);   /* matrix cutoff modulation is compressed (envelope and velocity amounts are not) */
     v->reso = clampf(p->d[P_F1_RESO] + dest[10], 127.0f);
     v->spec = clampi(p->d[P_F1_SPECIAL] + iround(dest[35]), 127);
     float m2 = dest[11];
-    if (p->d[P_F2_TYPE]) {   /* the tilt type responds less than the LP to large cutoff modulation (measured with a sine: +19 -> +19, +45 -> +40, +107 -> +58, +430 -> 127) */
-        static const float X[5] = { 0, 19, 45, 107, 430 }, Y[5] = { 0, 19, 40, 58, 127 };
-        float a = fabsf(m2), r = a >= X[4] ? Y[4] : 0; int i = 0;
-        if (a < X[4]) { while (i < 3 && a > X[i + 1]) i++; r = Y[i] + (a - X[i]) / (X[i + 1] - X[i]) * (Y[i + 1] - Y[i]); }
-        m2 = m2 < 0 ? -r : r;
-    }
+    if (p->d[P_F2_TYPE]) m2 = cut_compress(m2);   /* the tilt type responds less than the LP to large cutoff modulation */
     v->c2 = p->d[P_F2_CUTOFF] + (p->d[P_F2_KT] - 64) * 0.03125f * (note - 64) + m2;
     float vol = clampf(p->d[P_VOLUME] + dest[12], 127.0f);
     v->gfac = vg * (vol / 127.0f) * v->ug;
