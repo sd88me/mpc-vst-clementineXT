@@ -3958,12 +3958,77 @@
    "momentary": true,
    "display": "string",
    "type": "slot"
+  },
+  {
+   "key": "bank",
+   "name": "Bank",
+   "min": 0,
+   "max": 23,
+   "default": 0,
+   "display": "int",
+   "type": "stepper"
+  },
+  {
+   "key": "bank_prev",
+   "name": "Bank <",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "type": "trigger",
+   "step_of": "bank",
+   "step_delta": -1
+  },
+  {
+   "key": "bank_next",
+   "name": "Bank >",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "momentary": true,
+   "type": "trigger",
+   "step_of": "bank",
+   "step_delta": 1
+  },
+  {
+   "key": "play_v1",
+   "name": "Play 1",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "display": "int"
+  },
+  {
+   "key": "play_v2",
+   "name": "Play 2",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "display": "int"
+  },
+  {
+   "key": "play_v3",
+   "name": "Play 3",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "display": "int"
+  },
+  {
+   "key": "play_v4",
+   "name": "Play 4",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "display": "int"
   }
  ],
  "sections": [
   {
    "label": "PLAY",
    "keys": [
+    "bank",
+    "bank_name",
     "program",
     "program_prev",
     "program_next",
@@ -3971,7 +4036,11 @@
     "play1",
     "play2",
     "play3",
-    "play4"
+    "play4",
+    "play_v1",
+    "play_v2",
+    "play_v3",
+    "play_v4"
    ]
   },
   {

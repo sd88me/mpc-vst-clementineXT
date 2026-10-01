@@ -82,6 +82,29 @@ static void refresh(inst_t *s) {
     for (int n = 0; n < 16; n++) s->modgain[n] = mod_amount_gain(s->cur.d[193 + 3 * n]);
 }
 
+/* The four Play knobs: Play Parameter 1-4 (SDATA 58-61) each name one of 83 parameters of the XT's list, and a knob (0..127) spans that parameter's whole
+ * range. The table gives each list entry's SDATA index; -1 marks Controls W-Z, which are live controller values (CC 4, 8, 11, 12). */
+static const int16_t PLAY_SD[83] = { 1, 2, 3, 5, 6, 12, 13, 14, 17, 18, 25, 26, 27, 28, 29, 30, 36, 37, 38, 39, 40, 47, 48, 49, 50, 53, 54, 55, 62, 63, 64, 65, 66, 67, 73, 74, 75, 77, 79, 80, 82, 84, 85, 87, 88, 92, 93, 94, 95, 96, 97, 98, 99, 108, 109, 113, 114, 115, 116, 119, 120, 121, 122, 159, 160, 161, 162, 163, 164, 166, 167, 168, 169, 170, 171, 172, 7, 70, 90, -1, -1, -1, -1 };
+static const uint8_t PLAY_CC[4] = { 4, 8, 11, 12 };
+
+static int play_entry(const inst_t *s, int knob) { int e = s->cur.d[57 + knob]; return e > 82 ? 82 : e; }   /* knob 1..4 */
+
+static void play_set(inst_t *s, int knob, int v) {
+    int e = play_entry(s, knob), i = PLAY_SD[e];
+    if (v < 0) v = 0; else if (v > 127) v = 127;
+    if (i < 0) { s->cc[PLAY_CC[e - 79]] = (uint8_t)v; return; }
+    int lo = patch_fields[i].lo, hi = patch_fields[i].hi;
+    s->cur.d[i] = (uint8_t)(lo + (v * (hi - lo) + 63) / 127);
+    refresh(s);
+}
+
+static int play_get(const inst_t *s, int knob) {
+    int e = play_entry(s, knob), i = PLAY_SD[e];
+    if (i < 0) return s->cc[PLAY_CC[e - 79]];
+    int lo = patch_fields[i].lo, hi = patch_fields[i].hi;
+    return hi > lo ? ((s->cur.d[i] - lo) * 127 + (hi - lo) / 2) / (hi - lo) : 0;
+}
+
 typedef struct { patch_t *out; } bankctx_t;
 static void bank_cb(const patch_t *p, int bank, int num, void *ctx) {
     bankctx_t *c = ctx;
@@ -390,6 +413,14 @@ static void set_param(void *p, const char *k, const char *val) {
         if (!strcmp(k, "patch_page_next")) { if (x > 0 && (s->browse_page + 1) * PAGE_SLOTS < 256) s->browse_page++; return; }
         if (!strcmp(k, "patch_page_prev")) { if (x > 0 && s->browse_page > 0) s->browse_page--; return; }
     }
+    if (!strncmp(k, "play_v", 6) && k[6] >= '1' && k[6] <= '4' && !k[7]) { play_set(s, k[6] - '0', x); return; }
+    if (!strcmp(k, "bank")) {   /* the bank stepper: load that bank and keep the current program number */
+        if (x >= 0 && x < s->nbanks && x != s->cur_bank) {
+            select_bank(s, x); browse_to(s, x);
+            if (s->have_bank) { s->cur = s->bank[s->program]; refresh(s); }
+        }
+        return;
+    }
     if (!strcmp(k, "program")) {
         s->program = x < 0 ? 0 : x > 255 ? 255 : x;
         if (s->have_bank) s->cur = s->bank[s->program];   /* voices keep playing and pick the new values up next sample */
@@ -411,6 +442,8 @@ static int get_param(void *p, const char *k, char *buf, int n) {
         return o;
     }
     if (!strcmp(k, "program")) return snprintf(buf, n, "%d", s->program);
+    if (!strncmp(k, "play_v", 6) && k[6] >= '1' && k[6] <= '4' && !k[7]) return snprintf(buf, n, "%d", play_get(s, k[6] - '0'));
+    if (!strcmp(k, "bank")) return snprintf(buf, n, "%d", s->cur_bank);
     {   /* "<key>_on": the selection state of a list tile (the wrapper uses it as the tile's value; the tile's text is not a value) */
         size_t kl = strlen(k);
         if (kl > 3 && !strcmp(k + kl - 3, "_on")) {

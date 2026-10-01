@@ -158,7 +158,7 @@ def _slots(prefix, n, keys):
 
 # Skin sections, in page order (studio.py auto packs them into pages of 2 rows x 8 slots). Labels follow the XT's own page names.
 SECTIONS = [
-    ("PLAY", ["program", "program_prev", "program_next", "patch_name", "play1", "play2", "play3", "play4"]),
+    ("PLAY", ["bank", "bank_name", "program", "program_prev", "program_next", "patch_name", "play1", "play2", "play3", "play4", "play_v1", "play_v2", "play_v3", "play_v4"]),
     ("OSC 1", ["osc1_oct", "osc1_semi", "osc1_detune", "osc1_bend", "osc1_keytrack", "osc1_fm"]),
     ("OSC 2", ["osc2_oct", "osc2_semi", "osc2_detune", "osc2_bend", "osc2_keytrack", "osc2_sync", "osc2_link"]),
     ("WAVETABLE", ["wavetable"]),
@@ -240,6 +240,12 @@ def params_json():
         ps.append({"key": "bank_slot_%d" % i, "name": "BANK %d" % i, "min": 0, "max": 1, "default": 0, "momentary": True, "display": "string", "type": "slot"})
     for i in range(1, 29):
         ps.append({"key": "patch_slot_%d" % i, "name": "SOUND %d" % i, "min": 0, "max": 1, "default": 0, "momentary": True, "display": "string", "type": "slot"})
+    # the global page: a bank stepper and the four Play knobs (each one is the parameter its Play Parameter selector names, spanning that parameter's range)
+    ps.append({"key": "bank", "name": "Bank", "min": 0, "max": 23, "default": 0, "display": "int", "type": "stepper"})
+    ps.append({"key": "bank_prev", "name": "Bank <", "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger", "step_of": "bank", "step_delta": -1})
+    ps.append({"key": "bank_next", "name": "Bank >", "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger", "step_of": "bank", "step_delta": 1})
+    for i in range(1, 5):
+        ps.append({"key": "play_v%d" % i, "name": "Play %d" % i, "min": 0, "max": 127, "default": 0, "display": "int"})
     have = {p["key"] for p in ps}
     secs = []
     for label, keys in SECTIONS:

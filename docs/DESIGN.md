@@ -270,20 +270,20 @@ all voices -> stereo sum (24-bit-style fixed point, XT clipping) -> effect -> ch
 - **Mod wheel, aftertouch, poly pressure, breath, foot** come from MPC's MIDI as usual (check that MPC passes poly
   pressure and CC 2/4 to a VST2; record in NOTES).
 
-### Pages (one per MPC tab, Q-Links follow the page)
-| Page | Contents |
-|---|---|
-| PLAY | Preset browser (bank popup, program stepper, 16-character name), Play Params 1-4, W-Z, volume, glide, allocation/assignment/detune, wave-data status |
-| OSC | Osc 1/2 octave, semitone, detune, keytrack, bend range, sync, link, Osc 1 FM amount |
-| WAVE | Wavetable (popup with names), Wave 1/2 start wave, phase, env amount, velocity, keytrack, limit, link; a picture of the current slot |
-| WAVE ENV | 8 time and 8 level sliders side by side, so the row of sliders reads as the envelope; trigger; key-on and key-off loop start/end |
-| MIX | Wave 1, Wave 2, ring mod, noise, external levels; aliasing, time quantisation, clipping, accuracy |
-| FILTER | Filter 1 cutoff, resonance, type, keytrack, env amount, velocity, special (its label follows the type: `when=f1_type:...`); Filter 2 cutoff, type, keytrack; filter ADSR + trigger |
-| AMP | Amp ADSR + trigger, volume, velocity, keytrack, pan, pan keytrack, free envelope |
-| LFO | LFO 1/2 rate (or sync division, `when=`), shape, delay, sync, symmetry, humanize, LFO 2 phase |
-| MOD | 16 slots shown 4 at a time: `mod_view` 1-4 picks which (`when=mod_view:N`), each slot source popup, amount knob, destination popup |
-| MODIFIERS | 4 modifiers (source 1, source 2, op, parameter) + modifier delay |
-| ARP / FX | Arp settings and user pattern (16 steps as toggles, packed into SDATA 102-105); effect type, 3 parameters, chorus |
+### Pages (nine tabs, written by `tools/gen_layout.py`; Q-Links follow the page, several `qlinks` sets per tab are sub-pages)
+Four rows of eight cells per tab (frames 148 px high). The XT's 17 menu pages are merged into:
+
+| Tab | Contents | Q-Link sets |
+|---|---|---|
+| GLOBAL | Bank and sound steppers with their names, the four Play knobs (each drives the parameter its ASSIGN popup names, over that parameter's whole range) , effect type and three parameters, voice mode/assign/detune/de-pan, glide, volume/pan/chorus | Play, Voice |
+| SOUNDS | Bank list and a paged 2 x 14 sound list (sounds run down the columns); selection state through `<key>_on` | Banks |
+| OSC | Osc 1, Osc 2, wavetable, quality (aliasing, quantize, clipping, accuracy) | Osc |
+| WAVE | Wave 1, Wave 2, mixer | Waves, Mixer |
+| FILTER | Filter 1, Filter 2, filter envelope, amp envelope, amp velocity/keytrack | Filter, Amp |
+| ENV | Wave envelope times and levels, loops, free envelope | Times, Loops, Free |
+| LFO ARP | LFO 1, LFO 2, arpeggiator | LFO, Arp |
+| MATRIX | All 16 slots (source, amount, destination), four per row | Amount, Source, Dest |
+| MODIFIERS | The four modifiers and the control delay | Mods, Delay |
 
 Limits that shape this (NOTES/ROADMAP): no native envelope or XY component for a VST2, so envelopes are slider rows;
 no live meters (the wrapper has no engine-driven update path yet), so the wave picture and readouts refresh when a
