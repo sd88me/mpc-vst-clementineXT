@@ -183,9 +183,14 @@ Arp tempo: 0 ("extern") follows the host tempo, which the wrapper passes in as `
 
 ## Algorithmic tables 28-51 (rebuilt from observed output)
 The firmware computes these with code; none of their 61 waves matches any ROM wave. They were studied through the oracle's DSP-memory
-capture (never shipped). `src/waves.c` `algo_table()` rebuilds: 29 (pulse with a growing zero gap), 41 (square with a moving
-inverted pulse) and 42 (saw whose reset moves one sample per slot) exactly, sample for sample, including the mips; the sine sweeps
-38/39/40 (integer cycles 1+, 2+, 4+ every 8/4/2 slots, slots between blended with the ROM tables' truncating rule), the saw sweeps 32-34
-and the decaying ramp 31 as approximations (waveform correlation 0.8-0.97). The mirror rule saturates: a stored -128 expands to +127.
-Still open (fall back to the open tables): 28, 30, 35-37 (slew-limited pulse trains), 43-51 (noise-like and plucked-string families).
-57 of the 256 factory sounds use the rebuilt ones; their worst-band spectral error against the firmware fell from 27 to 22 dB (median).
+capture (never shipped) and rebuilt in `src/waves.c` `algo_table()`. Every wave is stored as 64 samples and mirrored (second half = the
+negated reverse, -128 saturating to +127); tables 32-40 also taper samples 48..63 by (63 - i)/16 (rounded).
+- **Exact, sample for sample (all 61 slots, including the mips): 28, 29, 32, 33, 34, 35, 36, 37, 41, 42.**
+  28: floor((70 + 8s) i / 64) mod 64. 29: 32 for 64-s samples then s zeros. 41: 127 for 60-s samples then -128. 42: a ramp 2i that
+  resets after 60-s samples. 32-34: saw sweeps, ((2 m i + max(2, m - 1/64)) mod 256) - 128 with m = 2 + s/30, 2 + s/10, 2 + 7s/30.
+  35-37: square waves of m = 1 + 3s/60, 1 + 7s/60, 1 + 15s/60 cycles.
+- **Close (rms error about 1 of 128): 38-40** (128 sin(2 pi (m + 0.04)(i + 0.5)/128), m = 1 + s/8, 2 + s/4, 4 + s/2) and **31** (keyframes at
+  slots 0, 30, 60 blended; the firmware's blend in between is slightly different).
+- **Not rebuilt (open-table stand-ins): 30 and 43-51**, noise-like and plucked-string families (43/44 are a sliding window over a fixed
+  noise sequence).
+76 of the 256 factory sounds use tables 28-51; 66 of them use rebuilt ones.

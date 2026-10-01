@@ -64,17 +64,27 @@ void table_build(const table_ctl_t *ctl, const wave_t *waves, int nwaves, table_
 }
 
 
+static int8_t c8(double v);
+static void mirror_half(int8_t w[WAVE_LEN]);
+/* The same 16-sample taper ends every wave of tables 32-40: samples 48..63 of the first half are scaled by (63 - i)/16, rounded. */
+static int8_t taper(int v, int i) { return (int8_t)(i >= 48 ? (v * (63 - i) * 2 + 16) >> 5 : v); }
+/* Tables 35-37, exact: a square wave with m cycles (m = 1 + k*s/60 for k = 3, 7, 15), low first, +127/-128, tapered. */
+static void gen_square_half(int8_t w[WAVE_LEN], double m) {
+    for (int i = 0; i < WAVE_HALF; i++) w[i] = taper(fmod(m * (i + 0.5) / WAVE_LEN, 1.0) >= 0.5 ? 127 : -128, i);
+    mirror_half(w);
+}
+/* Tables 38-40: a sine of 128 * sin(2 pi (m + 0.04)(i + 0.5)/128) (rms error under 1 against the firmware's), tapered. */
+static void gen_sine_half(int8_t w[WAVE_LEN], double m) {
+    for (int i = 0; i < WAVE_HALF; i++) w[i] = taper((int)c8(floor(128.0 * sin(2 * M_PI * (m + 0.04) * (i + 0.5) / WAVE_LEN) + 0.5)), i);
+    mirror_half(w);
+}
 /* ---- algorithmic tables 28-51 ----
  * The firmware generates these with code, not from stored waves. The ones below were rebuilt from the shapes the firmware produces
- * (observed with the dev-only oracle; no firmware data is used or shipped here): tables 28, 29, 32-34, 41 and 42 reproduce the
- * firmware exactly, the sine sweeps 38-40 and the decaying ramp 31 are close approximations (waveform correlation
- * 0.8-0.97). Tables 28, 30, 35-37 and 43-51 are not rebuilt yet and fall back to the open set. */
+ * (observed with the dev-only oracle; no firmware data is used or shipped here): tables 28, 29, 32-37, 41 and 42 reproduce the
+ * firmware exactly, the sine sweeps 38-40 and the keyframed ramp 31 are close approximations (rms error about 1 of 128). Tables 30 and 43-51 are not rebuilt yet and fall back to the open set. */
 static int8_t c8(double v) { return (int8_t)(v > 127 ? 127 : v < -128 ? -128 : v); }
 static void mirror_half(int8_t w[WAVE_LEN]) { for (int i = 0; i < WAVE_HALF; i++) { int v = -w[WAVE_HALF - 1 - i]; w[WAVE_HALF + i] = (int8_t)(v > 127 ? 127 : v); } }
 
-static void gen_sine(int8_t w[WAVE_LEN], double m) { for (int i = 0; i < WAVE_LEN; i++) w[i] = c8(floor(128.0 * sin(2 * M_PI * m * (i + 0.5) / WAVE_LEN) + 0.5)); }
-/* First half of the firmware's saw-sweep waves (tables 32-34), exact: ((2*m*i + c) mod 256) - 128 with c = max(2, m - 1/64), the last 16
- * samples tapered by (63 - i)/16 (rounded), the second half mirrored. m is the (fractional) number of cycles. */
 static void gen_saw_half(int8_t w[WAVE_LEN], double m) {
     double c = m - 1.0 / 64.0; if (c < 2.0) c = 2.0;
     for (int i = 0; i < WAVE_HALF; i++) {
@@ -85,17 +95,6 @@ static void gen_saw_half(int8_t w[WAVE_LEN], double m) {
     for (int i = 0; i < WAVE_HALF; i++) { int v = -w[WAVE_HALF - 1 - i]; w[WAVE_HALF + i] = (int8_t)(v > 127 ? 127 : v); }
 }
 
-/* Keyframe waves every `per` slots, the slots between blended with the truncating integer rule the ROM tables use. */
-static void keyframes(int8_t out[TABLE_SLOTS][WAVE_LEN], void (*gen)(int8_t *, double), double m0, double step, int per) {
-    int8_t key[40][WAVE_LEN]; int nk = 61 / per + 2;
-    for (int k = 0; k < nk && k < 40; k++) gen(key[k], m0 + k * step);
-    for (int s = 0; s < 61; s++) {
-        int a = s / per, b = a + 1, sa = a * per, sb = b * per;
-        for (int i = 0; i < WAVE_LEN; i++)
-            out[s][i] = (s == sa) ? key[a][i] : (int8_t)((key[a][i] * (sb - s) + key[b][i] * (s - sa)) / (sb - sa));
-    }
-}
-
 int algo_table(int n, wave_t *waves, table_ctl_t *ctl) {
     static int8_t all[TABLE_SLOTS][WAVE_LEN];
     switch (n) {
@@ -103,23 +102,27 @@ int algo_table(int n, wave_t *waves, table_ctl_t *ctl) {
     case 29: for (int s = 0; s < 61; s++) { int k = 64 - s; for (int i = 0; i < WAVE_HALF; i++) all[s][i] = i < k ? 32 : 0; mirror_half(all[s]); } break;
     case 41: for (int s = 0; s < 61; s++) { int n1 = 60 - s; for (int i = 0; i < WAVE_HALF; i++) all[s][i] = i < n1 ? 127 : -128; mirror_half(all[s]); } break;
     case 42: for (int s = 0; s < 61; s++) { int k = 60 - s; for (int i = 0; i < WAVE_HALF; i++) all[s][i] = (int8_t)(i < k ? 2 * i : -128 + 2 * (i - k)); mirror_half(all[s]); } break;
-    case 38: keyframes(all, gen_sine, 1, 1, 8); break;
-    case 39: keyframes(all, gen_sine, 2, 1, 4); break;
-    case 40: keyframes(all, gen_sine, 4, 1, 2); break;
+    case 35: for (int s = 0; s < 61; s++) gen_square_half(all[s], 1.0 + 3.0 * s / 60.0); break;
+    case 36: for (int s = 0; s < 61; s++) gen_square_half(all[s], 1.0 + 7.0 * s / 60.0); break;
+    case 37: for (int s = 0; s < 61; s++) gen_square_half(all[s], 1.0 + 15.0 * s / 60.0); break;
+    case 38: for (int s = 0; s < 61; s++) gen_sine_half(all[s], 1.0 + s / 8.0); break;
+    case 39: for (int s = 0; s < 61; s++) gen_sine_half(all[s], 2.0 + s / 4.0); break;
+    case 40: for (int s = 0; s < 61; s++) gen_sine_half(all[s], 4.0 + s / 2.0); break;
     case 32: for (int s = 0; s < 61; s++) gen_saw_half(all[s], 2.0 + s / 30.0); break;
     case 33: for (int s = 0; s < 61; s++) gen_saw_half(all[s], 2.0 + s / 10.0); break;
     case 34: for (int s = 0; s < 61; s++) gen_saw_half(all[s], 2.0 + 7.0 * s / 30.0); break;
-    case 31:   /* a decaying ramp whose start level and slope sweep with the slot, with an exponential-looking fall in the last 14 samples */
-        for (int s = 0; s < 61; s++) {
-            double init = 127.0 * (60 - s) / 60.0, slope = 1.0 - fabs(s - 30) / 30.0;
-            for (int i = 0; i < WAVE_HALF; i++) {
-                double v = init - slope * i; int j = i - 50;
-                if (j >= 0) { int k = j / 2 + 1; v = k <= 7 ? v * (128 - (1 << k)) / 128.0 : 0; }
-                all[s][i] = c8(v);
-            }
-            mirror_half(all[s]);
+    case 31: {   /* three keyframes (a flat 127, a ramp 64..1, a flat 0, the ends with a 2^k tail) at slots 0, 30 and 60, blended between */
+        int8_t key[3][WAVE_LEN];
+        for (int i = 0; i < WAVE_HALF; i++) {
+            int t = 0; if (i >= 49) { int k = (i - 49) / 2 + 1; t = k <= 7 ? (1 << k) - 1 : 127; }
+            key[0][i] = (int8_t)(127 - t); key[1][i] = (int8_t)(64 - i); key[2][i] = (int8_t)t;
         }
-        break;
+        for (int k = 0; k < 3; k++) mirror_half(key[k]);
+        for (int s = 0; s < 61; s++) {
+            int a = s < 30 ? 0 : 1, sa = a * 30, sb = sa + 30;
+            for (int i = 0; i < WAVE_LEN; i++) all[s][i] = s == sa ? key[a][i] : (int8_t)((key[a][i] * (sb - s) + key[a + 1][i] * (s - sa)) / 30);
+        }
+        break; }
     default: return -1;
     }
     for (int s = 0; s < TABLE_SLOTS; s++) ctl->slot[s] = s < 61 ? s : TABLE_EMPTY;
