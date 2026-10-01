@@ -529,7 +529,7 @@ static float noise_tick(voice_t *v) {
 /* one 40 kHz core sample, stereo */
 /* Modifier operations. The stateless ones are calibrated against the firmware (docs/CALIBRATION.md, "Modifiers"); the
  * stateful ones (S&H, ramp, lag, filter, differentiator) follow the manual and are not yet measured. a, b, par are 0..1. */
-static float mod_op(int op, float a, float b, float par, float st[2]) {
+static float mod_op(int op, float a, float b, float par, float st[2], float dt) {   /* dt: seconds since the last call */
     int ia = (int)lroundf(a * 127), ib = (int)lroundf(b * 127);
     float w;
     switch (op) {
@@ -540,17 +540,18 @@ static float mod_op(int op, float a, float b, float par, float st[2]) {
     case 4: return (ia ^ ib) / 128.0f;
     case 5: return (ia | ib) / 128.0f;
     case 6: return (ia & ib) / 128.0f;
-    case 7: if (st[1] <= 0) { st[0] = a; st[1] = 0.001f + par * par * 2.0f; } st[1] -= 1.0f / 40000.0f; return st[0];
+    case 7: if (st[1] <= 0) { st[0] = a; st[1] = 0.001f + par * par * 2.0f; } st[1] -= dt; return st[0];
     case 8: if (a > 0.5f && st[1] < 0.5f) st[0] = 0;
-            st[1] = a; st[0] += 1.0f / (40000.0f * (0.01f + par * par * 10.0f)); if (st[0] > 1) st[0] = 1; return st[0];
+            st[1] = a; st[0] += dt / (0.01f + par * par * 10.0f); if (st[0] > 1) st[0] = 1; return st[0];
     case 9: return a >= par ? 1.0f : 0.0f;
     case 10: return fabsf(a);
     case 11: w = 2.0f * par; return w >= 1.0f ? w - 2.0f : w;  /* depends on the parameter only (measured) */
     case 12: return a;
-    case 13: { float step = 1.0f / (40000.0f * (0.005f + par * par * 10.0f)), d = a - st[0];
+    case 13: { float step = 2.09f * exp2f((par * 127.0f - 64.0f) / 11.0f) * dt, d = a - st[0];   /* measured: linear ramp at 2.09 units/s for parameter 64, doubling every 11 steps */
                st[0] += d > step ? step : d < -step ? -step : d; return st[0]; }
-    case 14: st[0] += (a - st[0]) * (0.0001f + par * par * 0.2f); return st[0];
-    default: { float d = a - st[0]; st[0] = a; return d * 40.0f; }
+    case 14: { float tau = 0.040f * exp2f((par * 127.0f - 100.0f) / 25.0f);   /* measured one-pole low-pass: about 40 ms at 100, 15 ms at 64 */
+               st[0] += (a - st[0]) * (1.0f - expf(-dt / tau)); return st[0]; }
+    default: { float d = a - st[0]; st[0] = a; return dt > 0 ? d / dt * 0.0125f : 0.0f; }
     }
 }
 
@@ -591,7 +592,7 @@ static void voice_control(inst_t *s, voice_t *v) {
     for (int m = 0; m < 4; m++) {   /* modifiers 1-4 are sources 25-28 (sources 0 and 31 read 0 and 1) */
         int o = 176 + 4 * m;
         if (!p->d[o] && !p->d[o + 1] && !p->d[o + 2]) continue;   /* unused */
-        src[25 + m] = mod_op(p->d[o + 2], src[p->d[o]], src[p->d[o + 1]], p->d[o + 3] / 127.0f, v->mst[m]);
+        src[25 + m] = mod_op(p->d[o + 2], src[p->d[o]], src[p->d[o + 1]], p->d[o + 3] / 127.0f, v->mst[m], (float)CTL_N / CORE_HZ);
     }
     for (int n = 0; n < 16; n++) {
         int si = p->d[192 + 3 * n];

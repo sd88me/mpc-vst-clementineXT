@@ -171,3 +171,10 @@ Fitted against `filt.tsv` (white noise through the external input, 4 cutoffs x 3
 - Type 7: half the LP plus the raw BP of a section moved (special - 64) steps. Still too high above the BP peak (firmware falls faster).
 - Not fitted: type 12 (band stop; only special 64 was measured, the notch centre sits about 3x the pole at cutoff 72 and 5x at 48, with
   -6 dB below and +5 dB above), type 9 (S&H), and the non-linear types 5, 6, 8, whose levels depend on the input.
+
+## Modifiers, timed types (oracle `--acc0`: a controller step with the capture starting at the step)
+- Lag (13): linear ramp to source 1 at 2.09 units/s for parameter 64, doubling every 11 steps (parameter 20: 0.13/s, 100: > 10/s).
+- Filter (14): one-pole low-pass, time constant about 40 ms at parameter 100, 15 ms at 64, a few ms at 20 (0.040*2^((P-100)/25) s).
+- Differentiator (15): a short pulse at the step, then 0; the scale (0.0125/dt) is a guess.
+- S&H (7) and ramp (8) behave unlike the manual's description in these tests (S&H output depended on the parameter in a non-monotonic
+  way and exceeded full scale at parameter 20; the ramp showed a ripple at parameter 100), so they are still the manual-based guesses.

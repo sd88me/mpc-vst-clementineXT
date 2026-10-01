@@ -150,6 +150,7 @@ static void applyLateOpts(int from, int argc, char** argv)
 	for (int i = from; i < argc;)
 	{
 		if (!strcmp(argv[i], "--acc") && i + 2 < argc) { sendMidi(0xB0, (uint8_t)atoi(argv[i + 1]), (uint8_t)atoi(argv[i + 2])); run(100); i += 3; }
+		else if (!strcmp(argv[i], "--acc0") && i + 2 < argc) { sendMidi(0xB0, (uint8_t)atoi(argv[i + 1]), (uint8_t)atoi(argv[i + 2])); i += 3; }   // no settling time: the capture starts at the message
 		else if (!strcmp(argv[i], "--abend") && i + 1 < argc) { const int v = atoi(argv[i + 1]); sendMidi(0xE0, (uint8_t)(v & 127), (uint8_t)(v >> 7)); run(100); i += 2; }
 		else ++i;
 	}
