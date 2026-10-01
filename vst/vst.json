@@ -1,9 +1,9 @@
 {
-  "name": "Clementine",
+  "name": "Clementine-XT",
   "vendor": "sd88me",
   "uid": "ClmT",
   "version": 1000,
-  "so": "clementine.so",
+  "so": "clementine_xt.so",
   "params": "params.json",
   "layout": "layout.conf",
   "art": "html",

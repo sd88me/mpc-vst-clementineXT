@@ -246,7 +246,7 @@ def params_json():
         ks = [k for k in keys if k in have]
         assert len(ks) == len(keys), (label, [k for k in keys if k not in have])
         secs.append({"label": label, "keys": ks})
-    print(json.dumps({"name": "Clementine", "params": ps, "sections": secs}, indent=1))
+    print(json.dumps({"name": "Clementine-XT", "params": ps, "sections": secs}, indent=1))
 
 # MIDI controller table (Controller Number Assignment, release 2.28): cc -> (SDATA index, conversion).
 # kinds: 0 direct, 1 octave (cc 0..8 -> 16 + 12*cc), 2 semitone (cc 0..24 -> 52 + cc), 3 arp range (cc + 1),

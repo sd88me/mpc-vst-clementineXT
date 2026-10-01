@@ -1,4 +1,4 @@
-# Clementine: agent guide
+# Clementine-XT: agent guide
 
 MPC OS VST2 wavetable instrument modelled on the Waldorf Microwave II/XT. Start with `docs/DESIGN.md`, then
 mpc-vst-plugins' `CLAUDE.md`, `docs/NOTES.md` and `docs/PORTING.md` (checked out next to this repo as `MPC_VST`).

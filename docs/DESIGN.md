@@ -1,4 +1,4 @@
-# Clementine: design
+# Clementine-XT: design
 
 A wavetable instrument for MPC OS devices modelled on the Waldorf Microwave II/XT. Started 2026-09-30 in
 `mpc-vst-plugins` (`docs/proposals/`), moved here. Paths such as `wrapper/`, `tools/`, `docs/NOTES.md`,

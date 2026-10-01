@@ -1,8 +1,13 @@
-# Clementine
+# Clementine-XT
 
 A wavetable synth for Akai MPC OS standalone devices (MPC Live/One/X/Key, Force), built as a native VST2
 instrument with its own screen skin and Q-Links. It is modelled on the Waldorf Microwave II/XT: same voice
 architecture, same sound-dump format, and it loads Microwave II/XT `.syx` sound banks as they are.
+
+**Acknowledgement.** Clementine-XT exists because of the Waldorf Microwave II and Microwave XT, and the XT in the name is a nod to that
+instrument (it also reads as "extended", as in Surge XT). Its sound comes from the user's own copy of the instrument's ROM, which is loaded at
+runtime from the plugin's `ROMS` folder and is not included in this repository or its releases. Waldorf and Microwave are trademarks of their
+owners. This project is independent and not affiliated with or endorsed by Waldorf.
 
 **Status: development build, plays on a Force.** It has run on an Akai Force (CPU bench WARN: 14.5 % p99 at 16 voices, 22 % in the
 Q-Link sweep, docs/PERFORMANCE.md) and most of the sound engine is calibrated against the original firmware. See

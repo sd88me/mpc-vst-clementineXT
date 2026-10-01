@@ -1,4 +1,4 @@
-/* Clementine engine: 10 voices at 40 kHz -> out.c resampler. Oscillators read the firmware's mip tables (waves.c, wavedata.c),
+/* Clementine-XT engine: 10 voices at 40 kHz -> out.c resampler. Oscillators read the firmware's mip tables (waves.c, wavedata.c),
  * pitch follows the measured keytrack/tuning; envelope timing and output gain are placeholders until calibrated. */
 #include <math.h>
 #include <stdio.h>
@@ -105,7 +105,7 @@ static int cmp_str(const void *a, const void *b) { return strcmp((const char *)a
 
 /* Banks: the built-in sounds, then every .syx in the plugin folder and its ROMS folder (by file name). */
 static void scan_banks(inst_t *s, const char *dir) {
-    snprintf(s->banks[0].name, sizeof s->banks[0].name, "Clementine"); s->banks[0].path[0] = 0; s->nbanks = 1;
+    snprintf(s->banks[0].name, sizeof s->banks[0].name, "Clementine-XT"); s->banks[0].path[0] = 0; s->nbanks = 1;
     if (!dir) return;
     char sub[2][1100]; snprintf(sub[0], sizeof sub[0], "%s/ROMS", dir); snprintf(sub[1], sizeof sub[1], "%s", dir);
     static char names[MAX_BANKS][PATHLEN]; int nn = 0;
