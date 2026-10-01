@@ -155,6 +155,15 @@ const table_t *wavedata_table(wavedata_t *w, int n) {
     if (w->built[n]) return w->built[n];
     /* algorithmic tables (28-51) have no control table, and unloaded data leaves gaps: stand in with an open table so a sound
      * still plays. The real algorithmic tables come from the firmware's memory (docs/DESIGN.md). */
+    {   /* a rebuilt algorithmic table (28-51), else the open stand-in */
+        static wave_t aw[TABLE_SLOTS]; table_ctl_t ac;
+        if (n >= 28 && n <= 51 && !algo_table(n, aw, &ac)) {
+            w->built[n] = malloc(sizeof(table_t));
+            table_build(&ac, aw, TABLE_SLOTS, w->built[n]);
+            w->from_rom[n] = 1;   /* owned by this entry */
+            return w->built[n];
+        }
+    }
     int o = n % OPEN_TABLES;
     if (!w->open_b[o]) {
         static wave_t ow[TABLE_SLOTS]; table_ctl_t c;
