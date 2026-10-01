@@ -212,7 +212,7 @@ float filter1_run(filt_t *f, int type, float x, float cutoff, float reso, int sp
         svf_tick(&f->b, hp, 1.5f, 2.0f, &lp2, &bp2, &hp2);
         return lp2;
     case 5:   /* sine waveshaper (about +9.5 dB small-signal) then 12 dB LP */
-        svf_tick(&f->a, 0.857f * sinf(4.61f * x), g, k, &lp, &bp, &hp);   /* measured: gain 3.95, compressing like 0.857*sin(x/0.857 * 3.95) */
+        svf_tick(&f->a, 1.162f * sinf(3.4f * x), g, k, &lp, &bp, &hp);   /* small-signal gain 3.95; the fundamental follows the firmware within 2 dB at all input levels (a sine of growing amplitude: it peaks and folds back much later than with 4.61) */
         return lp;
     case 6: { /* 12 dB LP then waveshaper. Measured with a sine through the external input: the small-signal gain depends on Special (1.5 at 0, 4.5 at 32,
                * 7 at 64, 7.5 at 96, 0.5 at 127) and the output saturates softly near 1.0 (tanh-like, third harmonic at 3 %); the real shaping wave is not modelled */
