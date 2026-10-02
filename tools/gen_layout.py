@@ -17,9 +17,9 @@ def cx(cell): return X0 + 77 + CELL * cell
 
 def tab(name): emit("\n[tab %s]" % name)
 def frame(row, cell, n, title): emit('frame x=%d y=%d w=%d h=%d title="%s"' % (X0 + CELL * cell, ry(row), CELL * n - GAP, ROW_H, title))
-def knob(row, cell, label, key): emit('knob cx=%d cy=%d r=24 label="%s" key=%s' % (cx(cell), ry(row) + 66, label, key))
-def toggle(row, cell, label, key): emit('toggle cx=%d cy=%d label="%s" key=%s' % (cx(cell), ry(row) + 72, label, key))
-def popup(row, cell, label, key, w=134): emit('popup cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (cx(cell), ry(row) + 98, w, label, key))
+def knob(row, cell, label, key): emit('knob cx=%d cy=%d r=22 label="%s" key=%s' % (cx(cell), ry(row) + 74, label, key))
+def toggle(row, cell, label, key): emit('toggle cx=%d cy=%d label="%s" key=%s' % (cx(cell), ry(row) + 80, label, key))
+def popup(row, cell, label, key, w=134): emit('popup cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (cx(cell), ry(row) + 104, w, label, key))
 def stepper(row, cell, n, label, key): emit('stepper style=dotmatrix cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (X0 + CELL * cell + (CELL * n - GAP) // 2, ry(row) + 104, CELL * n - 24, label, key))
 def readout(row, cell, n, label, key): emit('readout style=dotmatrix cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (X0 + CELL * cell + (CELL * n - GAP) // 2, ry(row) + 104, CELL * n - 24, label, key))
 def qlinks(name, keys):
@@ -40,24 +40,27 @@ def vgrid(x, y, w, items, row_pitch=126):
     for r, row in enumerate(items):
         xs = [x + w // 2] if len(row) == 1 else [x + int(w * 0.27), x + int(w * 0.73)]
         for (kind, label, key), cxx in zip(row, xs):
-            cyy = y + 66 + row_pitch * r
-            if kind == "k": emit('knob cx=%d cy=%d r=24 label="%s" key=%s' % (cxx, cyy, label, key))
+            cyy = y + 86 + row_pitch * r
+            if kind == "k": emit('knob cx=%d cy=%d r=22 label="%s" key=%s' % (cxx, cyy, label, key))
             elif kind == "t": emit('toggle cx=%d cy=%d label="%s" key=%s' % (cxx, cyy + 6, label, key))
             else: emit('popup cx=%d cy=%d w=134 h=48 label="%s" key=%s' % (cxx, cyy + 32, label, key))
-def wordmark(cx_, cy_):
-    """The page's name plate: our own 90s-style 'clementine XT' (no borrowed logo)."""
-    emit('text cx=%d cy=%d label="clementine" size=3.4 weight=700 italic=1 align=right spacing=1 color=2a2933' % (cx_ - 6, cy_))
-    emit('text cx=%d cy=%d label="XT" size=3.4 weight=700 italic=1 align=left spacing=2 color=0f5a49' % (cx_ + 6, cy_))
+def wordmark(cx_, cy_, w=300):
+    """The page's name plate: the clementine XT logo (vst/images/logo-plate.svg, 1140 x 280)."""
+    h = int(w * 280 / 1140)
+    emit('art file=images/logo-plate.svg x=%d y=%d w=%d h=%d' % (cx_ - w // 2, cy_ - h // 2, w, h))
 
 # ---- GLOBAL ---------------------------------------------------------------------------------------------------------------------------
 tab("GLOBAL")
-frame(0, 0, 8, "PLAY")   # on the top row: the 83-entry ASSIGN list needs the most room below the field to fit the screen
+frame(0, 0, 8, "SOUND")
+SY = ry(0) + 108
+emit('stepper style=dotmatrix cx=%d cy=%d w=130 h=48 label="BANK" key=bank' % (93, SY))
+emit('readout style=dotmatrix cx=%d cy=%d w=250 h=48 label="" key=bank_name' % (295, SY))
+emit('stepper style=dotmatrix cx=%d cy=%d w=130 h=48 label="SOUND" key=program' % (515, SY))
+emit('readout style=dotmatrix cx=%d cy=%d w=330 h=48 label="" key=patch_name' % (757, SY))
+wordmark(1095, SY)
+frame(1, 0, 8, "PLAY")
 for k in range(4):
-    n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n); popup(0, 2 * k + 1, "PARAMETER", "play%d" % n)
-frame(1, 0, 8, "SOUND")
-wordmark(1150, ry(1) + 17)
-stepper(1, 0, 2, "BANK", "bank"); readout(1, 2, 2, "", "bank_name")
-stepper(1, 4, 2, "SOUND", "program"); readout(1, 6, 2, "", "patch_name")
+    n = k + 1; knob(1, 2 * k, "PLAY %d" % n, "play_v%d" % n); popup(1, 2 * k + 1, "PARAMETER", "play%d" % n)
 frame(2, 0, 4, "EFFECT"); popup(2, 0, "TYPE", "fx_type"); knobs(2, 1, [("PARAM 1", "fx_p1"), ("PARAM 2", "fx_p2"), ("PARAM 3", "fx_p3")])
 frame(2, 4, 4, "VOICES"); knobs(2, 4, [("MODE", "^alloc"), ("ASSIGN", "^assign"), ("DETUNE", "detune"), ("DE-PAN", "depan")])
 frame(3, 0, 4, "GLIDE"); knobs(3, 0, [("ACTIVE", "~glide_on"), ("TYPE", "^glide_type"), ("MODE", "^glide_mode"), ("TIME", "glide_time")])
@@ -176,10 +179,10 @@ for n in range(1, 5):
     vpanel(x, 92, 308, 470, "MODIFIER %d" % n)
     for r, (label, key) in enumerate([("SRC 1", "mod%d_src1" % n), ("SRC 2", "mod%d_src2" % n), ("TYPE", "mod%d_op" % n)]):
         emit('popup cx=%d cy=%d w=150 h=48 label="%s" key=%s' % (x + 154, 92 + 100 + 94 * r, label, key))
-    emit('knob cx=%d cy=%d r=24 label="PARAM" key=mod%d_par' % (x + 154, 92 + 100 + 94 * 3 + 12, n))
+    emit('knob cx=%d cy=%d r=22 label="PARAM" key=mod%d_par' % (x + 154, 92 + 100 + 94 * 3 + 12, n))
 vpanel(10, 570, 628, 138, "CONTROL DELAY")
 emit('popup cx=%d cy=%d w=150 h=48 label="SOURCE" key=mdelay_src' % (10 + 160, 570 + 98))
-emit('knob cx=%d cy=%d r=24 label="TIME" key=mdelay_time' % (10 + 440, 570 + 64))
+emit('knob cx=%d cy=%d r=22 label="TIME" key=mdelay_time' % (10 + 440, 570 + 64))
 wordmark(1020, 640)
 qlinks("Mods", ["mod1_src1", "mod1_src2", "mod1_op", "mod1_par", "mod2_src1", "mod2_src2", "mod2_op", "mod2_par",
                 "mod3_src1", "mod3_src2", "mod3_op", "mod3_par", "mod4_src1", "mod4_src2", "mod4_op", "mod4_par"])

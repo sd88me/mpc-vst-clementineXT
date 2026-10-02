@@ -148,7 +148,7 @@ def _short_list(o):
     out = []
     for n in o:
         for a, b in (("Filter 1", "F1"), ("Filter 2", "F2"), ("Amplifier", "Amp"), ("Resonance", "Reso")): n = n.replace(a, b)
-        out.append(n)
+        out.append(n.replace(" !!", ""))
     return out
 
 def options(k, lo, hi):

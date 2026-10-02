@@ -386,13 +386,13 @@
     "LFO2 Symmetry",
     "LFO2 Humanize",
     "LFO2 Phase",
-    "Osc 1 FM Amount !!",
-    "F1 Special !!",
-    "Glide Time !!",
-    "Control W !!",
-    "Control X !!",
-    "Control Y !!",
-    "Control Z !!"
+    "Osc 1 FM Amount",
+    "F1 Special",
+    "Glide Time",
+    "Control W",
+    "Control X",
+    "Control Y",
+    "Control Z"
    ],
    "default": 28
   },
@@ -476,13 +476,13 @@
     "LFO2 Symmetry",
     "LFO2 Humanize",
     "LFO2 Phase",
-    "Osc 1 FM Amount !!",
-    "F1 Special !!",
-    "Glide Time !!",
-    "Control W !!",
-    "Control X !!",
-    "Control Y !!",
-    "Control Z !!"
+    "Osc 1 FM Amount",
+    "F1 Special",
+    "Glide Time",
+    "Control W",
+    "Control X",
+    "Control Y",
+    "Control Z"
    ],
    "default": 29
   },
@@ -566,13 +566,13 @@
     "LFO2 Symmetry",
     "LFO2 Humanize",
     "LFO2 Phase",
-    "Osc 1 FM Amount !!",
-    "F1 Special !!",
-    "Glide Time !!",
-    "Control W !!",
-    "Control X !!",
-    "Control Y !!",
-    "Control Z !!"
+    "Osc 1 FM Amount",
+    "F1 Special",
+    "Glide Time",
+    "Control W",
+    "Control X",
+    "Control Y",
+    "Control Z"
    ],
    "default": 32
   },
@@ -656,13 +656,13 @@
     "LFO2 Symmetry",
     "LFO2 Humanize",
     "LFO2 Phase",
-    "Osc 1 FM Amount !!",
-    "F1 Special !!",
-    "Glide Time !!",
-    "Control W !!",
-    "Control X !!",
-    "Control Y !!",
-    "Control Z !!"
+    "Osc 1 FM Amount",
+    "F1 Special",
+    "Glide Time",
+    "Control W",
+    "Control X",
+    "Control Y",
+    "Control Z"
    ],
    "default": 37
   },
