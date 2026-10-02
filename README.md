@@ -71,6 +71,54 @@ parameters answer to their Microwave controller numbers. With the arpeggiator te
 **Saving.** The sound you are playing is stored with the MPC program and the project, so a project reloads as you left it. There is
 no separate "save preset" button in the plugin; MPC offers none for this kind of plugin.
 
+## How it is built, and how close it is to the original
+
+Clementine-XT is **not an emulation of the instrument's firmware or ROM**. It is a new engine in portable C (no JUCE, no 64-bit-only
+code, so it runs on the 32-bit ARM devices) built around the Microwave XT's own data model, then tuned against the real firmware's output.
+
+**Design**
+
+- **The XT's sound format.** A sound is the XT's 256-byte parameter block (`.syx` single sounds and bank dumps load and save as they are),
+  so every parameter has the original's range, meaning and MIDI controller number.
+- **Waves as the instrument holds them.** A wave is 128 signed 8-bit samples, read through the instrument's mip levels and 64-slot wave
+  tables, so the stepped, slightly aliased character comes from the same data rather than from an imitation of it. The 506 original waves and the
+  factory tables are read at runtime from *your* ROM dump; without one, 12 open wave tables stand in.
+- **The original's rate.** Voices run at the XT's 40 kHz internal rate and are resampled to the host's 44.1 kHz, so aliasing falls where it did on
+  the hardware. Ten voices, as on the XT.
+- **Signal path in the XT's order.** Two wavetable oscillators (FM, sync, ring modulation, noise, external input) into the mixer, Filter 1
+  (13 types) and Filter 2, amplifier, pan, then the effect and chorus; four envelopes (filter, amplifier, wave, free), two LFOs, the
+  16-slot matrix with four modifiers and the control delay, glide, poly / mono / dual / unison allocation, and the arpeggiator.
+- **Real-time friendly.** Slow-moving values are computed every 8 samples per voice and every table is built when the plugin is created, never
+  on the audio thread. [docs/DESIGN.md](docs/DESIGN.md) has the details.
+
+**How the accuracy was checked**
+
+The original firmware was run offline on a desktop computer, with its own ROM, as a reference rig. Test sounds were rendered through both it
+and this engine at 40 kHz and compared: pitch, spectrum, level, envelope timing and modulation. That rig is a development tool only; it is
+never shipped and none of its output is in this repository. What the measurements found
+([docs/CALIBRATION.md](docs/CALIBRATION.md) has each one):
+
+- Oscillator pitch matches to 0.0 cents, and the harmonic content of a wave follows the original's.
+- Of the 248 comparable factory sounds, 183 are within 3 dB of the original's level and 221 within 6 dB (mean spectral band error 13 dB).
+- The modulation matrix and LFOs, mixer sources, wave and free envelopes, voice allocation, glide, the arpeggiator and the effects were each
+  measured and fitted. Filter 1 types 0-4, 7, 10 and 11 are fitted to the original's responses; 20 of the 24 computed wave tables reproduce it.
+
+So it is faithful in structure and close in sound, not identical. The remaining differences are listed under
+[Known limitations](#known-limitations), and none of this has been judged by anything but measurement and a few ears.
+
+**Numbers**
+
+| | |
+|---|---|
+| Polyphony | 10 voices (mono, dual and unison modes use them) |
+| Internal rate | 40 kHz, resampled to 44.1 kHz; MPC block size 128 |
+| Oscillators | 2 wavetable oscillators, 506 waves, 64-slot tables, 8-bit stepped waves, FM, sync, ring mod, noise, external input |
+| Filters | Filter 1: 13 types; Filter 2: 6 dB low or high pass |
+| Modulation | 16 matrix slots, 4 modifiers, 2 LFOs, 4 envelopes, control delay |
+| Effects | the XT's ten effect types plus chorus |
+| CPU on a Force | about 14-16 % (p99) with 8-16 voices held, about 25 % sweeping the Q-Links ([docs/PERFORMANCE.md](docs/PERFORMANCE.md)) |
+| Code | C, GPL-3.0-only, engine in `src/` |
+
 ## Performance
 
 On a Force, a dense-chord benchmark used about 15 % of the CPU at its busiest moments (about 22 % while sweeping the Q-Links), which
