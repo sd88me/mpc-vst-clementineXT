@@ -30,7 +30,7 @@
 .knob-track { stroke: rgba(30, 14, 0, 0.55); }
 .knob-arc { stroke: #f7e7bd; opacity: 0.9; }
 .knob-pointer { stroke: #f4efe0; }
-.knob-face { filter: drop-shadow(0 3px 4px rgba(30, 10, 0, 0.65)); stroke: #0a0a0c; stroke-width: 1; }
+.knob-face { filter: drop-shadow(0 3px 4px rgba(30, 10, 0, 0.65)); stroke: #4a0a06; stroke-width: 1.2; }
 
 /* LCD fields and list tiles: a grey bezel round the green glass */
 .box { stroke: #8b8e88; stroke-width: 2.5; rx: 5px; filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.5)) drop-shadow(0 0 0.6px rgba(0, 0, 0, 0.8)); }
