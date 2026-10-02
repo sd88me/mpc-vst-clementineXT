@@ -17,9 +17,9 @@ def cx(cell): return X0 + 77 + CELL * cell
 
 def tab(name): emit("\n[tab %s]" % name)
 def frame(row, cell, n, title): emit('frame x=%d y=%d w=%d h=%d title="%s"' % (X0 + CELL * cell, ry(row), CELL * n - GAP, ROW_H, title))
-def knob(row, cell, label, key): emit('knob cx=%d cy=%d r=26 label="%s" key=%s' % (cx(cell), ry(row) + 74, label, key))
-def toggle(row, cell, label, key): emit('toggle cx=%d cy=%d label="%s" key=%s' % (cx(cell), ry(row) + 78, label, key))
-def popup(row, cell, label, key, w=134): emit('popup cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (cx(cell), ry(row) + 104, w, label, key))
+def knob(row, cell, label, key): emit('knob cx=%d cy=%d r=24 label="%s" key=%s' % (cx(cell), ry(row) + 66, label, key))
+def toggle(row, cell, label, key): emit('toggle cx=%d cy=%d label="%s" key=%s' % (cx(cell), ry(row) + 72, label, key))
+def popup(row, cell, label, key, w=134): emit('popup cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (cx(cell), ry(row) + 98, w, label, key))
 def stepper(row, cell, n, label, key): emit('stepper cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (X0 + CELL * cell + (CELL * n - GAP) // 2, ry(row) + 104, CELL * n - 24, label, key))
 def readout(row, cell, n, label, key): emit('readout cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (X0 + CELL * cell + (CELL * n - GAP) // 2, ry(row) + 104, CELL * n - 24, label, key))
 def qlinks(name, keys):
@@ -32,12 +32,30 @@ def knobs(row, cell, items):   # [(label, key)] one per cell; keys starting with
         elif key[0] == "^": popup(row, cell + i, label, key[1:])
         else: knob(row, cell + i, label, key)
 
+
+# Vertical panels: a tall panel with its controls in two columns, for pages that have the room (reads like the XT's panel columns)
+def vpanel(x, y, w, h, title): emit('frame x=%d y=%d w=%d h=%d title="%s"' % (x, y, w, h, title))
+def vgrid(x, y, w, items, row_pitch=126):
+    """items: rows of [(kind, label, key)] with kind in k (knob), t (toggle), p (popup); one or two per row."""
+    for r, row in enumerate(items):
+        xs = [x + w // 2] if len(row) == 1 else [x + int(w * 0.27), x + int(w * 0.73)]
+        for (kind, label, key), cxx in zip(row, xs):
+            cyy = y + 66 + row_pitch * r
+            if kind == "k": emit('knob cx=%d cy=%d r=24 label="%s" key=%s' % (cxx, cyy, label, key))
+            elif kind == "t": emit('toggle cx=%d cy=%d label="%s" key=%s' % (cxx, cyy + 6, label, key))
+            else: emit('popup cx=%d cy=%d w=134 h=48 label="%s" key=%s' % (cxx, cyy + 32, label, key))
+def wordmark(cx_, cy_):
+    """The page's name plate: our own 90s-style 'clementine XT' (no borrowed logo)."""
+    emit('text cx=%d cy=%d label="clementine" size=3.4 weight=700 italic=1 align=right spacing=1 color=2a2933' % (cx_ - 6, cy_))
+    emit('text cx=%d cy=%d label="XT" size=3.4 weight=700 italic=1 align=left spacing=2 color=0f5a49' % (cx_ + 6, cy_))
+
 # ---- GLOBAL ---------------------------------------------------------------------------------------------------------------------------
 tab("GLOBAL")
 frame(0, 0, 8, "PLAY")   # on the top row: the 83-entry ASSIGN list needs the most room below the field to fit the screen
 for k in range(4):
     n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n); popup(0, 2 * k + 1, "PARAMETER", "play%d" % n)
 frame(1, 0, 8, "SOUND")
+wordmark(1150, ry(1) + 17)
 stepper(1, 0, 2, "BANK", "bank"); readout(1, 2, 2, "", "bank_name")
 stepper(1, 4, 2, "SOUND", "program"); readout(1, 6, 2, "", "patch_name")
 frame(2, 0, 4, "EFFECT"); popup(2, 0, "TYPE", "fx_type"); knobs(2, 1, [("PARAM 1", "fx_p1"), ("PARAM 2", "fx_p2"), ("PARAM 3", "fx_p3")])
@@ -54,12 +72,15 @@ GLOBAL_TEXT = "\n".join(OUT)
 OSC = []
 OUT = OSC
 tab("OSC")
-frame(0, 0, 7, "OSC 1"); knobs(0, 0, [("OCTAVE", "osc1_oct"), ("SEMI", "osc1_semi"), ("DETUNE", "osc1_detune"), ("BEND", "osc1_bend"),
-                                       ("KEYTRACK", "osc1_keytrack"), ("FM AMT", "osc1_fm")])
-knob(0, 6, "WAVETABLE", "wavetable")
-frame(1, 0, 7, "OSC 2"); knobs(1, 0, [("OCTAVE", "osc2_oct"), ("SEMI", "osc2_semi"), ("DETUNE", "osc2_detune"), ("BEND", "osc2_bend"),
-                                       ("KEYTRACK", "osc2_keytrack"), ("SYNC", "~osc2_sync"), ("LINK", "~osc2_link")])
-frame(2, 0, 4, "QUALITY"); knobs(2, 0, [("ALIASING", "^aliasing"), ("QUANTIZE", "^quantize"), ("CLIPPING", "^clipping"), ("ACCURACY", "~accuracy")])
+vpanel(10, 92, 410, 616, "OSC 1")
+vgrid(10, 92, 410, [[("k", "OCTAVE", "osc1_oct"), ("k", "SEMI", "osc1_semi")], [("k", "DETUNE", "osc1_detune"), ("k", "BEND", "osc1_bend")],
+                    [("k", "KEYTRACK", "osc1_keytrack"), ("k", "FM AMT", "osc1_fm")], [("k", "WAVETABLE", "wavetable")]])
+vpanel(428, 92, 410, 616, "OSC 2")
+vgrid(428, 92, 410, [[("k", "OCTAVE", "osc2_oct"), ("k", "SEMI", "osc2_semi")], [("k", "DETUNE", "osc2_detune"), ("k", "BEND", "osc2_bend")],
+                     [("k", "KEYTRACK", "osc2_keytrack")], [("t", "SYNC", "osc2_sync"), ("t", "LINK", "osc2_link")]])
+vpanel(846, 92, 422, 380, "QUALITY")
+vgrid(846, 92, 422, [[("p", "ALIASING", "aliasing"), ("p", "QUANTIZE", "quantize")], [("p", "CLIPPING", "clipping"), ("t", "ACCURACY", "accuracy")]], row_pitch=110)
+wordmark(1057, 640)
 qlinks("Osc", ["osc1_oct", "osc1_semi", "osc1_detune", "osc1_bend", "osc1_keytrack", "osc1_fm", "wavetable", "aliasing",
                "osc2_oct", "osc2_semi", "osc2_detune", "osc2_bend", "osc2_keytrack", "osc2_sync", "osc2_link", "quantize"])
 
@@ -67,11 +88,15 @@ qlinks("Osc", ["osc1_oct", "osc1_semi", "osc1_detune", "osc1_bend", "osc1_keytra
 WAVE = []
 OUT = WAVE
 tab("WAVE")
-frame(0, 0, 6, "WAVE 1"); knobs(0, 0, [("START", "w1_start"), ("PHASE", "w1_phase"), ("ENV AMT", "w1_env"), ("ENV VELO", "w1_velo"),
-                                        ("KEYTRACK", "w1_keytrack"), ("LIMIT", "~w1_limit")])
-frame(1, 0, 7, "WAVE 2"); knobs(1, 0, [("START", "w2_start"), ("PHASE", "w2_phase"), ("ENV AMT", "w2_env"), ("ENV VELO", "w2_velo"),
-                                        ("KEYTRACK", "w2_keytrack"), ("LIMIT", "~w2_limit"), ("LINK", "~w2_link")])
-frame(2, 0, 5, "MIXER"); knobs(2, 0, [("WAVE 1", "mix_w1"), ("WAVE 2", "mix_w2"), ("RINGMOD", "mix_ring"), ("NOISE", "mix_noise"), ("EXTERNAL", "mix_ext")])
+vpanel(10, 92, 410, 616, "WAVE 1")
+vgrid(10, 92, 410, [[("k", "START", "w1_start"), ("k", "PHASE", "w1_phase")], [("k", "ENV AMT", "w1_env"), ("k", "ENV VELO", "w1_velo")],
+                    [("k", "KEYTRACK", "w1_keytrack"), ("t", "LIMIT", "w1_limit")]])
+vpanel(428, 92, 410, 616, "WAVE 2")
+vgrid(428, 92, 410, [[("k", "START", "w2_start"), ("k", "PHASE", "w2_phase")], [("k", "ENV AMT", "w2_env"), ("k", "ENV VELO", "w2_velo")],
+                     [("k", "KEYTRACK", "w2_keytrack"), ("t", "LIMIT", "w2_limit")], [("t", "LINK", "w2_link")]])
+vpanel(846, 92, 422, 500, "MIXER")
+vgrid(846, 92, 422, [[("k", "WAVE 1", "mix_w1"), ("k", "WAVE 2", "mix_w2")], [("k", "RINGMOD", "mix_ring"), ("k", "NOISE", "mix_noise")], [("k", "EXTERNAL", "mix_ext")]])
+wordmark(1057, 664)
 qlinks("Waves", ["w1_start", "w1_phase", "w1_env", "w1_velo", "w1_keytrack", "w1_limit", "mix_w1", "mix_w2",
                  "w2_start", "w2_phase", "w2_env", "w2_velo", "w2_keytrack", "w2_limit", "w2_link", "mix_ring"])
 qlinks("Mixer", ["mix_w1", "mix_w2", "mix_ring", "mix_noise", "mix_ext"])
@@ -80,12 +105,17 @@ qlinks("Mixer", ["mix_w1", "mix_w2", "mix_ring", "mix_noise", "mix_ext"])
 FILT = []
 OUT = FILT
 tab("FILTER")
-frame(0, 0, 7, "FILTER 1"); knobs(0, 0, [("CUTOFF", "f1_cutoff"), ("RESO", "f1_reso"), ("TYPE", "^f1_type"), ("KEYTRACK", "f1_keytrack"),
-                                          ("ENV AMT", "f1_env"), ("ENV VELO", "f1_velo"), ("SPECIAL", "f1_special")])
-frame(1, 0, 3, "FILTER 2"); knobs(1, 0, [("CUTOFF", "f2_cutoff"), ("TYPE", "^f2_type"), ("KEYTRACK", "f2_keytrack")])
-frame(1, 3, 5, "FILTER ENV"); knobs(1, 3, [("ATTACK", "fenv_a"), ("DECAY", "fenv_d"), ("SUSTAIN", "fenv_s"), ("RELEASE", "fenv_r"), ("TRIGGER", "^fenv_trig")])
-frame(2, 0, 5, "AMP ENV"); knobs(2, 0, [("ATTACK", "aenv_a"), ("DECAY", "aenv_d"), ("SUSTAIN", "aenv_s"), ("RELEASE", "aenv_r"), ("TRIGGER", "^aenv_trig")])
-frame(2, 5, 3, "AMP"); knobs(2, 5, [("VELO", "amp_velo"), ("KEYTRACK", "amp_keytrack"), ("PAN KEYT", "pan_keytrack")])
+vpanel(10, 92, 372, 616, "FILTER 1")
+vgrid(10, 92, 372, [[("k", "CUTOFF", "f1_cutoff"), ("k", "RESO", "f1_reso")], [("p", "TYPE", "f1_type"), ("k", "KEYTRACK", "f1_keytrack")],
+                    [("k", "ENV AMT", "f1_env"), ("k", "ENV VELO", "f1_velo")], [("k", "SPECIAL", "f1_special")]])
+vpanel(390, 92, 290, 300, "FILTER 2")
+vgrid(390, 92, 290, [[("k", "CUTOFF", "f2_cutoff"), ("p", "TYPE", "f2_type")], [("k", "KEYTRACK", "f2_keytrack")]], row_pitch=110)
+vpanel(390, 400, 290, 308, "AMP")
+vgrid(390, 400, 290, [[("k", "VELO", "amp_velo"), ("k", "KEYTRACK", "amp_keytrack")], [("k", "PAN KEYT", "pan_keytrack")]], row_pitch=110)
+vpanel(688, 92, 285, 616, "FILTER ENV")
+vgrid(688, 92, 285, [[("k", "ATTACK", "fenv_a"), ("k", "DECAY", "fenv_d")], [("k", "SUSTAIN", "fenv_s"), ("k", "RELEASE", "fenv_r")], [("p", "TRIGGER", "fenv_trig")]])
+vpanel(981, 92, 287, 616, "AMP ENV")
+vgrid(981, 92, 287, [[("k", "ATTACK", "aenv_a"), ("k", "DECAY", "aenv_d")], [("k", "SUSTAIN", "aenv_s"), ("k", "RELEASE", "aenv_r")], [("p", "TRIGGER", "aenv_trig")]])
 qlinks("Filter", ["f1_cutoff", "f1_reso", "f1_type", "f1_keytrack", "f1_env", "f1_velo", "f1_special", "f2_cutoff",
                   "f2_type", "f2_keytrack", "fenv_a", "fenv_d", "fenv_s", "fenv_r", "fenv_trig", "volume"])
 qlinks("Amp", ["aenv_a", "aenv_d", "aenv_s", "aenv_r", "aenv_trig", "amp_velo", "amp_keytrack", "pan_keytrack"])
@@ -116,6 +146,7 @@ frame(1, 0, 7, "LFO 2"); knobs(1, 0, [("RATE", "lfo2_rate"), ("SHAPE", "^lfo2_sh
 frame(2, 0, 8, "ARP"); knobs(2, 0, [("ACTIVE", "^arp_on"), ("TEMPO", "arp_tempo"), ("CLOCK", "^arp_clock"), ("RANGE", "arp_range"), ("PATTERN", "arp_pattern"),
                                      ("DIRECTION", "^arp_dir"), ("NOTE ORDER", "^arp_order"), ("VELO", "^arp_velo")])
 frame(3, 0, 1, "ARP RESET"); toggle(3, 0, "RESET", "arp_reset")
+wordmark(1010, 640)
 qlinks("LFO", ["lfo1_rate", "lfo1_shape", "lfo1_delay", "lfo1_sync", "lfo1_sym", "lfo1_human", "lfo2_rate", "lfo2_shape",
                "lfo2_delay", "lfo2_sync", "lfo2_sym", "lfo2_human", "lfo2_phase"])
 qlinks("Arp", ["arp_on", "arp_tempo", "arp_clock", "arp_range", "arp_pattern", "arp_dir", "arp_order", "arp_velo", "arp_reset"])
@@ -141,9 +172,15 @@ MODS = []
 OUT = MODS
 tab("MODIFIERS")
 for n in range(1, 5):
-    frame(n - 1, 0, 4, "MODIFIER %d" % n)
-    popup(n - 1, 0, "SRC 1", "mod%d_src1" % n); popup(n - 1, 1, "SRC 2", "mod%d_src2" % n); popup(n - 1, 2, "TYPE", "mod%d_op" % n); knob(n - 1, 3, "PARAM", "mod%d_par" % n)
-frame(0, 4, 2, "CONTROL DELAY"); popup(0, 4, "SOURCE", "mdelay_src"); knob(0, 5, "TIME", "mdelay_time")
+    x = 10 + 316 * (n - 1)
+    vpanel(x, 92, 308, 470, "MODIFIER %d" % n)
+    for r, (label, key) in enumerate([("SRC 1", "mod%d_src1" % n), ("SRC 2", "mod%d_src2" % n), ("TYPE", "mod%d_op" % n)]):
+        emit('popup cx=%d cy=%d w=150 h=48 label="%s" key=%s' % (x + 154, 92 + 100 + 94 * r, label, key))
+    emit('knob cx=%d cy=%d r=24 label="PARAM" key=mod%d_par' % (x + 154, 92 + 100 + 94 * 3 + 12, n))
+vpanel(10, 570, 628, 138, "CONTROL DELAY")
+emit('popup cx=%d cy=%d w=150 h=48 label="SOURCE" key=mdelay_src' % (10 + 160, 570 + 98))
+emit('knob cx=%d cy=%d r=24 label="TIME" key=mdelay_time' % (10 + 440, 570 + 64))
+wordmark(1020, 640)
 qlinks("Mods", ["mod1_src1", "mod1_src2", "mod1_op", "mod1_par", "mod2_src1", "mod2_src2", "mod2_op", "mod2_par",
                 "mod3_src1", "mod3_src2", "mod3_op", "mod3_par", "mod4_src1", "mod4_src2", "mod4_op", "mod4_par"])
 qlinks("Delay", ["mdelay_src", "mdelay_time"])
