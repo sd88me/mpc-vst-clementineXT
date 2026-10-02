@@ -19,9 +19,9 @@
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.1  0 0 0 0 0  0 0 0 0.55 -0.1'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='0.4'/></svg>");
 }
 
-/* open sections (no tray): a blue italic engraved title with a thin rule under it, the controls sit straight on the plate.
+/* open sections (no tray, only a thin blue outline): a blue italic engraved title with a thin rule under it, the controls sit straight on the plate.
  * For the boxed trays of 970dcc2 give .frame-border back a fill and stroke. */
-.frame-border { fill: none; stroke: none; }
+.frame-border { fill: none; stroke: #1d3fb0; stroke-width: 1.2; stroke-opacity: 0.6; rx: 8px; }
 .frame-rule { stroke: #1d3fb0; stroke-width: 1.4; stroke-opacity: 0.75; filter: drop-shadow(0 1px 0 rgba(255, 215, 150, 0.6)); }
 .frame-title { font-style: italic; letter-spacing: 0.08em; fill: #1d3fb0; filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.6)); }
 .text { fill: var(--ink); filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.6)); }
@@ -30,7 +30,7 @@
 .knob-track { stroke: rgba(30, 14, 0, 0.55); }
 .knob-arc { stroke: #f7e7bd; opacity: 0.9; }
 .knob-pointer { stroke: #f4efe0; }
-.knob-face { filter: drop-shadow(0 3px 4px rgba(30, 10, 0, 0.65)); stroke: #4a0a06; stroke-width: 1.2; }
+.knob-face { filter: drop-shadow(0 3px 4px rgba(30, 10, 0, 0.65)); stroke: #0a0a0c; stroke-width: 1; }
 
 /* LCD fields and list tiles: a grey bezel round the green glass */
 .box { stroke: #8b8e88; stroke-width: 2.5; rx: 5px; filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.5)) drop-shadow(0 0 0.6px rgba(0, 0, 0, 0.8)); }
@@ -45,3 +45,6 @@
 
 /* the LCD steppers' arrows */
 .dot-arrow { fill: #f6e9d4; }
+
+/* the four Play knobs (the only ones with a 27 px radius, so a 25 px face) are bold red */
+.knob-face[r="25"] { fill: #e01f14; stroke: #5c0d08; }
