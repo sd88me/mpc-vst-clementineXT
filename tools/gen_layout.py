@@ -60,7 +60,7 @@ emit('readout style=dotmatrix cx=%d cy=%d w=330 h=48 label="" key=patch_name' % 
 wordmark(1095, SY)
 frame(0, 0, 8, "PLAY")
 for k in range(4):
-    n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n, r=27)   # r=27 is unique to these: skin.css paints them red; popup(0, 2 * k + 1, "PARAMETER", "play%d" % n)
+    n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n, r=27); popup(0, 2 * k + 1, "PARAMETER", "play%d" % n)   # r=27 is unique to these: skin.css paints them red
 frame(2, 0, 4, "EFFECT"); popup(2, 0, "TYPE", "fx_type"); knobs(2, 1, [("PARAM 1", "fx_p1"), ("PARAM 2", "fx_p2"), ("PARAM 3", "fx_p3")])
 frame(2, 4, 4, "VOICES"); knobs(2, 4, [("MODE", "^alloc"), ("ASSIGN", "^assign"), ("DETUNE", "detune"), ("DE-PAN", "depan")])
 frame(3, 0, 4, "GLIDE"); knobs(3, 0, [("ACTIVE", "~glide_on"), ("TYPE", "^glide_type"), ("MODE", "^glide_mode"), ("TIME", "glide_time")])

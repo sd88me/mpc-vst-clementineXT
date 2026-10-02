@@ -47,4 +47,5 @@
 .dot-arrow { fill: #f6e9d4; }
 
 /* the four Play knobs (the only ones with a 27 px radius, so a 25 px face) are bold red */
-.knob-face[r="25"] { fill: #e01f14; stroke: #5c0d08; }
+.knob-face[r="25"] { fill: #a5190f; stroke: #3d0805; }
+.knob-sheen[r="25"] { opacity: 0.25; }
