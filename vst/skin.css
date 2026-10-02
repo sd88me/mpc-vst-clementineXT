@@ -9,6 +9,8 @@
 #c:has(#g > rect:first-child[width="1280"]) {
   background-color: var(--bg);
   background-image:
+    radial-gradient(ellipse 45% 40% at 30% 28%, rgba(255, 200, 120, 0.22), rgba(255, 200, 120, 0) 70%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, rgba(90, 28, 0, 0) 62%, rgba(80, 22, 0, 0.45) 100%),
     linear-gradient(115deg, rgba(255, 214, 140, 0) 0%, rgba(255, 214, 140, 0.16) 22%, rgba(255, 214, 140, 0) 42%, rgba(255, 214, 140, 0.10) 70%, rgba(255, 214, 140, 0) 90%),
     radial-gradient(ellipse 120% 70% at 50% 120%, rgba(110, 35, 0, 0.30), rgba(110, 35, 0, 0) 70%),
     linear-gradient(90deg, rgba(90, 28, 0, 0.18), rgba(90, 28, 0, 0) 6%, rgba(90, 28, 0, 0) 94%, rgba(90, 28, 0, 0.18)),
@@ -16,20 +18,18 @@
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.1  0 0 0 0 0  0 0 0 0.55 -0.1'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='0.4'/></svg>");
 }
 
-/* panels: a recessed tray with a thin teal engraved edge and rule, a lit lower lip and a soft shadow; titles engraved in teal */
-.frame-border {
-  fill: rgba(80, 25, 0, 0.12); stroke: var(--line); stroke-width: 1.6; rx: 10px; stroke-opacity: 0.85;
-  filter: drop-shadow(0 1px 0 rgba(255, 215, 150, 0.55)) drop-shadow(0 4px 6px rgba(70, 20, 0, 0.35));
-}
-.frame-rule { stroke: var(--line); stroke-width: 1.2; stroke-opacity: 0.8; filter: drop-shadow(0 1px 0 rgba(255, 215, 150, 0.6)); }
-.frame-title { font-style: italic; letter-spacing: 0.08em; fill: var(--ink); filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.6)); }
+/* open sections (no tray): a blue italic engraved title with a thin rule under it, the controls sit straight on the plate.
+ * For the boxed trays of 970dcc2 give .frame-border back a fill and stroke. */
+.frame-border { fill: none; stroke: none; }
+.frame-rule { stroke: #1d3fb0; stroke-width: 1.4; stroke-opacity: 0.75; filter: drop-shadow(0 1px 0 rgba(255, 215, 150, 0.6)); }
+.frame-title { font-style: italic; letter-spacing: 0.08em; fill: #1d3fb0; filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.6)); }
 .text { fill: var(--ink); filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.6)); }
 
 /* knobs: charcoal caps, a cream pointer, a thin cream value arc on a dark track */
 .knob-track { stroke: rgba(30, 14, 0, 0.55); }
 .knob-arc { stroke: #f7e7bd; opacity: 0.9; }
 .knob-pointer { stroke: #f4efe0; }
-.knob-face { filter: drop-shadow(0 3px 4px rgba(30, 10, 0, 0.65)); }
+.knob-face { filter: drop-shadow(0 3px 4px rgba(30, 10, 0, 0.65)); stroke: #0a0a0c; stroke-width: 1; }
 
 /* LCD fields and list tiles: a grey bezel round the green glass */
 .box { stroke: #8b8e88; stroke-width: 2.5; rx: 5px; filter: drop-shadow(0 1px 0 rgba(255, 225, 170, 0.5)) drop-shadow(0 0 0.6px rgba(0, 0, 0, 0.8)); }

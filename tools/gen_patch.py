@@ -143,12 +143,20 @@ ENUM = {   # key or key prefix -> option names; a 0..1 field with none listed be
 }
 TRIG = ["normal", "single", "retrigger"]
 
+def _short_list(o):
+    """Popup lists are narrow: Filter 1 -> F1, Filter 2 -> F2, Amplifier -> Amp, Resonance -> Reso (the full names stay in the parameter names)."""
+    out = []
+    for n in o:
+        for a, b in (("Filter 1", "F1"), ("Filter 2", "F2"), ("Amplifier", "Amp"), ("Resonance", "Reso")): n = n.replace(a, b)
+        out.append(n)
+    return out
+
 def options(k, lo, hi):
+    if k.startswith("play") and k not in ENUM: return _short_list(ENUM["play"])
     if k in ENUM: return ENUM[k]
-    if k.startswith("play"): return ENUM["play"]
     if k.endswith("_trig"): return TRIG
-    if k.endswith("_src") or k.endswith("_src1") or k.endswith("_src2"): return LISTS["src"]
-    if k.endswith("_dst"): return LISTS["dst"]
+    if k.endswith("_src") or k.endswith("_src1") or k.endswith("_src2"): return _short_list(LISTS["src"])
+    if k.endswith("_dst"): return _short_list(LISTS["dst"])
     if k.endswith("_op"): return LISTS["modifier"]
     if (lo, hi) == (0, 1): return ["off", "on"]
     return None
