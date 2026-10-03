@@ -11,6 +11,10 @@ chain of effects, in ten voices at the original's 40 kHz internal rate. It loads
 *Clementine-XT is an independent project. The XT in the name is a nod to the Microwave XT (and, like Surge XT, reads as "extended").
 It is not affiliated with or endorsed by Waldorf. See [Acknowledgements](#acknowledgements-and-legal).*
 
+<img width="320" height="200" alt="2026-10-03T100137025Z" src="https://github.com/user-attachments/assets/12290db3-6f89-4ede-8aff-eeb6300d532d" />
+<img width="320" height="200" alt="2026-10-03T100140464Z" src="https://github.com/user-attachments/assets/5819ae12-31b5-4e44-9968-a3ae151e8432" />
+<img width="320" height="200" alt="2026-10-03T100147890Z" src="https://github.com/user-attachments/assets/281464ab-4f28-4764-b941-c22e51cd1684" />
+
 ## What you need
 
 - A first-generation MPC OS standalone device (32-bit ARM): Force, MPC Live / Live II, MPC One, MPC X or MPC Key 61. Tested on a Force
