@@ -1,5 +1,8 @@
 # Clementine-XT
 
+> **Requires MPC OS 3.x.** MPC OS 2.x needs further development: the touchscreen skins do not draw there yet (the page
+> stays empty). See [MPC OS 2.x vs 3.x](https://github.com/sd88me/mpc-vst-plugins#mpc-os-2x-vs-3x) in the main repo.
+
 A wavetable synthesizer for Akai MPC OS standalone devices (Force, MPC Live / Live II, One, X, Key 61), built as a native VST2
 instrument with its own screen skin and Q-Link pages. It plays the way the Waldorf Microwave II and Microwave XT did: two wavetable
 oscillators with FM, sync and ring modulation, thirteen filter types, a 16-slot modulation matrix with modifiers, an arpeggiator and a
