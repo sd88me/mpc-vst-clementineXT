@@ -53,11 +53,11 @@ def wordmark(cx_, cy_, w=300):
 tab("GLOBAL")
 frame(1, 0, 8, "SOUND")
 SY = ry(1) + 108
-emit('stepper style=dotmatrix cx=%d cy=%d w=130 h=48 label="BANK" key=bank' % (93, SY))
-emit('readout style=dotmatrix cx=%d cy=%d w=250 h=48 label="" key=bank_name' % (295, SY))
-emit('stepper style=dotmatrix cx=%d cy=%d w=130 h=48 label="SOUND" key=program' % (515, SY))
-emit('readout style=dotmatrix cx=%d cy=%d w=330 h=48 label="" key=patch_name' % (757, SY))
-wordmark(1095, SY)
+emit('stepper style=dotmatrix cx=%d cy=%d w=220 h=48 label="BANK" key=bank' % (138, SY))
+emit('readout style=dotmatrix cx=%d cy=%d w=230 h=48 label="" key=bank_name' % (375, SY))
+emit('stepper style=dotmatrix cx=%d cy=%d w=220 h=48 label="SOUND" key=program' % (630, SY))
+emit('readout style=dotmatrix cx=%d cy=%d w=300 h=48 label="" key=patch_name' % (902, SY))
+wordmark(1160, SY, w=200)
 frame(0, 0, 8, "PLAY")
 for k in range(4):
     n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n, r=27); popup(0, 2 * k + 1, "PARAMETER", "play%d" % n)   # r=27 is unique to these: skin.css paints them red
