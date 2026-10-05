@@ -2,8 +2,10 @@
 
 💬 Questions or feedback? Join the [Open MPC Discord](https://discord.gg/sRRysZSgu3).
 
-> **Requires MPC OS 3.x.** MPC OS 2.x needs further development: the touchscreen skins do not draw there yet (the page
-> stays empty). See [MPC OS 2.x vs 3.x](https://github.com/sd88me/mpc-vst-plugins#mpc-os-2x-vs-3x) in the main repo.
+> **MPC OS.** This release works on **MPC OS 3.x**. On MPC OS 2.x it loads and plays from the Q-Links, but its touchscreen
+> page stays empty until a release with a compatible skin is published. The [catalog](https://sd88me.github.io/mpc-vst-plugins/)
+> shows which MPC OS each release works on, and the installers warn before putting a 3.x-only plugin on a 2.x device.
+> See [MPC OS 2.x vs 3.x](https://github.com/sd88me/mpc-vst-plugins#mpc-os-2x-vs-3x) in the main repo.
 
 A wavetable synthesizer for Akai MPC OS standalone devices (Force, MPC Live / Live II, One, X, Key 61), built as a native VST2
 instrument with its own screen skin and Q-Link pages. It plays the way the Waldorf Microwave II and Microwave XT did: two wavetable
