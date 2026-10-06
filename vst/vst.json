@@ -10,7 +10,7 @@
   "defines": {"MODULE_SUBDIR": "\".\""},
   "build": {
     "root": "..",
-    "sources": ["src/engine.c", "src/out.c", "src/patch.c", "src/syx.c", "src/waves.c", "src/wavedata.c", "src/filter.c", "src/fx.c", "src/mod.c src/presets.c"],
+    "sources": ["src/engine.c", "src/out.c", "src/patch.c", "src/syx.c", "src/waves.c", "src/wavedata.c", "src/filter.c", "src/fx.c", "src/mod.c src/presets.c src/factory.c"],
     "cflags": ["-DHAS_LFO_BPM=1", "-Isrc", "-I/mv/wrapper", "-I../mpc-vst-plugins/wrapper"],
     "libs": ["-lm"]
   }

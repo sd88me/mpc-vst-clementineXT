@@ -16,6 +16,7 @@
 #include "wavedata.h"
 #include "filter.h"
 #include "fx.h"
+#include "factory.h"
 #include "mod.h"
 
 #define NV 10
@@ -37,6 +38,7 @@ typedef struct { int key, on, vel; float ug, ph1, ph2, pitch, target, det, panof
 } voice_t;
 #define MAX_BANKS 24
 #define PATHLEN 1400
+#define FACTORY_BANK_PATH "@factory"   /* the bank path that means: decode the factory sounds from the ROM */
 #define PAGE_SLOTS 28
 typedef struct {
     patch_t cur;                 /* the engine state is the XT's SDATA block */
@@ -46,6 +48,7 @@ typedef struct {
     float last_pitch;            /* pitch of the previous note, for glide */
     patch_t bank[256];           /* A001..B128 from a user .syx file, when one is found */
     int have_bank, program;
+    char dir[PATHLEN];           /* the plugin folder, to find the ROM again when a bank is loaded */
     struct { char name[24]; char path[PATHLEN]; } banks[MAX_BANKS];   /* bank 0 is the built-in sounds, the rest are .syx files found in the plugin folder and ROMS */
     int nbanks, cur_bank, browse_bank, browse_page;
     patch_t browse[256];                                          /* the sounds of the bank the Banks page is browsing */
@@ -116,6 +119,11 @@ static void bank_cb(const patch_t *p, int bank, int num, void *ctx) {
 static void bank_fill(const inst_t *s, int b, patch_t *out) {
     if (b <= 0 || b >= s->nbanks) { presets_fill(out); return; }
     for (int i = 0; i < 256; i++) patch_init(&out[i]);
+    if (!strcmp(s->banks[b].path, FACTORY_BANK_PATH)) {   /* the factory sounds out of the user's ROM */
+        uint8_t *img = wavedata_rom_image(s->dir);
+        if (img) { factory_decode(img, out); free(img); }
+        return;
+    }
     FILE *f = fopen(s->banks[b].path, "rb");
     if (!f) return;
     fseek(f, 0, SEEK_END); long n = ftell(f); fseek(f, 0, SEEK_SET);
@@ -145,6 +153,12 @@ static void scan_banks(inst_t *s, const char *dir) {
         }
         closedir(d);
     }
+    {   /* the factory sounds, when the ROM in ROMS holds them: first after the built-in sounds */
+        uint8_t *img = wavedata_rom_image(dir);
+        patch_t *t = img ? malloc(256 * sizeof *t) : NULL;
+        if (t && factory_decode(img, t)) { snprintf(s->banks[s->nbanks].name, sizeof s->banks[0].name, "XT Factory"); strcpy(s->banks[s->nbanks].path, FACTORY_BANK_PATH); s->nbanks++; }
+        free(t); free(img);
+    }
     qsort(names, (size_t)nn, sizeof names[0], cmp_str);
     for (int i = 0; i < nn && s->nbanks < MAX_BANKS; i++) {
         const char *base = strrchr(names[i], '/'); base = base ? base + 1 : names[i];
@@ -173,6 +187,7 @@ static void *create(const char *dir) {
     if (s) { s->arp_sound = -1; s->arp_idx = -1; s->fx.lfo_chorus = 0.525f; }   /* the amp-page chorus LFO free-runs; the firmware starts it at 189 degrees (measured at note-on) */
     patch_init(&s->cur);
     if (dir) { char rd[1100]; snprintf(rd, sizeof rd, "%s/ROMS", dir); mkdir(rd, 0755); }   /* the folder for the user's own ROM dump and banks, created empty on first load */
+    if (s && dir) snprintf(s->dir, sizeof s->dir, "%s", dir);
     scan_banks(s, dir);
     select_bank(s, s->nbanks > 1 ? 1 : 0);   /* the first .syx bank when there is one, else the built-in sounds */
     browse_to(s, s->cur_bank);

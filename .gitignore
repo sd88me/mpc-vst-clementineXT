@@ -17,3 +17,4 @@ test/test_engine
 test/render_cmp
 test/filter_run
 test/test_rom
+test/test_factory

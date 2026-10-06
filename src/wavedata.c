@@ -123,6 +123,16 @@ static int find_rom(const char *dir, uint8_t **A, uint8_t **B) {
     return *A != NULL;
 }
 
+uint8_t *wavedata_rom_image(const char *dir) {
+    uint8_t *a, *b;
+    if (!dir || !find_rom(dir, &a, &b)) return NULL;
+    uint8_t *img = NULL;
+    if (a && b && (img = malloc(262144)))
+        for (int i = 0; i < 131072; i++) { img[2 * i] = a[i]; img[2 * i + 1] = b[i]; }
+    free(a); free(b);
+    return img;
+}
+
 wavedata_t *wavedata_load(const char *dir) {
     if (dir) {   /* the user's own ROM first (docs/DESIGN.md section 10) */
         uint8_t *a, *b;

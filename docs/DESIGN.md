@@ -361,8 +361,14 @@ What must be verified first, because the design depends on it:
    368-505 in chip B at `0xC180 + 64n` (307-367 are not waves). Control tables are 64 big-endian 16-bit wave numbers (0xFFFF empty):
    tables 0-27 in chip A at `0x10000 + 128n`, tables 52-63 in chip B at `0x10000 + 128(n-52)`. The plugin reads the two halves (or a
    256 KB image) from its data folder at load. Still missing: the 24 algorithmic tables (28-51), which have no control table.
-2. **Factory sounds inside the OS image.** gearmulator reads ROM singles for banks A and B. If they sit in the OS
-   update, the importer can offer the factory banks from the same file.
+2. **Factory sounds inside the ROM image.** **Yes, in the 256 KB ROM** (`src/factory.c`, `test/test_factory.c`; found 2026-10-06 by zeroing
+   blocks of the image and diffing the firmware's all-sounds dump). The 256 factory sounds are 188-byte records at `0x28000 + 188 n` of
+   the interleaved image, each byte inverted. A record is a bit stream, MSB first: the SDATA bytes in index order, each in a fixed number
+   of bits (0 to 7, 1504 bits in all; 0 bits means the byte is 0; the table is in `factory.c`). The 16-character name is bytes 240-255, 7 bits each.
+   244 sounds equal the firmware's dump byte for byte. The other 12 slots (4, 93, 98, 102, 103, 104, 182, 187, 230, 234, 254, 255) differ
+   because the image also carries a journal of stored edits at `0x3CE80-0x3D999` (headers followed by (byte offset, new byte) pairs against
+   the slot's record, and some whole records); our importer ignores it, so those slots give the factory sound, not the edit. The plugin
+   shows the result as the bank "XT Factory" whenever the ROM in `ROMS` holds a sound set (every name must be printable).
 3. **Our interpolation vs the firmware's.** Tested with the oracle: our table builder's output against the DSP
    wave memory dump, slot by slot. The dump itself is a test fixture on the developer's machine and is never committed.
 

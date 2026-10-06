@@ -14,6 +14,7 @@ typedef struct {
     int nwaves, ntables;
 } wavedata_t;
 wavedata_t *wavedata_load(const char *dir);              /* the user's ROM (256 KB image or two halves) in dir, dir/wavedata or dir/import; else the dev cache; NULL if nothing */
+uint8_t *wavedata_rom_image(const char *dir);           /* the user's ROM as one 256 KB interleaved image (malloc'd), or NULL unless both chips are there */
 wavedata_t *wavedata_load_cache(const char *dir);        /* the dev cache written by tools/oracle only */
 void wavedata_free(wavedata_t *w);
 void wavedata_prewarm(wavedata_t *w);                    /* build every table now, so the audio thread never has to */
