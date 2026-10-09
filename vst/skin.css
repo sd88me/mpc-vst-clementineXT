@@ -56,3 +56,19 @@
 .look-winset[data-r="27"] { fill: #d6402f; stroke: #8a110b; }
 .look-wnotch { stroke: #1d1d20; }
 .look-winset[data-r="27"] { fill: #d6402f; }
+
+/* depth: light from the top left. The plate has a chamfered edge (lit top and left, dark bottom and right); panels are engraved grooves with a lit lower lip over a
+ * slightly recessed fill; LCD bezels sit deeper; keycaps are raised (gradients from tools/html_art.py); toggle tracks are recessed. */
+#c:has(#g > rect:first-child[width="1280"]) {
+  box-shadow: inset 3px 3px 0 rgba(255, 224, 170, 0.55), inset 1px 1px 0 rgba(255, 245, 220, 0.5), inset -3px -3px 0 rgba(70, 22, 0, 0.5),
+              inset -1px -1px 0 rgba(40, 10, 0, 0.55), inset 0 0 28px rgba(80, 24, 0, 0.10);
+}
+.frame-border { fill: rgba(110, 36, 0, 0.09); stroke-opacity: 0.8; stroke-width: 1.4;
+                filter: drop-shadow(0 1.5px 0 rgba(255, 226, 172, 0.75)) drop-shadow(0 -1px 0 rgba(60, 20, 0, 0.4)); }
+.box { filter: drop-shadow(0 1.5px 0 rgba(255, 226, 172, 0.65)) drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.45)) drop-shadow(0 0 0.6px rgba(0, 0, 0, 0.8)); }
+.dot-bezel { filter: drop-shadow(0 1.5px 0 rgba(255, 226, 172, 0.6)) drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.45)); }
+.arrow-bg, .button-bg { fill: url(#key-linear); stroke: #4a0b04; stroke-width: 1.5;
+                        filter: drop-shadow(0 2px 0 #5a0d05) drop-shadow(0 4px 3px rgba(40, 10, 0, 0.55)); }
+.button-sheen { fill: url(#key-gloss); opacity: 1; }
+.pill-track { stroke: rgba(20, 8, 0, 0.85); stroke-width: 1.6; filter: drop-shadow(0 1.5px 0 rgba(255, 226, 172, 0.7)) drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.5)); }
+.pill-thumb { filter: drop-shadow(0 2px 1.5px rgba(0, 0, 0, 0.7)); }
