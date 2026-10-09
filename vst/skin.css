@@ -50,7 +50,7 @@
 .knob-face[r="25"] { fill: #a5190f; stroke: #3d0805; }
 .knob-sheen[r="25"] { opacity: 0.25; }
 
-/* knob look=waldorf: charcoal stems with a pale inset like the Microwave; the four Play knobs (r=27) are red */
+/* knob look=waldorf: charcoal stems with a pale inset; the four Play knobs (r=27) are red */
 .look-wside[data-r="27"] { fill: #b01c14; }
 .look-wtop[data-r="27"] { fill: #8a110b; stroke: #3d0805; }
 .look-winset[data-r="27"] { fill: #d6402f; stroke: #8a110b; }

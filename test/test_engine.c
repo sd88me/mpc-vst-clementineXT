@@ -11,6 +11,8 @@ int main(void) {
 #define CHECK(c, m) do { int ok_ = (c); printf("%s %s\n", ok_ ? "ok  " : "FAIL", m); fails += !ok_; } while (0)
     e->get_param(h, "patch_name", b, sizeof b); CHECK(b[0] && strcmp(b, "Init"), "bank loaded: program 0 has its own name, not the built-in Init");
     e->set_param(h, "program", "183"); e->get_param(h, "patch_name", b, sizeof b); CHECK(!strncmp(b, "Init Sound V1.1", 15), "program 183 = init sound");
+    e->get_param(h, "patch_text", b, sizeof b); CHECK(!strncmp(b, "183  Init Sound V1.1", 20), "patch_text = program number, two spaces, name");
+    e->get_param(h, "bank_text", b, sizeof b); CHECK(b[0] >= '0' && b[0] <= '9' && b[1] == ' ' && b[2] == ' ', "bank_text = bank number, two spaces, name");
     e->get_param(h, "lfo1_rate", b, sizeof b); CHECK(atoi(b) == 100, "init sound lfo1_rate 100");
     char st[600]; e->get_param(h, "state", st, sizeof st);
     void *h2 = e->create(NULL); e->set_param(h2, "state", st); e->get_param(h2, "patch_name", b, sizeof b);
