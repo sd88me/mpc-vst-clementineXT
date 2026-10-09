@@ -17,7 +17,7 @@ def cx(cell): return X0 + 77 + CELL * cell
 
 def tab(name): emit("\n[tab %s]" % name)
 def frame(row, cell, n, title): emit('frame x=%d y=%d w=%d h=%d title="%s"' % (X0 + CELL * cell, ry(row), CELL * n - GAP, ROW_H, title))
-def knob(row, cell, label, key, r=24): emit('knob cx=%d cy=%d r=%d label="%s" key=%s' % (cx(cell), ry(row) + 64, r, label, key))
+def knob(row, cell, label, key, r=24): emit('knob cx=%d cy=%d r=%d label="%s" key=%s' % (cx(cell), ry(row) + 81 - r, r, label, key))   # the value box ends 3 px above the frame's bottom
 def toggle(row, cell, label, key): emit('toggle cx=%d cy=%d label="%s" key=%s' % (cx(cell), ry(row) + 80, label, key))
 def popup(row, cell, label, key, w=134): emit('popup cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (cx(cell), ry(row) + 104, w, label, key))
 def stepper(row, cell, n, label, key): emit('stepper style=dotmatrix cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (X0 + CELL * cell + (CELL * n - GAP) // 2, ry(row) + 104, CELL * n - 24, label, key))
@@ -58,7 +58,7 @@ emit('stepper style=dotmatrix cx=%d cy=%d w=600 h=48 label="SOUND" key=program g
 wordmark(1160, SY, w=200)
 frame(0, 0, 8, "PLAY")
 for k in range(4):
-    n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n, r=25); popup(0, 2 * k + 1, "PARAMETER", "play%d" % n)   # r=25 is unique to these: skin.css paints them red
+    n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n, r=23); popup(0, 2 * k + 1, "PARAMETER", "play%d" % n)   # r=23 is unique to these: skin.css paints them red
 frame(2, 0, 4, "EFFECT"); popup(2, 0, "TYPE", "fx_type"); knobs(2, 1, [("PARAM 1", "fx_p1"), ("PARAM 2", "fx_p2"), ("PARAM 3", "fx_p3")])
 frame(2, 4, 4, "VOICES"); knobs(2, 4, [("MODE", "^alloc"), ("ASSIGN", "^assign"), ("DETUNE", "detune"), ("DE-PAN", "depan")])
 frame(3, 0, 4, "GLIDE"); knobs(3, 0, [("ACTIVE", "~glide_on"), ("TYPE", "^glide_type"), ("MODE", "^glide_mode"), ("TIME", "glide_time")])
