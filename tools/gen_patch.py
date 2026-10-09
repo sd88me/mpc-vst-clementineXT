@@ -166,7 +166,7 @@ def _slots(prefix, n, keys):
 
 # Skin sections, in page order (studio.py auto packs them into pages of 2 rows x 8 slots). Labels follow the XT's own page names.
 SECTIONS = [
-    ("PLAY", ["bank", "bank_name", "program", "program_prev", "program_next", "patch_name", "play1", "play2", "play3", "play4", "play_v1", "play_v2", "play_v3", "play_v4"]),
+    ("PLAY", ["bank", "bank_name", "program", "program_prev", "program_next", "patch_name", "play1", "play2", "play3", "play4", "play_v1", "play_v2", "play_v3", "play_v4", "bank_text", "patch_text"]),
     ("OSC 1", ["osc1_oct", "osc1_semi", "osc1_detune", "osc1_bend", "osc1_keytrack", "osc1_fm"]),
     ("OSC 2", ["osc2_oct", "osc2_semi", "osc2_detune", "osc2_bend", "osc2_keytrack", "osc2_sync", "osc2_link"]),
     ("WAVETABLE", ["wavetable"]),
@@ -254,6 +254,9 @@ def params_json():
     ps.append({"key": "bank_next", "name": "Bank >", "min": 0, "max": 1, "default": 0, "momentary": True, "type": "trigger", "step_of": "bank", "step_delta": 1})
     for i in range(1, 5):
         ps.append({"key": "play_v%d" % i, "name": "Play %d" % i, "min": 0, "max": 127, "default": 0, "display": "int"})
+    # the combined readouts the GLOBAL steppers display (get=): "<bank number>  <bank name>" and "<program number>  <sound name>"
+    ps.append({"key": "bank_text", "name": "Bank", "min": 0, "max": 0, "default": 0, "display": "string", "type": "readout"})
+    ps.append({"key": "patch_text", "name": "Sound", "min": 0, "max": 0, "default": 0, "display": "string", "type": "readout"})
     have = {p["key"] for p in ps}
     secs = []
     for label, keys in SECTIONS:

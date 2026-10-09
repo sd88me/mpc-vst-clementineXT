@@ -4021,6 +4021,24 @@
    "max": 127,
    "default": 0,
    "display": "int"
+  },
+  {
+   "key": "bank_text",
+   "name": "Bank",
+   "min": 0,
+   "max": 0,
+   "default": 0,
+   "display": "string",
+   "type": "readout"
+  },
+  {
+   "key": "patch_text",
+   "name": "Sound",
+   "min": 0,
+   "max": 0,
+   "default": 0,
+   "display": "string",
+   "type": "readout"
   }
  ],
  "sections": [
@@ -4040,7 +4058,9 @@
     "play_v1",
     "play_v2",
     "play_v3",
-    "play_v4"
+    "play_v4",
+    "bank_text",
+    "patch_text"
    ]
   },
   {

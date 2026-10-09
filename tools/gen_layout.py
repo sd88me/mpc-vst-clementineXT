@@ -17,7 +17,7 @@ def cx(cell): return X0 + 77 + CELL * cell
 
 def tab(name): emit("\n[tab %s]" % name)
 def frame(row, cell, n, title): emit('frame x=%d y=%d w=%d h=%d title="%s"' % (X0 + CELL * cell, ry(row), CELL * n - GAP, ROW_H, title))
-def knob(row, cell, label, key, r=26): emit('knob cx=%d cy=%d r=%d label="%s" key=%s' % (cx(cell), ry(row) + 72, r, label, key))
+def knob(row, cell, label, key, r=24): emit('knob cx=%d cy=%d r=%d label="%s" key=%s' % (cx(cell), ry(row) + 81 - r, r, label, key))   # the value box ends 3 px above the frame's bottom
 def toggle(row, cell, label, key): emit('toggle cx=%d cy=%d label="%s" key=%s' % (cx(cell), ry(row) + 80, label, key))
 def popup(row, cell, label, key, w=134): emit('popup cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (cx(cell), ry(row) + 104, w, label, key))
 def stepper(row, cell, n, label, key): emit('stepper style=dotmatrix cx=%d cy=%d w=%d h=48 label="%s" key=%s' % (X0 + CELL * cell + (CELL * n - GAP) // 2, ry(row) + 104, CELL * n - 24, label, key))
@@ -53,14 +53,12 @@ def wordmark(cx_, cy_, w=300):
 tab("GLOBAL")
 frame(1, 0, 8, "SOUND")
 SY = ry(1) + 108
-emit('stepper style=dotmatrix cx=%d cy=%d w=220 h=48 label="BANK" key=bank' % (138, SY))
-emit('readout style=dotmatrix cx=%d cy=%d w=230 h=48 label="" key=bank_name' % (375, SY))
-emit('stepper style=dotmatrix cx=%d cy=%d w=220 h=48 label="SOUND" key=program' % (630, SY))
-emit('readout style=dotmatrix cx=%d cy=%d w=300 h=48 label="" key=patch_name' % (902, SY))
+emit('stepper style=dotmatrix cx=%d cy=%d w=380 h=48 label="BANK" key=bank get=bank_text' % (214, SY))     # one stepper each: arrows step, the glass shows "<number>  <name>"
+emit('stepper style=dotmatrix cx=%d cy=%d w=600 h=48 label="SOUND" key=program get=patch_text' % (736, SY))
 wordmark(1160, SY, w=200)
 frame(0, 0, 8, "PLAY")
 for k in range(4):
-    n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n, r=27); popup(0, 2 * k + 1, "PARAMETER", "play%d" % n)   # r=27 is unique to these: skin.css paints them red
+    n = k + 1; knob(0, 2 * k, "PLAY %d" % n, "play_v%d" % n, r=23); popup(0, 2 * k + 1, "PARAMETER", "play%d" % n)   # r=23 is unique to these: skin.css paints them red
 frame(2, 0, 4, "EFFECT"); popup(2, 0, "TYPE", "fx_type"); knobs(2, 1, [("PARAM 1", "fx_p1"), ("PARAM 2", "fx_p2"), ("PARAM 3", "fx_p3")])
 frame(2, 4, 4, "VOICES"); knobs(2, 4, [("MODE", "^alloc"), ("ASSIGN", "^assign"), ("DETUNE", "detune"), ("DE-PAN", "depan")])
 frame(3, 0, 4, "GLIDE"); knobs(3, 0, [("ACTIVE", "~glide_on"), ("TYPE", "^glide_type"), ("MODE", "^glide_mode"), ("TIME", "glide_time")])

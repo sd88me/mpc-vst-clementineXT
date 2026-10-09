@@ -470,6 +470,8 @@ static int get_param(void *p, const char *k, char *buf, int n) {
             }
         }
     }
+    if (!strcmp(k, "bank_text")) return snprintf(buf, n, "%d  %s", s->cur_bank, s->banks[s->cur_bank].name);
+    if (!strcmp(k, "patch_text")) { char nm[PATCH_NAME_LEN + 1]; patch_get_name(&s->cur, nm); return snprintf(buf, n, "%d  %s", s->program, nm); }
     if (!strcmp(k, "bank_name")) return snprintf(buf, n, "%s", s->banks[s->cur_bank].name);
     if (!strcmp(k, "browse_bank_name")) return snprintf(buf, n, "%s%s", s->browse_bank == s->cur_bank ? "* " : "", s->banks[s->browse_bank].name);
     if (!strcmp(k, "patch_page_text")) return snprintf(buf, n, "PAGE %d/%d", s->browse_page + 1, (256 + PAGE_SLOTS - 1) / PAGE_SLOTS);
