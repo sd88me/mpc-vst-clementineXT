@@ -50,12 +50,12 @@
 .knob-face[r="25"] { fill: #a5190f; stroke: #3d0805; }
 .knob-sheen[r="25"] { opacity: 0.25; }
 
-/* knob look=taper: charcoal stems with a pale inset; the four Play knobs (r=27) are red */
-.look-wside[data-r="27"] { fill: #b01c14; }
-.look-wtop[data-r="27"] { fill: #8a110b; stroke: #3d0805; }
-.look-winset[data-r="27"] { fill: #d6402f; stroke: #8a110b; }
+/* knob look=taper: charcoal stems with a pale inset; the four Play knobs (r=25) are red */
+.look-wside[data-r="25"] { fill: #b01c14; }
+.look-wtop[data-r="25"] { fill: #8a110b; stroke: #3d0805; }
+.look-winset[data-r="25"] { fill: #d6402f; stroke: #8a110b; }
 .look-wnotch { stroke: #1d1d20; }
-.look-winset[data-r="27"] { fill: #d6402f; }
+.look-winset[data-r="25"] { fill: #d6402f; }
 
 /* depth: light from the top left. The plate has a chamfered edge (lit top and left, dark bottom and right); panels are engraved grooves with a lit lower lip over a
  * slightly recessed fill; LCD bezels sit deeper; keycaps are raised (gradients from tools/html_art.py); toggle tracks are recessed. */
