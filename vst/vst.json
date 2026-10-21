@@ -4,6 +4,7 @@
   "uid": "ClmT",
   "version": 1000,
   "so": "clementine_xt.so",
+  "targets": ["armv7", "aarch64"],
   "params": "params.json",
   "layout": "layout.conf",
   "art": "html",
