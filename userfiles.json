@@ -1,0 +1,15 @@
+[
+  {
+    "path": "ROMS",
+    "label": "Microwave II ROM and sound banks",
+    "description": "Optional. Your own Microwave II ROM gives the original waves, wave tables and the 256 factory sounds. Sound banks (.syx) appear on the SOUNDS tab.",
+    "hint": "The ROM is one 256 KB image or the two 128 KB chip images (lower and upper); any file names work. A bank is named after its file.",
+    "rules": [
+      {"label": "Microwave II ROM", "ext": [".bin"], "size": 262144, "header_hex": "c0de"},
+      {"label": "Microwave II ROM, lower chip", "ext": [".bin"], "size": 131072, "header_hex": "c000"},
+      {"label": "Microwave II ROM, upper chip", "ext": [".bin"], "size": 131072, "header_hex": "de00"},
+      {"label": "Sound bank (.syx)", "ext": [".syx"], "size_min": 16, "size_max": 1048576, "header_hex": "f03e", "unverified": true,
+       "note": "A Waldorf SysEx file. It shows as a bank on the SOUNDS tab if it holds Microwave II/XT sounds."}
+    ]
+  }
+]
