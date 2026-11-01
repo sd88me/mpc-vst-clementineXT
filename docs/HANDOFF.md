@@ -28,7 +28,7 @@ tools/make_layout.sh                                              # params.json 
 ../mpc-vst-plugins/tools/test_port.sh vst/vst.json                # offline host test, must print PASSED
 ../mpc-vst-plugins/tools/build_port.sh vst/vst.json               # armhf .so + skin in vst/build/ (about 4 minutes, Docker)
 cd vst && python3 ../../mpc-vst-plugins/tools/release.py --so build/clementine_xt.so --skin "build/skin/sd88me - VST - Clementine-XT" \
-   --entry build/pluginlist-entry.xml --version X.Y.Z --user-data ROMS --about "..." --id clementine-xt \
+   --entry build/pluginlist-entry.xml --version X.Y.Z --user-data ROMS --user-files ../userfiles.json --about "..." --id clementine-xt \
    --repo sd88me/mpc-vst-clementineXT --license GPL-3.0-only [--bench build/bench.txt] -o /tmp/rel     # then catalog_check.py <zip> --catalog
 scp the zip to the device, unzip, `sh install.sh -y` (stops and restarts MPC; ask the user first unless they just said to deploy)
 ../mpc-vst-plugins/tools/bench.sh vst/build/clementine_xt.so 192.168.1.44 -j

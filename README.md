@@ -43,6 +43,7 @@ It is not affiliated with or endorsed by Waldorf. See [Acknowledgements](#acknow
 
 The plugin makes a folder called `ROMS` inside its own folder on first load
 (`/sdcard/Synths/sd88me - VST - Clementine-XT/ROMS/`). Everything of your own goes there; upgrades and uninstalls leave it alone.
+The installer app's **Your ROMs and files** step can do this for you: it checks each file before copying it into the right folder (the rules are in `userfiles.json`).
 
 - **Waves and wave tables:** copy your Microwave II ROM dump into `ROMS`, either the two 128 KB chip images (for example `lower_Am29F010.bin`
   and `upper_Am29F010.bin`; any `.bin` names work) or one 256 KB image. Restart the plugin (add a fresh
