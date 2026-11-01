@@ -10,5 +10,12 @@
   "device": "Akai Force",
   "firmware": "MPC OS 3.9.1",
   "date": "2026-10-23"
+ },
+ {
+  "version": "0.9.7",
+  "device": "Akai Force",
+  "firmware": "MPC OS 3.9.1",
+  "date": "2026-11-01",
+  "note": "Upgrade kept ROMS; plays with the Microwave II chips."
  }
 ]
