@@ -23,27 +23,34 @@ It is not affiliated with or endorsed by Waldorf. See [Acknowledgements](#acknow
 
 - A first-generation MPC OS standalone device (32-bit ARM): Force, MPC Live / Live II, MPC One, MPC X or MPC Key 61. Tested on a Force
   running MPC OS 5.0.17; the others are untested.
-- Root (SSH) access to the device. Installing a plugin this way is unofficial, so back up first and use it at your own risk.
+- The OpenMPC Plugin Manager, or root (SSH) access to the device. Installing plugins this way is unofficial, so back up first and use it at your own risk.
 - **Optional but recommended: your own copy of the Microwave II ROM.** The plugin does not include one (see below). Without it you get
   12 built-in sounds on an original set of wave tables; with it you get the real waves and can load the instrument's factory banks.
 
 ## Install
 
-1. Download `Clementine-XT-<version>-mpc-armv7.zip`, unzip it and copy the folder to the device:
-   `scp -r Clementine-XT-<version> root@<device-ip>:/tmp/`
-2. Run the installer: `ssh root@<device-ip> sh /tmp/Clementine-XT-<version>/install.sh`
-   It stops MPC (save your project first), copies the plugin to `/sdcard/Synths/sd88me - VST - Clementine-XT/`, backs up `MPC.settings`,
-   adds the plugin to MPC's list and starts MPC again. Running it again upgrades in place and keeps your files.
-3. On a track, add **Clementine-XT** from the plugin browser (Instruments). The screen appears in the plugin view and the Q-Links
-   follow the page.
+Clementine-XT comes in one plugin format only: the older format, for plugins listed in `MPC.settings` (32-bit MPCs). There is no
+SDK-format zip for copying into `VST2 Plugins`. Install it one of two ways:
 
-`INSTALL.md` in the zip has the manual route and how to uninstall.
+- **With the OpenMPC Plugin Manager:** install Clementine-XT from it. Its **Your ROMs and files** step can then add your ROM and
+  sound banks (see below).
+- **By hand over SSH:**
+  1. Download `Clementine-XT-<version>-mpc-armv7.zip`, unzip it and copy the folder to the device:
+     `scp -r Clementine-XT-<version> root@<device-ip>:/tmp/`
+  2. Run the installer: `ssh root@<device-ip> sh /tmp/Clementine-XT-<version>/install.sh`
+     It stops MPC (save your project first), copies the plugin to `/sdcard/Synths/sd88me - VST - Clementine-XT/`, backs up
+     `MPC.settings`, adds the plugin to MPC's list and starts MPC again. Running it again upgrades in place and keeps your files.
+
+  `INSTALL.md` in the zip has the manual route and how to uninstall.
+
+Then, on a track, add **Clementine-XT** from the plugin browser (Instruments). The screen appears in the plugin view and the Q-Links
+follow the page.
 
 ## Your ROM and sound banks
 
 The plugin makes a folder called `ROMS` inside its own folder on first load
 (`/sdcard/Synths/sd88me - VST - Clementine-XT/ROMS/`). Everything of your own goes there; upgrades and uninstalls leave it alone.
-The installer app's **Your ROMs and files** step can do this for you: it checks each file before copying it into the right folder (the rules are in `userfiles.json`).
+If you installed with the OpenMPC Plugin Manager, its **Your ROMs and files** step can do this for you: it checks each file before copying it into the right folder (the rules are in `userfiles.json`). If you installed with `install.sh`, copy the files by hand with `scp` or the MPC's file browser.
 
 - **Waves and wave tables:** copy your Microwave II ROM dump into `ROMS`, either the two 128 KB chip images (for example `lower_Am29F010.bin`
   and `upper_Am29F010.bin`; any `.bin` names work) or one 256 KB image. Restart the plugin (add a fresh
